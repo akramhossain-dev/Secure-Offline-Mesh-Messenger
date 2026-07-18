@@ -22,7 +22,9 @@ data class MessageEntity(
     val timestamp: Long,
     val deliveryStatus: DbDeliveryStatus,
     val type: DbMessageType,
-    val priority: DbMessagePriority
+    val priority: DbMessagePriority,
+    val expiryTime: Long,
+    val retryCount: Int
 ) : BaseEntity
 
 /**
@@ -30,9 +32,12 @@ data class MessageEntity(
  */
 enum class DbDeliveryStatus {
     PENDING,
+    QUEUED,
+    SENDING,
     SENT,
     DELIVERED,
-    FAILED
+    FAILED,
+    EXPIRED
 }
 
 /**

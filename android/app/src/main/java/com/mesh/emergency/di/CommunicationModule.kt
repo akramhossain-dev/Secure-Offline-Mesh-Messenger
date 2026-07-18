@@ -7,10 +7,10 @@ package com.mesh.emergency.di
 
 import com.mesh.emergency.core.communication.CommunicationManager
 import com.mesh.emergency.core.communication.Transport
-import com.mesh.emergency.data.communication.BluetoothTransportStub
 import com.mesh.emergency.data.communication.CommunicationManagerImpl
-import com.mesh.emergency.data.communication.LoRaTransportStub
 import com.mesh.emergency.data.communication.MockTransport
+import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+import com.mesh.emergency.data.communication.lora.MockLoRaTransport
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -48,12 +48,12 @@ abstract class CommunicationModule {
         @Provides
         @Singleton
         @BluetoothTransportQualifier
-        fun provideBluetoothTransport(stub: BluetoothTransportStub): Transport = stub
+        fun provideBluetoothTransport(impl: BluetoothTransportImpl): Transport = impl
 
         @Provides
         @Singleton
         @LoRaTransportQualifier
-        fun provideLoRaTransport(stub: LoRaTransportStub): Transport = stub
+        fun provideLoRaTransport(mockLora: MockLoRaTransport): Transport = mockLora
 
         @Provides
         @Singleton

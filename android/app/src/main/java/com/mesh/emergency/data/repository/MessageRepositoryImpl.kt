@@ -36,16 +36,19 @@ class MessageRepositoryImpl @Inject constructor(
 
     override suspend fun sendMessage(recipientId: String, content: String): Result<Unit> {
         return try {
+            val now = System.currentTimeMillis()
             val message = MessageEntity(
                 entityId = UUID.randomUUID().toString(),
                 conversationId = recipientId,
                 senderId = "local_user_id",
                 recipientId = recipientId,
                 content = content,
-                timestamp = System.currentTimeMillis(),
+                timestamp = now,
                 deliveryStatus = DbDeliveryStatus.PENDING,
                 type = DbMessageType.TEXT,
-                priority = DbMessagePriority.MEDIUM
+                priority = DbMessagePriority.MEDIUM,
+                expiryTime = now + 86400000L, // 1 day expiry by default
+                retryCount = 0
             )
             localDataSource.insertMessage(message)
             Result.Success(Unit)
@@ -76,9 +79,12 @@ private fun MessageEntity.toDomain(): MessageDomainModel = MessageDomainModel(
     content = content,
     timestamp = timestamp,
     status = when (deliveryStatus) {
-        DbDeliveryStatus.PENDING -> MessageStatus.SENDING
-        DbDeliveryStatus.SENT -> MessageStatus.SENT
+        DbDeliveryStatus.PENDING   -> MessageStatus.SENDING
+        DbDeliveryStatus.QUEUED    -> MessageStatus.SENDING
+        DbDeliveryStatus.SENDING   -> MessageStatus.SENDING
+        DbDeliveryStatus.SENT      -> MessageStatus.SENT
         DbDeliveryStatus.DELIVERED -> MessageStatus.DELIVERED
-        DbDeliveryStatus.FAILED -> MessageStatus.FAILED
+        DbDeliveryStatus.FAILED    -> MessageStatus.FAILED
+        DbDeliveryStatus.EXPIRED   -> MessageStatus.FAILED
     }
 )

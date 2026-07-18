@@ -5,6 +5,7 @@
 
 package com.mesh.emergency.di
 
+import com.mesh.emergency.core.hardware.bluetooth.BluetoothManager
 import com.mesh.emergency.core.system.AudioServiceWrapper
 import com.mesh.emergency.core.system.AudioServiceWrapperImpl
 import com.mesh.emergency.core.system.BluetoothServiceWrapper
@@ -19,6 +20,7 @@ import com.mesh.emergency.core.utils.PermissionManager
 import com.mesh.emergency.core.utils.PermissionManagerImpl
 import com.mesh.emergency.core.utils.capability.DeviceCapabilityManager
 import com.mesh.emergency.core.utils.capability.DeviceCapabilityManagerImpl
+import com.mesh.emergency.data.hardware.bluetooth.BluetoothManagerImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -66,4 +68,9 @@ abstract class UtilityModule {
     @Binds
     @Singleton
     abstract fun bindAudioServiceWrapper(impl: AudioServiceWrapperImpl): AudioServiceWrapper
+
+    /** Binds [BluetoothManagerImpl] to the [BluetoothManager] interface. */
+    @Binds
+    @Singleton
+    abstract fun bindBluetoothManager(impl: BluetoothManagerImpl): BluetoothManager
 }
