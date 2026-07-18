@@ -1,4 +1,4 @@
-# Theme System & UI Foundation Overview — Phase A3
+# Theme System, UI Foundation & Navigation Shell Overview — Phase A4
 
 ## Design Principles
 
@@ -82,30 +82,32 @@ Standardized in [`MeshIcons.kt`](../../android/app/src/main/java/com/mesh/emerge
 
 ---
 
-## Reusable Components Library
+## Navigation & App Shell Architecture
 
-All custom Compose components are fully stateless and are located in `com.mesh.emergency.core.designsystem.component.*`:
+Phase A4 implements the complete application navigation layout scaffolding:
 
-### Buttons (`MeshButton.kt`)
-- `MeshButton`: Standard brand-filled primary button.
-- `MeshOutlinedButton`: Minimal secondary button.
-- `MeshTextButton`: Inlined flat button.
-- `MeshIconButton`: Compact action icon trigger.
-- `MeshSosButton`: Red glowing action button designed for **accidental-press safety**. Requires a **press-and-hold interaction** for `holdDurationMs = 1500L` with progressive surrounding animation updates before triggering.
+### 1. Adaptive Navigation Shell (`AppShell.kt`)
+The UI shell dynamically updates layout formats matching window widths using the `rememberWindowSize` helper:
+- **Compact Window (Phone, < 600dp)**: Standard Bottom Navigation Bar with screen navigation targets.
+- **Medium & Expanded Window (Tablets/Landscape, >= 600dp)**: Displays a vertical `NavigationRail` alongside screen contents for optimal landscape real estate.
+- **Gesture Control**: Modal sheets gesture boundaries are mapped to only allow swipes on top-level routes (e.g. Home, ChatList, Map, Diagnostics).
 
-### Cards (`MeshCard.kt`)
-- `MeshCard`: Flat minimal container.
-- `MeshGlassCard`: Translucent background overlay card with outline accents and alpha surface background.
+### 2. Navigation Actions Flow
+ViewModels request routing changes through the `AppNavigator` singleton coordinator. The root `AppShell` collects navigation actions and dispatches updates to `NavController` safely:
+- State restoration (`restoreState = true`, `saveState = true`) is configured to preserve scroll positions across layout jumps.
+- Multiple button clicks are ignored using `launchSingleTop = true`.
 
-### Indicators & Status (`MeshStatusIndicator.kt`)
-- `MeshConnectionStatus`: Tags displaying "Connected" (Teal) or "Offline" (Gray).
-- `MeshBatteryStatus`: Circular tag indicating battery level and warning colors.
-- `MeshSignalIndicator`: Decouples RSSI readings to display "Strong", "Weak", or "No Signal".
+### 3. Transition Animators (`NavTransitions.kt`)
+All screen transitions follow standard Material 3 motion specs:
+- **Forward Navigation**: 300ms Slide-in from right.
+- **Backward/Pop Navigation**: 300ms Slide-out to right.
 
-### Components States
-- **Loading (`LoadingView.kt`)**: Screen loaders, linear strips, and skeleton shimmer placeholders (`MeshSkeletonItem`).
-- **Empty States (`EmptyState.kt`)**: Pre-styled lists placeholders for empty chats, Bluetooth scans, or SOS alert histories.
-- **Error States (`ErrorState.kt`)**: Action boxes displaying permission requirements, device off warnings, and retry triggers.
+### 4. Deep Links
+Deep links leverage standard schema patterns: `mesh://emergency/...`
+- Chat Session: `mesh://emergency/chat/{contactId}`
+- Emergency Activation: `mesh://emergency/sos`
+- User Profile: `mesh://emergency/profile`
+- Settings Screen: `mesh://emergency/settings`
 
 ---
 

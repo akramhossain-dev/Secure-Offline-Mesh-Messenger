@@ -9,23 +9,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.mesh.emergency.core.designsystem.theme.MeshTheme
+import com.mesh.emergency.core.navigation.AppNavigator
+import com.mesh.emergency.core.presentation.AppShell
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Main entry-point Activity for the Offline Emergency Mesh Communication System.
- *
- * Phase A1: Sets up the Compose content host with [MeshTheme].
- * Phase A2+: Will host the NavHost and navigation graph.
- *
- * Edge-to-edge is enabled for immersive UI.
+ * Hosts the responsive [AppShell] to coordinate navigation and adaptive UI layouts.
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    /** Injected navigation coordinator singleton. */
+    @Inject
+    lateinit var appNavigator: AppNavigator
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
@@ -35,13 +35,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MeshTheme {
-                // Phase A1: Placeholder surface.
-                // Phase A2 will replace this with NavHost + full navigation graph.
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    // Navigation host will be placed here in Phase A2
-                }
+                AppShell(appNavigator = appNavigator)
             }
         }
     }
