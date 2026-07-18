@@ -77,4 +77,9 @@ interface LocalDataSource {
     fun getVoiceMessages(): Flow<List<com.mesh.emergency.data.local.entity.VoiceMessageEntity>>
     suspend fun insertVoiceMessage(voice: com.mesh.emergency.data.local.entity.VoiceMessageEntity)
     suspend fun deleteVoiceMessage(id: String)
+
+    // ── Log Operations ────────────────────────────────────────────────────────
+    fun getLogs(): Flow<List<com.mesh.emergency.data.local.entity.LogEntity>>
+    suspend fun insertLog(log: com.mesh.emergency.data.local.entity.LogEntity)
+    suspend fun clearLogs()
 }

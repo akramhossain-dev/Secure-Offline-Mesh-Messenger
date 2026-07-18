@@ -13,6 +13,7 @@ import com.mesh.emergency.data.local.dao.DeliveryStatusDao
 import com.mesh.emergency.data.local.dao.DeviceDao
 import com.mesh.emergency.data.local.dao.EmergencyEventDao
 import com.mesh.emergency.data.local.dao.LocationDao
+import com.mesh.emergency.data.local.dao.LogDao
 import com.mesh.emergency.data.local.dao.MessageDao
 import com.mesh.emergency.data.local.dao.NetworkDao
 import com.mesh.emergency.data.local.dao.ResourceDao
@@ -23,6 +24,7 @@ import com.mesh.emergency.data.local.entity.DeliveryStatusEntity
 import com.mesh.emergency.data.local.entity.DeviceEntity
 import com.mesh.emergency.data.local.entity.EmergencyEventEntity
 import com.mesh.emergency.data.local.entity.LocationEntity
+import com.mesh.emergency.data.local.entity.LogEntity
 import com.mesh.emergency.data.local.entity.MessageEntity
 import com.mesh.emergency.data.local.entity.NetworkNodeEntity
 import com.mesh.emergency.data.local.entity.ResourceEntity
@@ -43,7 +45,8 @@ import com.mesh.emergency.data.local.entity.VoiceMessageEntity
         LocationEntity::class,
         ResourceEntity::class,
         DeliveryStatusEntity::class,
-        VoiceMessageEntity::class
+        VoiceMessageEntity::class,
+        LogEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -61,6 +64,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun emergencyEventDao(): EmergencyEventDao
     abstract fun deliveryStatusDao(): DeliveryStatusDao
     abstract fun voiceMessageDao(): VoiceMessageDao
+    abstract fun logDao(): LogDao
 
     companion object {
         const val DATABASE_NAME = "mesh_emergency.db"
