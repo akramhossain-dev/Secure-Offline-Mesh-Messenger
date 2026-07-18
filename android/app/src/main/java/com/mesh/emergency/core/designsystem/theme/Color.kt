@@ -5,11 +5,11 @@
 
 package com.mesh.emergency.core.designsystem.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mesh Color Palette
-//
 // Brand direction: Emergency communications — confident, trustworthy, urgent.
 // Primary: Deep Indigo (authority, trust, radio comms aesthetic)
 // Secondary: Electric Teal (signal, connectivity)
@@ -95,10 +95,15 @@ val NeutralVar90  = Color(0xFFE2E1EE)
 val NeutralVar95  = Color(0xFFF0EFFC)
 val NeutralVar99  = Color(0xFFFFFBFF)
 
+// ── Aurora Backdrop Accents ────────────────────────────────────────────────────
+val AuroraBlueLight = Color(0x1F4F4BD4)
+val AuroraTealLight = Color(0x1F008C96)
+val AuroraBlueDark  = Color(0x1A7674DC)
+val AuroraTealDark  = Color(0x1A5ADFF0)
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Material 3 — Light Color Scheme Tokens
 // ─────────────────────────────────────────────────────────────────────────────
-
 val md_theme_light_primary              = Indigo50
 val md_theme_light_onPrimary            = Color.White
 val md_theme_light_primaryContainer     = Indigo90
@@ -133,7 +138,6 @@ val md_theme_light_scrim                = Neutral10
 // ─────────────────────────────────────────────────────────────────────────────
 // Material 3 — Dark Color Scheme Tokens
 // ─────────────────────────────────────────────────────────────────────────────
-
 val md_theme_dark_primary               = Indigo80
 val md_theme_dark_onPrimary             = Indigo20
 val md_theme_dark_primaryContainer      = Indigo30
@@ -166,23 +170,53 @@ val md_theme_dark_outlineVariant        = NeutralVar30
 val md_theme_dark_scrim                 = Neutral10
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Semantic / Feature-specific colors (not part of M3 scheme)
+// Semantic / Feature-specific color tokens (M3 scheme adjacent)
 // ─────────────────────────────────────────────────────────────────────────────
+@Immutable
+data class SemanticColors(
+    val connected: Color,
+    val offline: Color,
+    val weakSignal: Color,
+    val strongSignal: Color,
+    val emergency: Color,
+    val warning: Color,
+    val success: Color,
+    val info: Color,
+    val disabled: Color,
+    val outline: Color,
+    val messageSent: Color,
+    val messageDelivered: Color,
+    val messageFailed: Color
+)
 
-/** SOS / Emergency active indicator */
-val ColorSosActive    = Color(0xFFFF1744)
+val LightSemanticColors = SemanticColors(
+    connected = Teal50,
+    offline = Neutral50,
+    weakSignal = Amber60,
+    strongSignal = Teal60,
+    emergency = Red50,
+    warning = Amber70,
+    success = Teal60,
+    info = Indigo50,
+    disabled = Neutral80,
+    outline = NeutralVar50,
+    messageSent = Neutral50,
+    messageDelivered = Teal50,
+    messageFailed = Red40
+)
 
-/** BLE connected indicator */
-val ColorBleConnected = Teal50
-
-/** LoRa signal indicator */
-val ColorLoraActive   = Amber70
-
-/** Message delivered status */
-val ColorDelivered    = Teal60
-
-/** Message pending/queued status */
-val ColorPending      = Neutral60
-
-/** Message failed status */
-val ColorFailed       = Red50
+val DarkSemanticColors = SemanticColors(
+    connected = Teal60,
+    offline = Neutral60,
+    weakSignal = Amber50,
+    strongSignal = Teal70,
+    emergency = Red60,
+    warning = Amber60,
+    success = Teal70,
+    info = Indigo60,
+    disabled = Neutral40,
+    outline = NeutralVar60,
+    messageSent = Neutral60,
+    messageDelivered = Teal60,
+    messageFailed = Red70
+)

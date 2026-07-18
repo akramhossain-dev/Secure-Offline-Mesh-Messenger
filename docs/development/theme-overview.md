@@ -1,166 +1,116 @@
-# Theme System Overview
+# Theme System & UI Foundation Overview — Phase A3
 
-## Design Philosophy
+## Design Principles
 
-The Offline Emergency Mesh Communication System uses **Material Design 3** as its design foundation, customized with an **emergency communications aesthetic**:
+The UI of the Offline Emergency Mesh Communication System has been custom designed around key principles suitable for **outdoor usage, high legibility, and low power consumption**:
 
-- **Deep Indigo primary** — authority, trust, tactical communications
-- **Electric Teal secondary** — signal strength, connectivity, data flow
-- **Amber tertiary** — alerts, warnings, power telemetry
-- **Emergency Red error** — SOS, critical failures, danger states
+- **Simple & Minimal**: Avoid clutter or flashy details. Focus on speed of action in stressful crisis scenarios.
+- **Accessible & High Contrast**: Large fonts and strong visual accents to support viewing in bright outdoor sunlight.
+- **Battery Friendly**: Dark theme maps dark slate gray and deep black backgrounds to reduce display power draw on AMOLED screens.
+- **Subtle Glassmorphism**: Utilized in dashboard components to layer status nodes without visual clutter.
+- **Aurora Accents**: Gradual backdrop glows indicating the active mesh signal fields in settings and network boards.
+- **No Fancy Animations**: Animation transitions are restricted to fade, scale, or sliding progress to keep frame renders fast and save CPU cycles.
 
 ---
 
-## Color System
+## Semantic Color System
 
-### Tonal Palettes
+Beyond the standard Material Design 3 palettes, the system has a custom CompositionLocal provider `LocalSemanticColors` delivering unified status color tokens:
 
-The theme uses five tonal palettes, each with 11 shades:
-
-| Palette | Role | Hex (50%) |
+| Property | Color | Context |
 |---|---|---|
-| **Indigo** | Primary | `#4F4BD4` |
-| **Teal** | Secondary | `#007178` |
-| **Amber** | Tertiary / Alerts | `#FFB82A` |
-| **Red** | Error / SOS | `#BA1A1A` |
-| **Neutral** | Surfaces, backgrounds | — |
+| `connected` | Teal50 (`#008C96`) | Active BLE link / Peripheral synced |
+| `offline` | Neutral50 (`#777680`) | Device disconnected / Offline standby state |
+| `weakSignal` | Amber60 (`#B77600`) | Poor RSSI levels / Battery charge warnings |
+| `strongSignal` | Teal60 (`#00A8B4`) | High quality RSSI values |
+| `emergency` | Red50 (`#DE3730`) | Active SOS beacon broadcasts / Critical failures |
+| `warning` | Amber70 (`#DA8E00`) | Out-of-bounds metrics alerts |
+| `success` | Teal60 (`#00A8B4`) | Transmissions acknowledged |
+| `info` | Indigo50 (`#4F4BD4`) | System info banners |
+| `disabled` | Neutral80 (`#C7C5D0`) | Inactive controls |
+| `outline` | NeutralVar50 (`#767682`)| Translucent divider board boundaries |
 
-### Light vs. Dark Scheme
-
-Material 3 color tokens are mapped separately for light and dark:
-
+Usage in Compose code:
 ```kotlin
-// Light scheme
-md_theme_light_primary = Indigo50 (#4F4BD4)
-md_theme_light_background = Neutral99 (#FFFBFF)
-
-// Dark scheme
-md_theme_dark_primary = Indigo80 (#C4C3EE)
-md_theme_dark_background = Neutral10 (#1B1B1F)
+val colors = MeshThemeTokens.semanticColors
+val indicatorColor = if (isConnected) colors.connected else colors.offline
 ```
 
-All token mappings are in [`Color.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Color.kt).
-
 ---
 
-## Theme Modes
+## Spacing & Dimensions Tokens
 
-Three modes are supported via `ThemeMode` enum:
+A strict 4dp base layout grid is defined in [`Spacing.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Spacing.kt). Component paddings and layouts must consume these tokens:
 
-| Mode | Behavior |
-|---|---|
-| `SYSTEM` | Follows Android system dark/light setting (default) |
-| `LIGHT` | Always light theme |
-| `DARK` | Always dark theme |
-
-The mode is persisted in DataStore (`PREF_KEY_THEME_MODE`) and applied at startup.
-
-### Dynamic Color (Android 12+)
-
-When `dynamicColor = true`, the theme derives colors from the user's wallpaper using Android's Material You system. This overrides the Indigo/Teal palette but preserves the emergency semantic colors (`ColorSosActive`, `ColorBleConnected`, etc.).
-
-Dynamic color is opt-in and configurable in Settings.
-
----
-
-## Typography
-
-The app uses **Inter** (by Google Fonts) — chosen for its high legibility at small sizes, essential for emergency dashboards.
-
-Full Material 3 type scale implemented (15 roles):
-
-| Role | Size | Weight | Use |
-|---|---|---|---|
-| `displayLarge` | 57sp | Normal | Hero screens |
-| `headlineLarge` | 32sp | SemiBold | Screen titles |
-| `titleLarge` | 22sp | SemiBold | App bar titles |
-| `bodyLarge` | 16sp | Normal | Message content |
-| `bodyMedium` | 14sp | Normal | Secondary content |
-| `labelLarge` | 14sp | Medium | Button labels |
-| `labelSmall` | 11sp | Medium | Captions, timestamps |
+| Token | Dimension | Use Case |
+|---|---|---|
+| `none` | 0.dp | Reset parameters |
+| `xxs` | 2.dp | Minor offsets |
+| `xs` | 4.dp | Text padding / inner badges offsets |
+| `sm` | 8.dp | Inner chips layout spacing / gap between rows |
+| `md` | 12.dp | Standard list item vertical spacing |
+| `lg` | 16.dp | Screen margins / Card contents margins |
+| `xl` | 20.dp | Large category offsets |
+| `xxl` | 24.dp | Bottom sheet vertical separators |
+| `xxxl`| 32.dp | Form fields groupings spacer |
+| `huge`| 40.dp | Splash margins |
+| `massive`| 48.dp| Minimum tap targets spacing |
+| `giant`| 64.dp | FAB margins / Header layouts offset |
 
 ---
 
 ## Shape System
 
-Corner radii follow a 4dp-based scale:
-
-| Token | Value | Used For |
-|---|---|---|
-| `extraSmall` | 4dp | Chips, badges, input corners |
-| `small` | 8dp | Buttons, small cards |
-| `medium` | 12dp | Standard cards, dialogs |
-| `large` | 16dp | Navigation drawers |
-| `extraLarge` | 28dp | Bottom sheets, modal surfaces |
+Corner radii tokens map as follows in [`Shape.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Shape.kt):
+- `extraSmall` (4dp) — Badges / Chips
+- `small` (8dp) — Buttons / Action inputs
+- `medium` (12dp) — Cards / Dialogs / Details sheets
+- `large` (16dp) — Bottom panels
+- `extraLarge` (28dp) — Modals / Bottom sheets overlay
 
 ---
 
-## Spacing System
+## Icon Architecture
 
-The `Spacing` data class provides a 4dp-grid token system accessed via `LocalSpacing.current`:
-
-```kotlin
-@Composable
-fun MyComposable() {
-    val spacing = LocalSpacing.current
-    Column(
-        modifier = Modifier.padding(
-            horizontal = spacing.screenHorizontal,  // 16dp
-            vertical = spacing.screenVertical,      // 16dp
-        )
-    ) { ... }
-}
-```
-
-Key semantic tokens:
-
-| Token | Value | Purpose |
-|---|---|---|
-| `screenHorizontal` | 16dp | Screen edge padding |
-| `cardPadding` | 16dp | Card internal padding |
-| `listItemSpacing` | 8dp | Gap between list items |
-| `sosTouchTarget` | 72dp | Minimum SOS button touch target |
-| `iconSizeMd` | 24dp | Standard icon size |
+Standardized in [`MeshIcons.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/icon/MeshIcons.kt), icons are categorized logically:
+- **Navigation**: `Back`, `Menu`, `Close`, `Home`, `Settings`
+- **Communication**: `Chat`, `Send`, `Voice`, `Global`, `QrScan`
+- **Emergency**: `Emergency`, `Warning`, `Info`, `Alert`
+- **Network**: `Bluetooth`, `BluetoothDisabled`, `SignalStrong`, `SignalWeak`, `SignalNone`, `NetworkCheck`
+- **Battery**: `BatteryFull`, `BatteryCharging`, `BatteryLow`, `BatteryUnknown`
+- **Location**: `Location`, `Map`, `MyLocation`
 
 ---
 
-## Theme Switching
+## Reusable Components Library
 
-Theme switching infrastructure (Phase A1):
+All custom Compose components are fully stateless and are located in `com.mesh.emergency.core.designsystem.component.*`:
 
-1. `ThemeMode` enum — defines the three modes
-2. `AppConstants.PREF_KEY_THEME_MODE` — DataStore key
-3. `MeshTheme(themeMode = ...)` — applies the selected mode
+### Buttons (`MeshButton.kt`)
+- `MeshButton`: Standard brand-filled primary button.
+- `MeshOutlinedButton`: Minimal secondary button.
+- `MeshTextButton`: Inlined flat button.
+- `MeshIconButton`: Compact action icon trigger.
+- `MeshSosButton`: Red glowing action button designed for **accidental-press safety**. Requires a **press-and-hold interaction** for `holdDurationMs = 1500L` with progressive surrounding animation updates before triggering.
 
-Phase A2 will add:
-- `ThemeViewModel` — reads/writes preference via DataStore
-- Settings screen UI — theme picker with System/Light/Dark options
-- Dynamic color toggle
+### Cards (`MeshCard.kt`)
+- `MeshCard`: Flat minimal container.
+- `MeshGlassCard`: Translucent background overlay card with outline accents and alpha surface background.
 
----
+### Indicators & Status (`MeshStatusIndicator.kt`)
+- `MeshConnectionStatus`: Tags displaying "Connected" (Teal) or "Offline" (Gray).
+- `MeshBatteryStatus`: Circular tag indicating battery level and warning colors.
+- `MeshSignalIndicator`: Decouples RSSI readings to display "Strong", "Weak", or "No Signal".
 
-## Semantic Colors
-
-Beyond the M3 scheme, the design system defines app-specific semantic colors:
-
-| Color | Hex | Usage |
-|---|---|---|
-| `ColorSosActive` | `#FF1744` | SOS broadcast active indicator |
-| `ColorBleConnected` | Teal50 | BLE connection status |
-| `ColorLoraActive` | Amber70 | LoRa mesh active indicator |
-| `ColorDelivered` | Teal60 | Message delivered status |
-| `ColorPending` | Neutral60 | Message queued status |
-| `ColorFailed` | Red50 | Message delivery failed |
+### Components States
+- **Loading (`LoadingView.kt`)**: Screen loaders, linear strips, and skeleton shimmer placeholders (`MeshSkeletonItem`).
+- **Empty States (`EmptyState.kt`)**: Pre-styled lists placeholders for empty chats, Bluetooth scans, or SOS alert histories.
+- **Error States (`ErrorState.kt`)**: Action boxes displaying permission requirements, device off warnings, and retry triggers.
 
 ---
 
-## Files Reference
+## Accessibility Guidelines
 
-| File | Purpose |
-|---|---|
-| [`Color.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Color.kt) | All color values and M3 scheme tokens |
-| [`Theme.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Theme.kt) | `MeshTheme` composable |
-| [`Typography.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Typography.kt) | M3 type scale |
-| [`Shape.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Shape.kt) | Shape system |
-| [`Spacing.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/Spacing.kt) | Spacing tokens |
-| [`ThemeConfig.kt`](../../android/app/src/main/java/com/mesh/emergency/core/designsystem/theme/ThemeConfig.kt) | `ThemeMode` enum |
+- **Touch Targets**: Standard buttons occupy a minimum target height of `48dp`. The emergency `MeshSosButton` touch target is expanded to `72dp` to support fast finger targeting in panic situations.
+- **Font Scaling**: All text styles consume `sp` scaling units mapping directly to system preference resizing.
+- **Screen Reader Compatibility**: Image tags define clear content descriptions. New elements are layered correctly to avoid navigation traversal issues.

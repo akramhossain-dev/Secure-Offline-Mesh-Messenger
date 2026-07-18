@@ -91,6 +91,7 @@ private val DarkColorScheme: ColorScheme = darkColorScheme(
 // ─────────────────────────────────────────────────────────────────────────────
 
 val LocalSpacing = staticCompositionLocalOf { Spacing() }
+val LocalSemanticColors = staticCompositionLocalOf { LightSemanticColors }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MeshTheme — Main composable
@@ -126,8 +127,11 @@ fun MeshTheme(
         else      -> LightColorScheme
     }
 
+    val semanticColors = if (darkTheme) DarkSemanticColors else LightSemanticColors
+
     CompositionLocalProvider(
         LocalSpacing provides Spacing(),
+        LocalSemanticColors provides semanticColors
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -143,9 +147,12 @@ fun MeshTheme(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Provides access to the Mesh spacing system from within a [MeshTheme] context.
+ * Provides access to the Mesh spacing and semantic colors from within a [MeshTheme] context.
  */
 object MeshThemeTokens {
     val spacing: Spacing
         @Composable get() = LocalSpacing.current
+
+    val semanticColors: SemanticColors
+        @Composable get() = LocalSemanticColors.current
 }
