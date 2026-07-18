@@ -32,7 +32,7 @@
     <style name="Theme.OfflineEmergencyMesh.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
-        <item name="windowSplashScreenBrandingImage">@drawable/ic_splash_brand</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/ic_splash_brand</item>
         <item name="postSplashScreenTheme">@style/Theme.OfflineEmergencyMesh</item>
     </style>
 

@@ -28,9 +28,9 @@ android {
         // ── BuildConfig fields ────────────────────────────────────────────
         buildConfigField("String",  "APP_NAME",       "\"OfflineEmergencyMesh\"")
         buildConfigField("String",  "ENVIRONMENT",    "\"debug\"")
-        buildConfigField("Long",    "BLE_TIMEOUT_MS", "30_000L")
-        buildConfigField("Long",    "LORA_TIMEOUT_MS","60_000L")
-        buildConfigField("Int",     "MAX_HOPS",       "10")
+        buildConfigField("long",    "BLE_TIMEOUT_MS", "30_000L")
+        buildConfigField("long",    "LORA_TIMEOUT_MS","60_000L")
+        buildConfigField("int",     "MAX_HOPS",       "10")
 
         // ── Resource configurations ───────────────────────────────────────
         resourceConfigurations += listOf("en", "bn")
@@ -64,11 +64,11 @@ android {
             isMinifyEnabled = false
             isShrinkResources = false
 
-            buildConfigField("Boolean", "ENABLE_LOGGING",       "true")
-            buildConfigField("Boolean", "FEATURE_BLE",          "false")
-            buildConfigField("Boolean", "FEATURE_LORA",         "false")
-            buildConfigField("Boolean", "FEATURE_ENCRYPTION",   "false")
-            buildConfigField("Boolean", "FEATURE_MAPS",         "false")
+            buildConfigField("boolean", "ENABLE_LOGGING",       "true")
+            buildConfigField("boolean", "FEATURE_BLE",          "false")
+            buildConfigField("boolean", "FEATURE_LORA",         "false")
+            buildConfigField("boolean", "FEATURE_ENCRYPTION",   "false")
+            buildConfigField("boolean", "FEATURE_MAPS",         "false")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -81,11 +81,11 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
 
-            buildConfigField("Boolean", "ENABLE_LOGGING",       "false")
-            buildConfigField("Boolean", "FEATURE_BLE",          "true")
-            buildConfigField("Boolean", "FEATURE_LORA",         "true")
-            buildConfigField("Boolean", "FEATURE_ENCRYPTION",   "true")
-            buildConfigField("Boolean", "FEATURE_MAPS",         "true")
+            buildConfigField("boolean", "ENABLE_LOGGING",       "false")
+            buildConfigField("boolean", "FEATURE_BLE",          "true")
+            buildConfigField("boolean", "FEATURE_LORA",         "true")
+            buildConfigField("boolean", "FEATURE_ENCRYPTION",   "true")
+            buildConfigField("boolean", "FEATURE_MAPS",         "true")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

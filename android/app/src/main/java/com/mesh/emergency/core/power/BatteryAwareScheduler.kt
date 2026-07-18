@@ -24,38 +24,34 @@ class BatteryAwareScheduler @Inject constructor(
 
     /** Returns true if heavy-duty operations are permitted given battery state. */
     val isHeavyOperationAllowed: Boolean
-        get() = powerManager.currentMode.value != PowerSavingMode.ULTRA_SAVE
+        get() = powerManager.currentMode.value != PowerSavingMode.EMERGENCY
 
     /** Returns true if BLE scanning is permitted given battery state. */
     val isScanningAllowed: Boolean
-        get() = powerManager.currentMode.value != PowerSavingMode.ULTRA_SAVE &&
-                powerManager.currentMode.value != PowerSavingMode.AGGRESSIVE_SAVE
+        get() = powerManager.currentMode.value == PowerSavingMode.NORMAL
 
     /** Returns BLE scan interval in ms based on current power mode. */
     val bleScanIntervalMs: Long
         get() = when (powerManager.currentMode.value) {
-            PowerSavingMode.PERFORMANCE     -> BLE_INTERVAL_PERFORMANCE
-            PowerSavingMode.BALANCED        -> BLE_INTERVAL_BALANCED
-            PowerSavingMode.AGGRESSIVE_SAVE -> BLE_INTERVAL_AGGRESSIVE
-            PowerSavingMode.ULTRA_SAVE      -> Long.MAX_VALUE // scanning disabled
+            PowerSavingMode.NORMAL    -> BLE_INTERVAL_BALANCED
+            PowerSavingMode.SAVING    -> BLE_INTERVAL_AGGRESSIVE
+            PowerSavingMode.EMERGENCY -> Long.MAX_VALUE // scanning disabled
         }
 
     /** Returns location update interval in ms based on power mode. */
     val locationIntervalMs: Long
         get() = when (powerManager.currentMode.value) {
-            PowerSavingMode.PERFORMANCE     -> LOCATION_INTERVAL_PERFORMANCE
-            PowerSavingMode.BALANCED        -> LOCATION_INTERVAL_BALANCED
-            PowerSavingMode.AGGRESSIVE_SAVE -> LOCATION_INTERVAL_AGGRESSIVE
-            PowerSavingMode.ULTRA_SAVE      -> Long.MAX_VALUE
+            PowerSavingMode.NORMAL    -> LOCATION_INTERVAL_BALANCED
+            PowerSavingMode.SAVING    -> LOCATION_INTERVAL_AGGRESSIVE
+            PowerSavingMode.EMERGENCY -> Long.MAX_VALUE
         }
 
     /** Returns database batch size based on power mode. */
     val dbBatchSize: Int
         get() = when (powerManager.currentMode.value) {
-            PowerSavingMode.PERFORMANCE     -> DB_BATCH_LARGE
-            PowerSavingMode.BALANCED        -> DB_BATCH_MEDIUM
-            PowerSavingMode.AGGRESSIVE_SAVE -> DB_BATCH_SMALL
-            PowerSavingMode.ULTRA_SAVE      -> DB_BATCH_MINIMAL
+            PowerSavingMode.NORMAL    -> DB_BATCH_MEDIUM
+            PowerSavingMode.SAVING    -> DB_BATCH_SMALL
+            PowerSavingMode.EMERGENCY -> DB_BATCH_MINIMAL
         }
 
     /**

@@ -7,6 +7,7 @@ package com.mesh.emergency.data.repository
 
 import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.security.KeyManager
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.UserEntity
 import com.mesh.emergency.domain.repository.UserDomainModel
@@ -22,13 +23,19 @@ import javax.inject.Singleton
 @Singleton
 class UserRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
-    private val deviceFingerprintProvider: DeviceFingerprintProvider
+    private val deviceFingerprintProvider: DeviceFingerprintProvider,
+    private val keyManager: KeyManager
 ) : UserRepository {
 
     override fun getCurrentUser(): Flow<Result<UserDomainModel>> {
         return localDataSource.getCurrentUser().map { entity ->
             if (entity != null) {
-                Result.Success(entity.toDomain())
+                val pubKeyHex = try {
+                    keyManager.getIdentityPublicKey().joinToString("") { "%02x".format(it) }
+                } catch (e: Exception) {
+                    "00000000000000000000"
+                }
+                Result.Success(entity.toDomain(pubKeyHex))
             } else {
                 Result.Error(Exception("Local user profile has not been initialized"))
             }
@@ -49,8 +56,7 @@ class UserRepositoryImpl @Inject constructor(
                 updatedTime = now,
                 status = "ACTIVE",
                 isCurrentUser = true,
-                lastSeen = now,
-                publicKey = existing?.publicKey ?: "00000000000000000000"
+                lastSeen = now
             )
             localDataSource.insertUser(user)
             Result.Success(Unit)
@@ -60,7 +66,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 }
 
-private fun UserEntity.toDomain(): UserDomainModel = UserDomainModel(
+private fun UserEntity.toDomain(publicKey: String): UserDomainModel = UserDomainModel(
     id = entityId,
     username = username,
     publicKey = publicKey,

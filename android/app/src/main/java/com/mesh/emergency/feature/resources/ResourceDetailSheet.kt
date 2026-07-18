@@ -46,7 +46,7 @@ fun ResourceDetailSheet(
     onDismiss: () -> Unit,
     onMarkUnavailable: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartialExpansion = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = MeshThemeTokens.spacing
     val category = ResourceCategory.entries.firstOrNull { it.key == resource.type }
     val dateFormat = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())

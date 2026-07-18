@@ -105,3 +105,5 @@ class KeyManagerImpl @Inject constructor(
         mac.init(SecretKeySpec(key, "HmacSHA256"))
         return mac.doFinal(data)
     }
+}
+

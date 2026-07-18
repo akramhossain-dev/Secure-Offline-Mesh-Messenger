@@ -30,7 +30,7 @@ import timber.log.Timber
  */
 @Singleton
 class KeyStorageImpl @Inject constructor(
-    @ApplicationContext private val context: Context? = null
+    @ApplicationContext private val context: Context?
 ) : KeyStorage {
 
     private val sharedPrefsName = "secure_key_store_prefs"

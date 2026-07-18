@@ -39,7 +39,7 @@ spotless {
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt")
-        ktlint(libs.versions.ktlint.gradle.get())
+        ktlint("1.0.1")
         trimTrailingWhitespace()
         endWithNewline()
         licenseHeader(
@@ -54,7 +54,7 @@ spotless {
     kotlinGradle {
         target("**/*.gradle.kts")
         targetExclude("**/build/**/*.gradle.kts")
-        ktlint(libs.versions.ktlint.gradle.get())
+        ktlint("1.0.1")
     }
 }
 
@@ -62,7 +62,7 @@ spotless {
 // KtLint — Root-level config
 // ─────────────────────────────────────────────────────────────────────────────
 ktlint {
-    version.set(libs.versions.ktlint.gradle.get())
+    version.set("1.0.1")
     debug.set(false)
     verbose.set(true)
     android.set(true)

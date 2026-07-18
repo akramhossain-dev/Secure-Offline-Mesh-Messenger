@@ -5,6 +5,8 @@
 
 package com.mesh.emergency.feature.message.presentation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -163,9 +165,8 @@ private fun ConversationRow(conversation: ConversationSummary, onClick: () -> Un
     val spacing = MeshThemeTokens.spacing
 
     GlassPanel(
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = 12.dp,
-        onClick = onClick
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
+        contentPadding = 12.dp
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -217,21 +218,22 @@ private fun ConversationRow(conversation: ConversationSummary, onClick: () -> Un
 }
 
 @Composable
-private fun UnreadBadge(count: Int) {
-    Text(
-        text = if (count > 9) "9+" else count.toString(),
-        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onPrimary,
-        modifier = androidx.compose.ui.Modifier
-            .then(
-                androidx.compose.foundation.layout.Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .let { it }
-                ).let { Modifier }
+private fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(20.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary,
+                shape = androidx.compose.foundation.shape.CircleShape
             )
-    )
+    ) {
+        Text(
+            text = if (count > 9) "9+" else count.toString(),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onPrimary
+        )
+    }
 }
 
 private fun formatShortTime(ts: Long): String =
@@ -247,6 +249,7 @@ fun deliveryStatusLabel(status: DbDeliveryStatus): String = when (status) {
     DbDeliveryStatus.EXPIRED   -> "⌛"
 }
 
+@Composable
 fun deliveryStatusColor(status: DbDeliveryStatus): androidx.compose.ui.graphics.Color =
     when (status) {
         DbDeliveryStatus.DELIVERED -> MeshThemeTokens.semanticColors.success
@@ -255,6 +258,7 @@ fun deliveryStatusColor(status: DbDeliveryStatus): androidx.compose.ui.graphics.
         else -> MeshThemeTokens.semanticColors.info
     }
 
+@Composable
 fun priorityColor(priority: DbMessagePriority): androidx.compose.ui.graphics.Color =
     when (priority) {
         DbMessagePriority.CRITICAL -> MeshThemeTokens.semanticColors.emergency

@@ -15,6 +15,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -156,9 +158,9 @@ fun ScanningRipple(
  */
 @Composable
 fun ShimmerPlaceholder(
-    width: Dp,
-    height: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified
 ) {
     val aurora = MeshThemeTokens.auroraColors
     val infiniteTransition = rememberInfiniteTransition(label = "Shimmer")
@@ -172,7 +174,12 @@ fun ShimmerPlaceholder(
 
     Box(
         modifier = modifier
-            .size(width, height)
+            .then(
+                if (width != Dp.Unspecified && height != Dp.Unspecified) Modifier.size(width, height)
+                else if (width != Dp.Unspecified) Modifier.width(width)
+                else if (height != Dp.Unspecified) Modifier.height(height)
+                else Modifier
+            )
             .clip(MaterialTheme.shapes.small)
             .background(aurora.glassOverlay.copy(alpha = alpha))
     )

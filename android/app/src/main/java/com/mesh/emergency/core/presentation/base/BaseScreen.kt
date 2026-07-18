@@ -36,6 +36,7 @@ fun BaseScreen(
     onDismissError: () -> Unit = {},
     topBar: @Composable () -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
+    modifier: Modifier = Modifier,
     content: @Composable (modifier: Modifier) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -51,7 +52,7 @@ fun BaseScreen(
         topBar = topBar,
         bottomBar = bottomBar,
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Box(
             modifier = Modifier

@@ -35,7 +35,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SignalCellular0Bar
-import androidx.compose.material.icons.filled.SignalCellular3Bar
+import androidx.compose.material.icons.filled.SignalCellularAlt
 import androidx.compose.material.icons.filled.SignalCellular4Bar
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -69,7 +69,7 @@ object MeshIcons {
     val Bluetooth: ImageVector         = Icons.Default.Bluetooth
     val BluetoothDisabled: ImageVector = Icons.Default.BluetoothDisabled
     val SignalStrong: ImageVector      = Icons.Default.SignalCellular4Bar
-    val SignalWeak: ImageVector        = Icons.Default.SignalCellular3Bar
+    val SignalWeak: ImageVector        = Icons.Default.SignalCellularAlt
     val SignalNone: ImageVector        = Icons.Default.SignalCellular0Bar
     val NetworkCheck: ImageVector      = Icons.Default.NetworkCheck
 

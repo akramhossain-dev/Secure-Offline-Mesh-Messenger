@@ -15,6 +15,8 @@ import com.mesh.emergency.data.local.entity.MessageEntity
 import com.mesh.emergency.data.local.entity.NetworkNodeEntity
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.data.local.entity.UserEntity
+import com.mesh.emergency.data.local.entity.VoiceMessageEntity
+import com.mesh.emergency.data.local.entity.LogEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -281,7 +281,7 @@ private fun NodeCard(node: NodeDomainModel, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun NodeDetailSheet(node: NodeDomainModel, onDismiss: () -> Unit) {
-    val sheetState = rememberModalBottomSheetState(skipPartialExpansion = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = MeshThemeTokens.spacing
     val dateFormat = SimpleDateFormat("MMM dd, HH:mm:ss", Locale.getDefault())
 

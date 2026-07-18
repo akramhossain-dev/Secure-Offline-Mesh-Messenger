@@ -42,9 +42,7 @@ fun MeshCard(
         Column(
             modifier = Modifier.padding(spacing.cardPadding),
             content = content
-        ) {
-            // Card items layout block
-        }
+        )
     }
 }
 
@@ -79,8 +77,6 @@ fun MeshGlassCard(
         Column(
             modifier = Modifier.padding(spacing.cardPadding),
             content = content
-        ) {
-            // Glass card items layout block
-        }
+        )
     }
 }

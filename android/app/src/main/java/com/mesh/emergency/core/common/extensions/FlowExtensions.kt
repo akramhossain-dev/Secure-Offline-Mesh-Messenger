@@ -6,6 +6,7 @@
 package com.mesh.emergency.core.common.extensions
 
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.common.result.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map

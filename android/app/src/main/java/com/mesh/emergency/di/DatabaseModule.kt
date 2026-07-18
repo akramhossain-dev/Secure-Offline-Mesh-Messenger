@@ -11,6 +11,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.LocalDataSourceImpl
+import com.mesh.emergency.data.local.dao.MessageDao
+import com.mesh.emergency.data.local.dao.ConversationDao
+import com.mesh.emergency.data.local.dao.EmergencyEventDao
 import com.mesh.emergency.data.local.database.AppDatabase
 import dagger.Binds
 import dagger.Module
@@ -63,12 +66,24 @@ abstract class DatabaseModule {
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
-                    db.execSQL("PRAGMA journal_mode=WAL")
-                    db.execSQL("PRAGMA cache_size=4096") // 4 MB
-                    db.execSQL("PRAGMA synchronous=NORMAL")
+                    db.query("PRAGMA journal_mode=WAL").close()
+                    db.query("PRAGMA cache_size=4096").close()
+                    db.query("PRAGMA synchronous=NORMAL").close()
                 }
             })
             .build()
         }
+
+        @Provides
+        @Singleton
+        fun provideMessageDao(db: AppDatabase): MessageDao = db.messageDao()
+
+        @Provides
+        @Singleton
+        fun provideConversationDao(db: AppDatabase): ConversationDao = db.conversationDao()
+
+        @Provides
+        @Singleton
+        fun provideEmergencyEventDao(db: AppDatabase): EmergencyEventDao = db.emergencyEventDao()
     }
 }

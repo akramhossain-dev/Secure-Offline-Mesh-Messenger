@@ -340,7 +340,7 @@ private fun BleDeviceCard(
     GlassPanel(
         modifier = Modifier.fillMaxWidth(),
         contentPadding = 12.dp,
-        variant = if (device.connectionState == BleConnectionState.CONNECTED) GlassPanelVariant.SUCCESS else GlassPanelVariant.DEFAULT
+        variant = GlassPanelVariant.DEFAULT
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -406,7 +406,7 @@ private fun ConnectedProfileCard(
 
     GlassPanel(
         modifier = Modifier.fillMaxWidth(),
-        variant = GlassPanelVariant.SUCCESS,
+        variant = GlassPanelVariant.DEFAULT,
         contentPadding = 14.dp
     ) {
         Column {

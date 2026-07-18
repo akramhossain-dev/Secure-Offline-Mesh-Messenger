@@ -34,17 +34,14 @@ class BatteryOptimizationWorker @AssistedInject constructor(
             Timber.d("BatteryOptimizationWorker: Current power mode = $currentMode")
 
             when (currentMode) {
-                PowerSavingMode.ULTRA_SAVE -> {
-                    Timber.w("BatteryOptimizationWorker: ULTRA_SAVE — all non-critical tasks deferred")
+                PowerSavingMode.EMERGENCY -> {
+                    Timber.w("BatteryOptimizationWorker: EMERGENCY — all non-critical tasks deferred")
                 }
-                PowerSavingMode.AGGRESSIVE_SAVE -> {
-                    Timber.d("BatteryOptimizationWorker: AGGRESSIVE_SAVE — reducing scan frequency")
+                PowerSavingMode.SAVING -> {
+                    Timber.d("BatteryOptimizationWorker: SAVING — reducing scan frequency")
                 }
-                PowerSavingMode.BALANCED -> {
-                    Timber.d("BatteryOptimizationWorker: BALANCED — standard operation")
-                }
-                PowerSavingMode.PERFORMANCE -> {
-                    Timber.d("BatteryOptimizationWorker: PERFORMANCE — full operation")
+                PowerSavingMode.NORMAL -> {
+                    Timber.d("BatteryOptimizationWorker: NORMAL — full operation")
                 }
             }
 
