@@ -4,13 +4,19 @@
 
 ## Overview
 
-Development is organized into three parallel tracks that can progress independently with defined integration checkpoints.
+Development is organized into seven sequential phases. Software architecture is completed before hardware is purchased or assembled.
 
 | Phase | Track | Goal |
 |---|---|---|
 | Phase A | Android App | Complete, deployable Android application |
 | Phase B | ESP32 Firmware | Complete, field-ready embedded firmware |
-| Phase H | Hardware | Validated, reproducible hardware assembly |
+| Phase C | Communication Protocol | Packet protocol, transport layer, mesh routing |
+| Phase D | Security | Encryption, key exchange, authentication |
+| Phase H | Hardware | Component procurement, validated assembly |
+| Phase I | Integration | Android ↔ ESP32 ↔ LoRa Mesh end-to-end |
+| Phase T | Testing | Software, hardware, and field testing |
+
+> **Hardware Purchase Gate:** Components are ordered only after Phase A architecture and Phase B firmware architecture are fully documented and reviewed. This prevents rework and ensures the correct components are selected.
 
 ---
 
@@ -18,16 +24,19 @@ Development is organized into three parallel tracks that can progress independen
 
 The recommended build sequence is:
 
-| Step | Activity |
-|---|---|
-| 1 | Build Android App UI and architecture |
-| 2 | Develop Bluetooth communication |
-| 3 | Develop ESP32 firmware |
-| 4 | Integrate LoRa communication |
-| 5 | Implement mesh protocol |
-| 6 | Add security |
-| 7 | Add power monitoring |
-| 8 | Field testing |
+| Step | Phase | Activity |
+|---|---|---|
+| 1 | A | Android App UI and MVVM architecture |
+| 2 | A | Communication Manager and transport layer architecture |
+| 3 | B | ESP32 firmware architecture and FreeRTOS task design |
+| 4 | B | BLE GATT server and LoRa subsystem |
+| ↓ | — | **★ Hardware purchase happens here — after A + B architecture** |
+| 5 | C | Communication protocol and packet format |
+| 6 | C | Mesh routing and Store & Forward |
+| 7 | D | Encryption, key exchange, HMAC signing |
+| 8 | H | Component procurement, breadboard assembly |
+| 9 | I | End-to-end integration (Android ↔ ESP32 ↔ Mesh) |
+| 10 | T | Field testing, range tests, power validation |
 
 ---
 
@@ -273,9 +282,11 @@ The recommended build sequence is:
 
 ---
 
-## Phase H — Hardware Development
+## Phase H — Hardware Assembly
 
 **Goal:** A reproducible, physically reliable hardware assembly suitable for field deployment.
+
+> **Prerequisite:** Hardware is purchased only after Phase A (Android app architecture) and Phase B (ESP32 firmware architecture) are completed. This ensures component selection is finalized before procurement.
 
 ---
 
@@ -317,7 +328,7 @@ The recommended build sequence is:
 
 | Task | Details |
 |---|---|
-| INA219/226 inline calibration | Verify readings against known USB power meter |
+| INA219 inline calibration | Verify readings against known USB power meter |
 | Active power measurement | Measure current in BLE+LoRa active mode |
 | Sleep power measurement | Measure current in light sleep mode |
 | Runtime estimation | Calculated vs. measured for test power bank |
@@ -348,11 +359,73 @@ The recommended build sequence is:
 
 ---
 
+## Phase I — Integration
+
+**Goal:** Full end-to-end validation of the Android app, ESP32 firmware, and LoRa mesh communicating together.
+
+---
+
+### I1 — Android ↔ ESP32 BLE Integration
+
+| Task | Details |
+|---|---|
+| BLE pairing | Android app connects to ESP32 over BLE |
+| Message round-trip | Text message sent from app, received at app on second device |
+| Status channel | Power telemetry visible in Power Monitor screen |
+
+**Testing Criteria:**
+- End-to-end text message round-trip confirmed
+- BLE connection stable for 30+ minutes
+
+---
+
+### I2 — LoRa Mesh Integration
+
+| Task | Details |
+|---|---|
+| 2-node LoRa test | Direct LoRa packet exchange confirmed |
+| 3-node relay test | Message routed through an intermediate node |
+| Store-and-forward test | Message delivered when offline node comes back online |
+| Communication Manager test | Bluetooth and LoRa transport selection verified |
+
+**Testing Criteria:**
+- 3-node mesh delivers messages with no packet loss
+- Store-and-forward delivers cached messages on reconnection
+
+---
+
+## Phase T — Testing
+
+**Goal:** Software, hardware, and field validation. See [Testing](testing.md) for the full test plan.
+
+---
+
+### T1 — Software Testing
+
+| Task | Details |
+|---|---|
+| Unit tests | All use cases and domain logic |
+| Integration tests | Repository, DAO, and BLE communication |
+| UI tests | Compose screen flows using Espresso / Compose Test |
+
+---
+
+### T2 — Field Testing
+
+| Task | Details |
+|---|---|
+| Range test | Open field, rural, urban environments |
+| Multi-node mesh | 5-node mesh, SOS traversal, relay validation |
+| Battery runtime | INA219 measured vs. estimated runtime |
+
+---
+
 ## Integration Milestones
 
 | Milestone | Phases Required | Criteria |
 |---|---|---|
+| Architecture Complete | A + B (documented) | Software architecture reviewed; hardware ordered |
 | Alpha: BLE + LoRa Bridge | A3 + B4 | App connects to ESP32 and transmits a packet over LoRa |
-| Beta: Full Mesh Chat | A4 + B5 | Private and global chat working across 3 nodes |
+| Beta: Full Mesh Chat | A4 + B5 + C | Private and global chat working across 3 nodes |
 | Emergency RC: SOS + Location | A5 + B5 + H2 | SOS packet traverses 2 hops, received and displayed |
 | Field Ready v1.0 | All phases | All features, < 5 critical bugs, field test passed |

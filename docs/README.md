@@ -6,9 +6,16 @@
 
 ## What This System Does
 
-This system enables two-way text, voice, and emergency messaging between Android devices through an ESP32 + SX1278 LoRa hardware node — with **no internet, no SIM card, and no Wi-Fi required**.
+This system enables two-way text, voice, and emergency messaging between Android devices — with **no internet, no SIM card, and no Wi-Fi required**.
 
-Communication flows over a **LoRa 433MHz mesh network**, bridged to Android phones via **Bluetooth BLE**. Every node participates in routing, enabling multi-hop message delivery across large distances.
+The application supports **two communication methods** managed automatically by the Communication Manager:
+
+| Method | When Used | Range |
+|---|---|---|
+| **Bluetooth BLE** | Receiver is a nearby device | Up to ~10 m |
+| **LoRa 433MHz Mesh** | Receiver is far away or across the mesh | 1–5 km per hop |
+
+The Communication Manager selects the best available transport transparently. Users never choose manually. When the receiver is offline, messages are queued via **Store & Forward** and delivered when the destination node reappears. Every ESP32 node participates in mesh routing, enabling multi-hop delivery across large distances.
 
 ---
 
@@ -40,23 +47,66 @@ Communication flows over a **LoRa 433MHz mesh network**, bridged to Android phon
 
 ## Documentation Index
 
-| Section | Description |
-|---|---|
-| [Project Overview](overview/project-overview.md) | Goals, use cases, design principles |
-| [System Architecture](overview/system-architecture.md) | Full system architecture with diagrams |
-| [Features](overview/features.md) | Complete feature list |
-| [App Architecture](app/app-architecture.md) | Android MVVM + Clean Architecture breakdown |
-| [App Features](app/app-features.md) | UI, UX, and application feature details |
-| [Database Design](app/database-design.md) | Room Database schema and relationships |
-| [ESP32 Architecture](firmware/esp32-architecture.md) | Firmware structure and task system |
-| [LoRa Communication](firmware/lora-communication.md) | SX1278 configuration, range, and operation |
-| [Packet Protocol](firmware/packet-protocol.md) | Message format, packet types, and routing |
-| [Components](hardware/components.md) | Hardware specifications and datasheets |
-| [Wiring Guide](hardware/wiring-guide.md) | SPI wiring, pinout, and connection table |
-| [Setup Guide](hardware/setup-guide.md) | Assembly, breadboard, and prototype steps |
-| [Security Design](security/security-design.md) | Encryption, key exchange, and authentication |
-| [Roadmap](development/roadmap.md) | Development phases A, B, H |
-| [Testing](development/testing.md) | Software, hardware, and field testing |
+### Product & Overview
+* [Product Requirements](product/product-requirements.md): System goals, objectives, and NFRs.
+* [Use Cases](product/use-cases.md): Actor flows and functional scenarios.
+* [User Flow](product/user-flow.md): Flowcharts of normal and emergency states.
+* [Project Overview](overview/project-overview.md): High-level problem statement and targets.
+* [Features List](overview/features.md): Grouped app capabilities.
+* [System Architecture](overview/system-architecture.md): Top-level block diagrams.
+
+### Android Application Layer
+* [App Overview](app/app-overview.md): Technical stack and design choices.
+* [App Architecture](app/app-architecture.md): MVVM & Clean Architecture packages.
+* [Screen Documentation](app/screen-documentation.md): Detailed page layout specifications.
+* [Database Schema](app/database-schema.md): Room DB entity attributes and relation details.
+* [State Management](app/state-management.md): Unidirectional data flows (UDF) and Flow configurations.
+* [Permissions & Privacy](app/permission-privacy.md): System permissions check matrices.
+* [Database Design](app/database-design.md): Entity Relationships and SQL types.
+* [App Features](app/app-features.md): Specific UI implementations.
+
+### Communications Layer
+* [Communication Overview](communication/communication-overview.md): Multi-tier topology configurations.
+* [Bluetooth Transport](communication/bluetooth-transport.md): NimBLE setup and GATT specifications.
+* [LoRa Transport](communication/lora-transport.md): Semtech parameter matrices.
+* [Hybrid Communication](communication/hybrid-communication.md): Transport selection flowchart.
+* [Message Protocol](communication/message-protocol.md): Checksum validation and route decisions.
+* [Packet Structure](communication/packet-structure.md): JSON envelope field mappings.
+* [Store & Forward System](communication/store-forward-system.md): Background workers and retirement rules.
+* [Communication Manager](app/communication-manager.md): App state controller details.
+* [Transport Layer Interfaces](app/transport-layer.md): Transport API contracts.
+* [Packet Protocol Spec](../firmware/packet-protocol.md): Serialized payload limits.
+
+### Cryptography & Security
+* [Security Overview](security/security-overview.md): Primary threat vectors and mitigation policies.
+* [Encryption](security/encryption.md): E2E AES-GCM and mbedTLS specifics.
+* [Identity Management](security/identity-management.md): Key generations and secure pair flows.
+* [Privacy Model](security/privacy-model.md): Location polling triggers and scopes.
+* [Security Design](security/security-design.md): Android Keystore security boundaries.
+
+### Hardware & Firmware
+* [Hardware Overview](hardware/hardware-overview.md): Base component references.
+* [ESP32 Setup](hardware/esp32-setup.md): PlatformIO dependencies and task system.
+* [LoRa Module](hardware/lora-module.md): SPI pin tables and antenna notes.
+* [Power System](hardware/power-system.md): INA219 shunt metrics and sleep profiles.
+* [Hardware Integration](hardware/hardware-integration.md): Breadboard layouts and integration checklists.
+* [Components Reference](hardware/components.md): Datasheets and cost details.
+* [Wiring Guide](hardware/wiring-guide.md): Connection schematics.
+* [Setup Guide](hardware/setup-guide.md): Step-by-step soldering instructions.
+* [ESP32 Architecture](../firmware/esp32-architecture.md): FreeRTOS core configurations.
+* [LoRa Communication Spec](../firmware/lora-communication.md): Signal parameters.
+
+### Testing & Deployment
+* [Testing Strategy](testing/testing-strategy.md): Code unit tests and scope matrices.
+* [Simulation Testing](testing/simulation-testing.md): Scaling matrix parameters (50, 100, 1000 nodes).
+* [Field Testing](testing/field-testing.md): Real-world range walks and battery telemetry checks.
+* [Roadmap Index](development/roadmap.md): General timelines.
+* [Testing Protocols](development/testing.md): Automated and manual checklists.
+
+### Roadmap
+* [Development Roadmap](roadmap/development-roadmap.md): Phase sequence layouts.
+* [Version Plan](roadmap/version-plan.md): Milestone scopes (v0.1 to v1.0).
+* [Future Improvements](roadmap/future-improvements.md): Long-term system updates.
 
 ---
 
@@ -84,27 +134,50 @@ Power Bank → USB → ESP32 (3.3V pin) → SX1278 LoRa Module
 ```
 docs/
 ├── README.md
-├── overview/
-│   ├── project-overview.md
-│   ├── system-architecture.md
-│   └── features.md
+├── product/
+│   ├── product-requirements.md
+│   ├── use-cases.md
+│   └── user-flow.md
 ├── app/
+│   ├── app-overview.md
 │   ├── app-architecture.md
-│   ├── app-features.md
+│   ├── screen-documentation.md
+│   ├── database-schema.md
+│   ├── state-management.md
+│   ├── permission-privacy.md
 │   └── database-design.md
-├── firmware/
-│   ├── esp32-architecture.md
-│   ├── lora-communication.md
-│   └── packet-protocol.md
+├── communication/
+│   ├── communication-overview.md
+│   ├── bluetooth-transport.md
+│   ├── lora-transport.md
+│   ├── hybrid-communication.md
+│   ├── message-protocol.md
+│   ├── packet-structure.md
+│   └── store-forward-system.md
+├── security/
+│   ├── security-overview.md
+│   ├── encryption.md
+│   ├── identity-management.md
+│   ├── privacy-model.md
+│   └── security-design.md
 ├── hardware/
+│   ├── hardware-overview.md
+│   ├── esp32-setup.md
+│   ├── lora-module.md
+│   ├── power-system.md
+│   ├── hardware-integration.md
 │   ├── components.md
 │   ├── wiring-guide.md
 │   └── setup-guide.md
-├── security/
-│   └── security-design.md
-└── development/
-    ├── roadmap.md
-    └── testing.md
+├── testing/
+│   ├── testing-strategy.md
+│   ├── simulation-testing.md
+│   ├── field-testing.md
+│   └── testing.md
+└── roadmap/
+    ├── development-roadmap.md
+    ├── version-plan.md
+    └── future-improvements.md
 ```
 
 ---

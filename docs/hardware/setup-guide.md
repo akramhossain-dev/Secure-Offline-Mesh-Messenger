@@ -33,7 +33,7 @@ Before assembling the hardware, ensure you have:
 - Check that all solder pads/pins are clean and accessible
 - The RA-02 module has SMD components — handle with care and avoid static discharge
 
-### INA219/226 Breakout
+### INA219 Breakout
 - Check for visible shunt resistor on the board (some breakouts include a 0.1 Ω shunt)
 - Confirm I2C pull-up resistors are present (look for two resistors near SDA/SCL)
 - Identify VIN+, VIN−, VCC, GND, SDA, SCL pins
@@ -64,7 +64,7 @@ Before assembling the hardware, ensure you have:
    - Pins should grip firmly in the breadboard sockets
 2. Insert the SX1278 RA-02 module on the right side of the breadboard, below the ESP32
    - Use male headers soldered to the RA-02 pads if the module does not have through-hole pins
-3. Insert the INA219/226 breakout board below the SX1278
+3. Insert the INA219 breakout board below the SX1278
 
 ### Connect Power Rails
 
@@ -95,7 +95,7 @@ Check each connection by tracing the wire from the SX1278 pad to the correct ESP
 
 ---
 
-## Step 5: I2C Wiring (INA219/226 ↔ ESP32)
+## Step 5: I2C Wiring (INA219 ↔ ESP32)
 
 | From | To |
 |---|---|

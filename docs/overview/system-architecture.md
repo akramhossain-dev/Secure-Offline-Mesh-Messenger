@@ -4,11 +4,34 @@
 
 ## Architecture Overview
 
-The system consists of three physical layers that work together to form a resilient offline mesh network:
+The system consists of four layers that work together to form a resilient offline mesh network:
 
 1. **Android Application Layer** — User-facing interface running on Android devices
-2. **ESP32 Node Layer** — Embedded hardware bridge between BLE and LoRa
-3. **LoRa RF Layer** — Long-range radio mesh network
+2. **Communication Manager** — Automatic transport selection, retry logic, and delivery tracking
+3. **ESP32 Node Layer** — Embedded hardware bridge between BLE and LoRa
+4. **LoRa RF Layer** — Long-range radio mesh network
+
+```mermaid
+graph TD
+    APP["Android Application\n(Kotlin + Jetpack Compose)"]
+    CM["Communication Manager"]
+    BT["Bluetooth Transport"]
+    LT["LoRa Transport"]
+    SF["Store & Forward"]
+    ESP["ESP32 Node\n(FreeRTOS + BLE GATT)"]
+    SX["SX1278 LoRa\n(SPI)"]
+    MESH["LoRa 433MHz Mesh\n(Multi-hop)"]
+
+    APP --> CM
+    CM -->|"Nearby device"| BT
+    CM -->|"Long distance"| LT
+    CM -->|"Receiver offline"| SF
+    BT --> ESP
+    LT --> ESP
+    SF --> ESP
+    ESP --> SX
+    SX --> MESH
+```
 
 ```mermaid
 graph TD
@@ -50,6 +73,48 @@ graph TD
     INA_B --> MCU_B
     MCU_B --> BLE_B
     BLE_B <-->|"Bluetooth BLE"| APP_B
+```
+
+## Communication Manager
+
+The Communication Manager is the central module responsible for selecting the correct transport for every outbound message. It runs inside the Android application and is invisible to the user.
+
+### Transport Priority
+
+| Priority | Transport | Condition |
+|---|---|---|
+| 1 (First) | Bluetooth BLE | Receiver's ESP32 is within BLE range |
+| 2 (Fallback) | LoRa Mesh | Receiver is not nearby but is reachable over the mesh |
+| 3 (Last resort) | Store & Forward | Receiver is currently offline; message is cached |
+
+### Responsibilities
+
+| Responsibility | Description |
+|---|---|
+| Transport selection | Evaluates BLE proximity and last-known node status |
+| Retry logic | Re-attempts delivery on transport failure with exponential backoff |
+| Message queue | Prioritized outbound queue (Critical → High → Normal → Low) |
+| Delivery status | Tracks and reports Queued / Sent / Delivered / Failed per message |
+| Message routing | Decides whether a message goes directly via BLE or is relayed via LoRa |
+
+```mermaid
+flowchart TD
+    MSG["Outbound Message"]
+    BLE_CHECK{"Receiver reachable\nvia Bluetooth?"}
+    BT["Bluetooth Transport\n(BLE GATT Write)"]
+    LORA_CHECK{"Receiver reachable\nvia LoRa Mesh?"]
+    LT["LoRa Transport\n(via ESP32 BLE bridge)"]
+    SF["Store & Forward\n(cache in Room DB,\nretry on reconnection)"]
+    ACK["Delivery Confirmed\n(ACK received)"]
+
+    MSG --> BLE_CHECK
+    BLE_CHECK -->|"Yes"| BT
+    BLE_CHECK -->|"No"| LORA_CHECK
+    LORA_CHECK -->|"Yes"| LT
+    LORA_CHECK -->|"No / Unknown"| SF
+    BT --> ACK
+    LT --> ACK
+    SF -->|"On reconnection"| LT
 ```
 
 ---

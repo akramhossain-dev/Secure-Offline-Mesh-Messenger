@@ -6,29 +6,29 @@
 
 | Category | Feature | Status |
 |---|---|---|
-| User System | Profile and unique ID | Core |
-| User System | QR Code pairing | Core |
-| User System | Nearby device discovery | Core |
-| User System | Contact management | Core |
-| Messaging | Private chat | Core |
-| Messaging | Global mesh chat | Core |
-| Messaging | Emergency broadcast | Core |
-| Messaging | Message history | Core |
-| Messaging | Voice messages | Advanced |
-| Emergency | SOS system | Core |
-| Emergency | Emergency status flag | Core |
-| Emergency | Location sharing | Core |
-| Emergency | Offline maps | Advanced |
-| Emergency | Resource sharing | Advanced |
-| Emergency | Trusted rescue network | Advanced |
-| Routing | Store and Forward | Core |
-| Routing | Multi-hop mesh relay | Core |
-| Routing | Smart message priority | Advanced |
-| Privacy | Permission-based location | Core |
-| Privacy | User-controlled visibility | Core |
-| Monitoring | Power telemetry (INA219/226) | Core |
-| Monitoring | Node health status | Core |
-| Localization | Multi-language support | Advanced |
+| Communication | Private Chat | Core |
+| Communication | Global Chat | Core |
+| Communication | Voice Message | Core |
+| Communication | Emergency Broadcast | Core |
+| User | QR Pairing | Core |
+| User | Nearby Discovery | Core |
+| User | Contacts | Core |
+| User | Profile | Core |
+| Emergency | SOS | Core |
+| Emergency | Emergency Status | Core |
+| Emergency | Offline Map | Advanced |
+| Emergency | Resource Sharing | Advanced |
+| Emergency | Trusted Rescue Network | Advanced |
+| Advanced | Smart Priority Queue | Core |
+| Advanced | Mesh Routing | Core |
+| Advanced | Store & Forward | Core |
+| Advanced | Battery Saving | Core |
+| Advanced | Network Dashboard | Advanced |
+| Privacy | Permission-Based Location | Core |
+| Privacy | No Background Tracking | Core |
+| Monitoring | Power Telemetry (INA219) | Core |
+| Monitoring | Node Health Status | Core |
+| Localization | Multi-Language Support | Advanced |
 
 ---
 

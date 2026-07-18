@@ -37,10 +37,23 @@ There is no single point of failure. Each ESP32 node acts as both a sender and a
 ### 3. Emergency-Priority Messaging
 SOS packets carry the highest routing priority and are forwarded by all nodes regardless of destination. Emergency broadcasts preempt all other traffic.
 
-### 4. Privacy by Design
+### 4. Hybrid Communication — Automatic Transport Selection
+The Communication Manager inside the Android app selects the best available transport for every message without user involvement:
+
+```
+Bluetooth (nearby device, lowest latency)
+    ↓  if not reachable
+LoRa Mesh (long-range, multi-hop)
+    ↓  if destination offline
+Store & Forward (cache and retry on reconnection)
+```
+
+Users compose messages as normal. Transport decisions are invisible.
+
+### 5. Privacy by Design
 Location sharing is explicit and user-controlled. No background tracking. No persistent identifiers are exposed without user consent. End-to-end encryption is applied to all private messages.
 
-### 5. Low Barrier to Deployment
+### 6. Low Barrier to Deployment
 A node consists of five components: an ESP32 board, an SX1278 LoRa module, a 433MHz Rubber Duck SMA antenna, a U.FL/SMA adapter cable, and a power bank. No specialized tools, soldering, or enclosures are required for basic deployment.
 
 ---
@@ -70,7 +83,7 @@ Remote villages, off-grid communities, and humanitarian camps deploy fixed nodes
 | Mesh routing and store-and-forward | Centralized dispatch systems |
 | AES-encrypted private messaging | Certificate authority or PKI infrastructure |
 | Power monitoring via INA219 | Battery management or charging circuits |
-| GPS coordinate sharing (via phone GPS) | External GPS hardware module |
+| GPS coordinate sharing (via phone built-in GPS) | External GPS hardware module |
 
 ---
 

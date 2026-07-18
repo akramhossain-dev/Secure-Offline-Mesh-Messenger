@@ -26,8 +26,11 @@ graph TD
 
     subgraph Data["Data Layer"]
         REPO_IMPL["Repository Implementations"]
+        CM["Communication Manager"]
         LOCAL["Local Data Source\n(Room Database)"]
-        BLE["BLE Data Source\n(BLE Manager)"]
+        BLE["Bluetooth Transport\n(BLE Manager)"]
+        LORA["LoRa Transport\n(via BLE bridge)"]
+        SF["Store & Forward\n(Pending Packet Queue)"]
         CRYPTO["Crypto Data Source\n(Encryption Service)"]
     end
 
@@ -35,8 +38,11 @@ graph TD
     VM --> UC
     UC --> REPO_I
     REPO_I --> REPO_IMPL
+    REPO_IMPL --> CM
     REPO_IMPL --> LOCAL
-    REPO_IMPL --> BLE
+    CM --> BLE
+    CM --> LORA
+    CM --> SF
     REPO_IMPL --> CRYPTO
 ```
 
@@ -55,6 +61,7 @@ com.mesh.emergency/
 │   │   ├── map/               # Offline map screen
 │   │   ├── profile/           # User profile and QR code
 │   │   ├── resources/         # Resource board
+│   │   ├── dashboard/         # Network dashboard
 │   │   └── settings/          # App settings
 │   ├── viewmodels/            # ViewModels per screen
 │   ├── components/            # Shared Compose components
@@ -68,10 +75,13 @@ com.mesh.emergency/
 │   │   ├── dao/               # Room DAOs
 │   │   ├── entity/            # Room entity classes
 │   │   └── database/          # AppDatabase, migrations
-│   ├── ble/
-│   │   ├── BleManager.kt      # BLE Central connection manager
-│   │   ├── BleScanner.kt      # Device discovery
-│   │   ├── GattCallback.kt    # GATT event handling
+│   ├── communication/
+│   │   ├── CommunicationManager.kt   # Transport selection + queue
+│   │   ├── BluetoothTransport.kt     # BLE Central connection + GATT
+│   │   ├── LoRaTransport.kt          # LoRa delivery via BLE bridge
+│   │   ├── StoreForwardManager.kt    # Offline queue, retry
+│   │   ├── BleScanner.kt             # Device discovery
+│   │   ├── GattCallback.kt           # GATT event handling
 │   │   └── PacketSerializer.kt
 │   ├── crypto/
 │   │   ├── CryptoEngine.kt    # AES-256 + ECDH
@@ -170,7 +180,40 @@ enum class DeliveryStatus { QUEUED, SENT, DELIVERED, FAILED }
 
 ## Data Layer
 
-### BLE Manager
+### Communication Manager
+
+`CommunicationManager` is the single point of control for all outbound message delivery. It selects the transport, manages retries, and updates delivery status.
+
+```kotlin
+@Singleton
+class CommunicationManager @Inject constructor(
+    private val bluetoothTransport: BluetoothTransport,
+    private val loRaTransport: LoRaTransport,
+    private val storeForwardManager: StoreForwardManager
+) {
+    suspend fun send(message: Message) {
+        val status = when {
+            bluetoothTransport.isReceiverReachable(message.receiverId) ->
+                bluetoothTransport.send(message)
+            loRaTransport.isReceiverKnown(message.receiverId) ->
+                loRaTransport.send(message)
+            else ->
+                storeForwardManager.enqueue(message)
+        }
+        updateDeliveryStatus(message.id, status)
+    }
+}
+```
+
+**Transport Priority:**
+
+| Order | Transport | Trigger |
+|---|---|---|
+| 1 | `BluetoothTransport` | Receiver's BLE advertisement detected within range |
+| 2 | `LoRaTransport` | Receiver known on mesh (last HELLO < 10 min ago) |
+| 3 | `StoreForwardManager` | Receiver unknown or offline — message cached in Room |
+
+### BLE Manager (BluetoothTransport)
 
 `BleManager` is a singleton that manages the lifecycle of the BLE Central connection to the ESP32 GATT Server.
 
@@ -260,6 +303,6 @@ Dependency injection is managed by **Hilt**. Modules are organized by layer:
 | Module | Provides |
 |---|---|
 | `DatabaseModule` | `AppDatabase`, all DAOs |
-| `BleModule` | `BleManager`, `BleScanner` |
+| `CommunicationModule` | `CommunicationManager`, `BluetoothTransport`, `LoRaTransport`, `StoreForwardManager` |
 | `CryptoModule` | `CryptoEngine`, `KeyStore` |
 | `RepositoryModule` | All repository bindings |

@@ -271,7 +271,7 @@ Run with: `pio test -e native`
 
 ### Power Consumption Test Protocol
 
-**Equipment:** INA219/226 in-circuit, USB power meter as reference, serial log.
+**Equipment:** INA219 in-circuit, USB power meter as reference, serial log.
 
 **Test Conditions:**
 

@@ -140,7 +140,7 @@ Resource sharing enables coordinated logistics during emergencies.
 | SOS Repeat Interval | 30 / 60 / 120 seconds |
 | Message TTL | Default hop limit for outbound messages |
 | Store & Forward | Enable / disable local message caching for relay |
-| Power Monitoring | Enable / disable INA219/226 polling |
+| Power Monitoring | Enable / disable INA219 polling |
 | Node Pairing | Reset paired ESP32 node |
 | Clear Data | Wipe all messages and contacts |
 
@@ -157,6 +157,21 @@ Accessible from the status bar when connected to a node that includes an INA219 
 | Power Consumption | Calculated (V × A) | 5 seconds |
 | Device Health | Derived | 5 seconds |
 | Node Temperature (if available) | ESP32 internal sensor | 30 seconds |
+
+---
+
+## Network Dashboard
+
+The Network Dashboard provides a real-time overview of the mesh network and node connectivity.
+
+| Panel | Description |
+|---|---|
+| Active Nodes | List of nodes seen via HELLO packets in the last 10 minutes |
+| Transport Status | Current active transport (Bluetooth / LoRa / Store & Forward) |
+| Mesh Topology | Visual graph of known nodes and their last-seen timestamps |
+| Message Queue | Number of pending messages in the outbound queue |
+| Delivery Stats | Delivered / Failed / Pending message counts |
+| Signal Quality | RSSI and SNR for the paired ESP32's last LoRa reception |
 
 ---
 
@@ -195,4 +210,6 @@ RTL layout is supported for Arabic and Urdu via Android's automatic RTL mirrorin
 | Incoming SOS from contact | High-priority full-screen intent |
 | Emergency broadcast received | High-priority heads-up notification |
 | BLE connection lost | Persistent status bar notification |
+| Transport fallback (BLE → LoRa) | Silent status bar update |
+| Message delivery failed | Standard notification with retry action |
 | New contact discovered | Standard notification |
