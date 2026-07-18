@@ -10,14 +10,14 @@ import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
- * Database Entity mapping mesh nodes diagnostics metrics.
+ * Database Entity representing active mesh hardware bridges (ESP32/LoRa).
  */
 @Entity(tableName = "network_nodes")
 data class NetworkNodeEntity(
     @PrimaryKey override val entityId: String,
     val nodeName: String,
-    val rssi: Int,
-    val hops: Int,
-    val batteryLevel: Float,
-    val lastSeen: Long
+    val nodeType: String,
+    val status: String,
+    val lastSeen: Long,
+    val signalPlaceholder: String?
 ) : BaseEntity

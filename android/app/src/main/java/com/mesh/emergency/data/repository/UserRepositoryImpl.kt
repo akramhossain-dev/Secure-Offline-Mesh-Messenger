@@ -16,7 +16,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Repository regulating user profiles operations using local persistence.
+ * Repository regulating user profile configurations operations using local database.
  */
 @Singleton
 class UserRepositoryImpl @Inject constructor(
@@ -35,13 +35,19 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun updateProfile(username: String, avatarUrl: String?): Result<Unit> {
         return try {
+            val existing = localDataSource.getUserById("local_user_id")
+            val now = System.currentTimeMillis()
             val user = UserEntity(
                 entityId = "local_user_id",
                 username = username,
-                publicKey = "00000000000000000000",
-                avatarUrl = avatarUrl,
+                profileImageRef = avatarUrl,
+                languagePreference = existing?.languagePreference ?: "en",
+                createdTime = existing?.createdTime ?: now,
+                updatedTime = now,
+                status = "ACTIVE",
                 isCurrentUser = true,
-                lastSeen = System.currentTimeMillis()
+                lastSeen = now,
+                publicKey = existing?.publicKey ?: "00000000000000000000"
             )
             localDataSource.insertUser(user)
             Result.Success(Unit)
@@ -55,5 +61,5 @@ private fun UserEntity.toDomain(): UserDomainModel = UserDomainModel(
     id = entityId,
     username = username,
     publicKey = publicKey,
-    avatarUrl = avatarUrl
+    avatarUrl = profileImageRef
 )

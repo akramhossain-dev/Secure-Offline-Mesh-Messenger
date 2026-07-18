@@ -10,14 +10,20 @@ import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
- * Database Entity representing a paired peer contact or local user.
+ * Database Entity representing local user profiles or contact peers list logs.
  */
 @Entity(tableName = "users")
 data class UserEntity(
     @PrimaryKey override val entityId: String,
     val username: String,
-    val publicKey: String,
-    val avatarUrl: String?,
+    val profileImageRef: String?,
+    val languagePreference: String,
+    val createdTime: Long,
+    val updatedTime: Long,
+    val status: String,
     val isCurrentUser: Boolean,
-    val lastSeen: Long
+    val lastSeen: Long,
+    // Contact-specific properties (for peer relationships)
+    val trustedStatus: Boolean = false,
+    val nickname: String? = null
 ) : BaseEntity
