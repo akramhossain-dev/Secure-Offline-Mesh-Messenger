@@ -6,3 +6,9 @@
 # macOS:   /Users/<you>/Library/Android/sdk
 # Windows: C:/Users/<you>/AppData/Local/Android/Sdk
 sdk.dir=/home/USER/Android/Sdk
+
+# Release Signing Configuration — DO NOT COMMIT REAL PASSWORDS (A35.2)
+RELEASE_KEYSTORE_FILE=../keystores/release.jks
+RELEASE_KEYSTORE_PASSWORD=dummy_keystore_password
+RELEASE_KEY_ALIAS=mesh_release_alias
+RELEASE_KEY_PASSWORD=dummy_key_password

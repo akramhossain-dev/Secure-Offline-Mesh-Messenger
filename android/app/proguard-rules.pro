@@ -73,3 +73,14 @@
     public static int v(...);
     public static int d(...);
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Room Database (A35.2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class *
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep class * extends androidx.room.Dao { *; }
+-dontwarn androidx.room.**
+

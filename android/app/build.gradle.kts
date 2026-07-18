@@ -40,6 +40,22 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = project.findProperty("RELEASE_KEYSTORE_FILE") as? String
+            val keystorePassword = project.findProperty("RELEASE_KEYSTORE_PASSWORD") as? String
+            val keyAliasStr = project.findProperty("RELEASE_KEY_ALIAS") as? String
+            val keyPasswordStr = project.findProperty("RELEASE_KEY_PASSWORD") as? String
+
+            if (!keystorePath.isNullOrEmpty()) {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = keyAliasStr
+                keyPassword = keyPasswordStr
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -76,8 +92,12 @@ android {
                 "proguard-rules.pro"
             )
 
-            // Signing config — will be configured in Phase A2
-            // signingConfig = signingConfigs.getByName("release")
+            val keystorePath = project.findProperty("RELEASE_KEYSTORE_FILE") as? String
+            if (!keystorePath.isNullOrEmpty()) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 
