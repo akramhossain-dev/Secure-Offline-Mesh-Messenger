@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
- * Database Entity mapping LoRa emergency alerts.
+ * Database Entity mapping emergency SOS beacons telemetry logs.
  */
 @Entity(tableName = "emergency_events")
 data class EmergencyEventEntity(
@@ -20,5 +20,33 @@ data class EmergencyEventEntity(
     val longitude: Double,
     val message: String,
     val timestamp: Long,
-    val isResolved: Boolean
+    val isResolved: Boolean,
+    val emergencyType: DbEmergencyType = DbEmergencyType.SOS,
+    val priority: DbMessagePriority = DbMessagePriority.CRITICAL,
+    val status: DbEmergencyStatus = DbEmergencyStatus.CREATED,
+    val ttl: Long = System.currentTimeMillis() + 86400000L
 ) : BaseEntity
+
+/**
+ * Emergency event types.
+ */
+enum class DbEmergencyType {
+    SOS,
+    MEDICAL,
+    ACCIDENT,
+    DISASTER,
+    CUSTOM
+}
+
+/**
+ * Emergency SOS lifecycle states.
+ */
+enum class DbEmergencyStatus {
+    CREATED,
+    SENDING,
+    BROADCASTING,
+    RECEIVED,
+    ACKNOWLEDGED,
+    RESOLVED,
+    CANCELLED
+}

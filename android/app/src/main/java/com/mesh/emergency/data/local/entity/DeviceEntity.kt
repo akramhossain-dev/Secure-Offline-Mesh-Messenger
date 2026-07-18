@@ -10,14 +10,28 @@ import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
- * Database Entity representing local or bridged device identities.
+ * Database Entity mapping discovered or paired devices metadata logs.
  */
 @Entity(tableName = "devices")
 data class DeviceEntity(
     @PrimaryKey override val entityId: String,
-    val deviceName: String,
-    val deviceType: String,
-    val platformInfo: String,
-    val createdTime: Long,
-    val lastActiveTime: Long
+    val name: String,
+    val rssi: Int,
+    val lastSeen: Long,
+    val deviceType: String = "SMARTPHONE",
+    val platformInfo: String = "ANDROID",
+    val createdTime: Long = System.currentTimeMillis(),
+    val lastActiveTime: Long = System.currentTimeMillis(),
+    val trustStatus: DbTrustStatus = DbTrustStatus.UNKNOWN,
+    val nickname: String? = null
 ) : BaseEntity
+
+/**
+ * Peer trust level states.
+ */
+enum class DbTrustStatus {
+    TRUSTED,
+    PENDING,
+    BLOCKED,
+    UNKNOWN
+}

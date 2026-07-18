@@ -30,6 +30,7 @@ interface LocalDataSource {
 
     // ── Device Operations ─────────────────────────────────────────────────────
     fun getDevices(): Flow<List<DeviceEntity>>
+    suspend fun getDeviceById(id: String): DeviceEntity?
     suspend fun clearAllDevices()
     suspend fun insertDevice(device: DeviceEntity)
     suspend fun deleteDevice(device: DeviceEntity)

@@ -49,6 +49,8 @@ class LocalDataSourceImpl @Inject constructor(
 
     override fun getDevices(): Flow<List<DeviceEntity>> = deviceDao.getDevices()
 
+    override suspend fun getDeviceById(id: String): DeviceEntity? = deviceDao.getDeviceById(id)
+
     override suspend fun clearAllDevices() = deviceDao.clearAllDevices()
 
     override suspend fun insertDevice(device: DeviceEntity) = deviceDao.insertDevice(device)

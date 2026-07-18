@@ -7,8 +7,11 @@ package com.mesh.emergency.data.local.database
 
 import androidx.room.TypeConverter
 import com.mesh.emergency.data.local.entity.DbDeliveryStatus
+import com.mesh.emergency.data.local.entity.DbEmergencyStatus
+import com.mesh.emergency.data.local.entity.DbEmergencyType
 import com.mesh.emergency.data.local.entity.DbMessagePriority
 import com.mesh.emergency.data.local.entity.DbMessageType
+import com.mesh.emergency.data.local.entity.DbTrustStatus
 
 /**
  * Type converters converting custom database enums to primitive strings for Room compilation.
@@ -35,4 +38,25 @@ class Converters {
     @TypeConverter
     fun toMessagePriority(value: String): DbMessagePriority =
         DbMessagePriority.valueOf(value)
+
+    @TypeConverter
+    fun fromTrustStatus(status: DbTrustStatus): String = status.name
+
+    @TypeConverter
+    fun toTrustStatus(value: String): DbTrustStatus =
+        DbTrustStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromEmergencyType(type: DbEmergencyType): String = type.name
+
+    @TypeConverter
+    fun toEmergencyType(value: String): DbEmergencyType =
+        DbEmergencyType.valueOf(value)
+
+    @TypeConverter
+    fun fromEmergencyStatus(status: DbEmergencyStatus): String = status.name
+
+    @TypeConverter
+    fun toEmergencyStatus(value: String): DbEmergencyStatus =
+        DbEmergencyStatus.valueOf(value)
 }

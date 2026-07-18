@@ -21,6 +21,12 @@ interface DeviceRepository {
 
     /** Directs Bluetooth central to stop scanning. */
     suspend fun stopScan(): Result<Unit>
+
+    /** Updates trust status values on device identifiers. */
+    suspend fun updateTrustStatus(deviceId: String, status: String): Result<Unit>
+
+    /** Pairs a device by caching details and status in local database. */
+    suspend fun pairDevice(deviceId: String, name: String, deviceType: String, platformInfo: String): Result<Unit>
 }
 
 /**

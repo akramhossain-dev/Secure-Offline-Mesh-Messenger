@@ -34,4 +34,8 @@ interface DeviceDao {
     /** Delete scanned device log. */
     @Delete
     suspend fun deleteDevice(device: DeviceEntity)
+
+    /** Fetch device details by ID. */
+    @Query("SELECT * FROM devices WHERE entityId = :id")
+    suspend fun getDeviceById(id: String): DeviceEntity?
 }
