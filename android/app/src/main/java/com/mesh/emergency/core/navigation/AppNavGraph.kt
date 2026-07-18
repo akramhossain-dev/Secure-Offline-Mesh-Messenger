@@ -19,14 +19,16 @@ import com.mesh.emergency.feature.contacts.DeviceScreen
 import com.mesh.emergency.feature.dashboard.HomeScreen
 import com.mesh.emergency.feature.dashboard.NetworkScreen
 import com.mesh.emergency.feature.dashboard.SplashScreen
+import com.mesh.emergency.feature.emergency.presentation.EmergencyScreen
+import com.mesh.emergency.feature.message.presentation.ChatScreen
+import com.mesh.emergency.feature.message.presentation.MessageListScreen
 import com.mesh.emergency.feature.settings.SettingsScreen
 
 /**
  * Main application navigation graph.
  *
- * Phase A26/A27: Splash, Home, Devices, Network, Communication, and Settings
- * are wired to real composable screens. Remaining destinations retain placeholder
- * screens until Phases A28–A30.
+ * Phase A28/A29: Emergency, MessageList, and Chat screens are wired.
+ * Remaining destinations retain placeholder screens until Phases A30+.
  */
 @Composable
 fun AppNavGraph(
@@ -54,7 +56,7 @@ fun AppNavGraph(
             )
         }
 
-        // ── Onboarding (future A28) ───────────────────────────────────────────
+        // ── Onboarding ────────────────────────────────────────────────────────
         composable(route = NavigationDestination.Onboarding.route) {
             PlaceholderScreen(title = "Onboarding")
         }
@@ -63,41 +65,64 @@ fun AppNavGraph(
         composable(route = NavigationDestination.Home.route) {
             HomeScreen(
                 onNavigateToEmergency = {
-                    navController.navigate(NavigationDestination.Emergency.route)
+                    navController.navigate(NavRoutes.EMERGENCY_DASHBOARD)
                 }
             )
         }
 
-        // ── Chat List (future A28) ────────────────────────────────────────────
+        // ── Message List ──────────────────────────────────────────────────────
         composable(route = NavigationDestination.ChatList.route) {
-            CommunicationScreen()
+            MessageListScreen(
+                onOpenConversation = { id, label ->
+                    navController.navigate(NavRoutes.chatScreen(id, label))
+                }
+            )
         }
 
-        // ── Chat Detail ───────────────────────────────────────────────────────
+        // ── Chat Screen ───────────────────────────────────────────────────────
         composable(
-            route = NavigationDestination.ChatDetail.route,
+            route = NavRoutes.CHAT_SCREEN,
             arguments = listOf(
-                navArgument("contactId") { type = NavType.StringType }
-            ),
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/chat/{contactId}" }
+                navArgument("convId") { type = NavType.StringType },
+                navArgument("label")  { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val convId = backStackEntry.arguments?.getString("convId") ?: ""
+            val label  = backStackEntry.arguments?.getString("label")  ?: "Chat"
+            ChatScreen(
+                conversationId = convId,
+                recipientLabel = label,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ── Chat Detail (legacy deep-link) ────────────────────────────────────
+        composable(
+            route = NavigationDestination.ChatDetail.route,
+            arguments = listOf(navArgument("contactId") { type = NavType.StringType }),
+            deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/chat/{contactId}" })
+        ) { backStackEntry ->
             val contactId = backStackEntry.arguments?.getString("contactId") ?: "unknown"
-            PlaceholderScreen(title = "Chat with $contactId")
+            ChatScreen(
+                conversationId = "conv-$contactId",
+                recipientLabel = contactId,
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // ── Global Chat ───────────────────────────────────────────────────────
         composable(route = NavigationDestination.GlobalChat.route) {
-            PlaceholderScreen(title = "Global Broadcast Chat")
+            ChatScreen(
+                conversationId = "conv-broadcast",
+                recipientLabel = "BROADCAST",
+                onBack = { navController.popBackStack() }
+            )
         }
 
         // ── Devices / Contacts ────────────────────────────────────────────────
         composable(route = NavigationDestination.Contacts.route) {
             DeviceScreen(
-                onNavigateToQrPair = {
-                    navController.navigate(NavigationDestination.QrPair.route)
-                }
+                onNavigateToQrPair = { navController.navigate(NavigationDestination.QrPair.route) }
             )
         }
 
@@ -109,27 +134,28 @@ fun AppNavGraph(
         // ── Contact Detail ────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.ContactDetail.route,
-            arguments = listOf(
-                navArgument("contactId") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("contactId") { type = NavType.StringType })
         ) { backStackEntry ->
             val contactId = backStackEntry.arguments?.getString("contactId") ?: "unknown"
             PlaceholderScreen(title = "Contact Profile of $contactId")
         }
 
-        // ── Emergency ─────────────────────────────────────────────────────────
+        // ── Emergency Dashboard ───────────────────────────────────────────────
         composable(route = NavigationDestination.Emergency.route) {
-            PlaceholderScreen(title = "Emergency Console")
+            EmergencyScreen()
+        }
+
+        // ── Emergency Dashboard (new route) ───────────────────────────────────
+        composable(route = NavRoutes.EMERGENCY_DASHBOARD) {
+            EmergencyScreen()
         }
 
         // ── SOS Active ────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.SosActive.route,
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/sos" }
-            )
+            deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/sos" })
         ) {
-            PlaceholderScreen(title = "SOS Emergency Active")
+            EmergencyScreen()
         }
 
         // ── Offline Map ───────────────────────────────────────────────────────
@@ -145,9 +171,7 @@ fun AppNavGraph(
         // ── Profile ───────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.Profile.route,
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/profile" }
-            )
+            deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/profile" })
         ) {
             PlaceholderScreen(title = "My Profile")
         }
@@ -155,9 +179,7 @@ fun AppNavGraph(
         // ── Settings ──────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.Settings.route,
-            deepLinks = listOf(
-                navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/settings" }
-            )
+            deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/settings" })
         ) {
             SettingsScreen()
         }

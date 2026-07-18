@@ -69,6 +69,10 @@ object NavRoutes {
     // ─────────────────────────────────────────────────────────────────────────
 
     const val NETWORK_DASHBOARD = "network-dashboard"
+    const val EMERGENCY_DASHBOARD = "emergency-dashboard"
+    const val CHAT_SCREEN         = "chat-screen/{convId}/{label}"
+
+    fun chatScreen(convId: String, label: String) = "chat-screen/$convId/${label.ifBlank { "Node" }}"
 
     // ─────────────────────────────────────────────────────────────────────────
     // Profile / Settings routes

@@ -23,6 +23,10 @@ interface EmergencyEventDao {
     @Query("SELECT * FROM emergency_events ORDER BY timestamp DESC")
     fun getEmergencyEvents(): Flow<List<EmergencyEventEntity>>
 
+    /** Queries a single emergency event by its primary key. */
+    @Query("SELECT * FROM emergency_events WHERE entityId = :id LIMIT 1")
+    suspend fun getEmergencyEventById(id: String): EmergencyEventEntity?
+
     /** Insert or replace distress alerts logs. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEmergencyEvent(event: EmergencyEventEntity)
