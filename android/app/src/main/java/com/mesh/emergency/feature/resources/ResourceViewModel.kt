@@ -14,6 +14,7 @@ import com.mesh.emergency.data.local.entity.DbResourceStatus
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.domain.repository.ResourceDomainModel
 import com.mesh.emergency.domain.repository.ResourceRepository
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +32,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ResourceViewModel @Inject constructor(
     private val resourceManager: ResourceManager,
-    private val resourceRepository: ResourceRepository
+    private val resourceRepository: ResourceRepository,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ResourceUiState())
@@ -157,7 +159,7 @@ class ResourceViewModel @Inject constructor(
     ): List<ResourceDomainModel> {
         val tabFiltered = when (tab) {
             ResourceTab.AVAILABLE -> all.filter { it.status == DbResourceStatus.AVAILABLE.name || it.status == DbResourceStatus.LIMITED.name }
-            ResourceTab.MY_RESOURCES -> all.filter { it.ownerId == "local_user_id" }
+            ResourceTab.MY_RESOURCES -> all.filter { it.ownerId == deviceFingerprintProvider.getDeviceFingerprint() }
             ResourceTab.REQUESTS -> all.filter { it.status == DbResourceStatus.LIMITED.name }
         }
         return if (category == null) tabFiltered

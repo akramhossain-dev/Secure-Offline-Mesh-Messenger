@@ -6,6 +6,8 @@
 <full-backup-content>
     <!-- Exclude DataStore preferences (contain private keys in Phase A2+) -->
     <exclude domain="sharedpref" path="mesh_preferences" />
+    <!-- Exclude KeyStorage SharedPreferences (contains AES-encrypted EC key material) -->
+    <exclude domain="sharedpref" path="secure_key_store_prefs" />
     <!-- Exclude all databases (contain messages — privacy sensitive) -->
     <exclude domain="database" path="." />
 </full-backup-content>

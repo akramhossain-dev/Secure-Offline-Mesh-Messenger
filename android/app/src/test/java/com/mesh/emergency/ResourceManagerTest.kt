@@ -12,6 +12,7 @@ import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbResourceStatus
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.data.resource.ResourceManagerImpl
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -37,12 +38,20 @@ class ResourceManagerTest {
     @Mock
     private lateinit var mockCommunicationManager: CommunicationManager
 
+    @Mock
+    private lateinit var mockDeviceFingerprintProvider: DeviceFingerprintProvider
+
     private lateinit var resourceManager: ResourceManagerImpl
 
     @Before
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        resourceManager = ResourceManagerImpl(mockLocalDataSource, mockCommunicationManager)
+        `when`(mockDeviceFingerprintProvider.getDeviceFingerprint()).thenReturn("local_user_id")
+        resourceManager = ResourceManagerImpl(
+            mockLocalDataSource,
+            mockCommunicationManager,
+            mockDeviceFingerprintProvider
+        )
     }
 
     @Test

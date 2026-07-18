@@ -6,6 +6,7 @@
 package com.mesh.emergency.domain.usecase.profile
 
 import com.mesh.emergency.core.domain.usecase.SuspendUseCase
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.di.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
@@ -16,11 +17,13 @@ import javax.inject.Inject
  */
 class DeleteProfileUseCase @Inject constructor(
     private val localDataSource: LocalDataSource,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider,
     @IoDispatcher dispatcher: CoroutineDispatcher
 ) : SuspendUseCase<Unit, Unit>(dispatcher) {
 
     override suspend fun execute(params: Unit) {
-        val user = localDataSource.getUserById("local_user_id")
+        val userId = deviceFingerprintProvider.getDeviceFingerprint()
+        val user = localDataSource.getUserById(userId)
         if (user != null) {
             localDataSource.deleteUser(user)
         }

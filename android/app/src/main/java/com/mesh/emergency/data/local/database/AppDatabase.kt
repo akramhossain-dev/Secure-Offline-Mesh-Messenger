@@ -49,7 +49,7 @@ import com.mesh.emergency.data.local.entity.VoiceMessageEntity
         LogEntity::class
     ],
     version = 1,
-    exportSchema = false
+    exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

@@ -7,7 +7,7 @@ package com.mesh.emergency.di
 
 import com.mesh.emergency.core.audio.AudioProvider
 import com.mesh.emergency.core.audio.VoiceManager
-import com.mesh.emergency.data.audio.AudioProviderStub
+import com.mesh.emergency.data.audio.AudioProviderImpl
 import com.mesh.emergency.data.audio.VoiceManagerImpl
 import dagger.Binds
 import dagger.Module
@@ -22,10 +22,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class AudioModule {
 
-    /** Binds [AudioProviderStub] to the [AudioProvider] interface. */
+    /** Binds [AudioProviderImpl] to the [AudioProvider] interface. */
     @Binds
     @Singleton
-    abstract fun bindAudioProvider(impl: AudioProviderStub): AudioProvider
+    abstract fun bindAudioProvider(impl: AudioProviderImpl): AudioProvider
 
     /** Binds [VoiceManagerImpl] to the [VoiceManager] interface. */
     @Binds

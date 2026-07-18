@@ -27,8 +27,8 @@ class MeshApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initializeLogging()
-        // Initialize global CrashHandler (A34.9)
-        com.mesh.emergency.core.error.CrashHandler.install()
+        // Initialize global CrashHandler with application context for local crash log persistence
+        com.mesh.emergency.core.error.CrashHandler.install(this)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -38,9 +38,9 @@ class MeshApplication : Application() {
     /**
      * Initializes Timber logging.
      * - Debug builds: DebugTree with full stack traces
-     * - Release builds: No-op (logs stripped by ProGuard)
+     * - Release builds: ReleaseTree writing ERROR+ to filesDir/logs/error.log
      */
     private fun initializeLogging() {
-        AppLogger.initialize(isDebug = BuildConfig.DEBUG)
+        AppLogger.initialize(isDebug = BuildConfig.DEBUG, context = this)
     }
 }

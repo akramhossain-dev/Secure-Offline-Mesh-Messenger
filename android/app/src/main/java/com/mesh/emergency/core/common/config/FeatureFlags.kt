@@ -33,7 +33,7 @@ object FeatureFlags {
     val FEATURE_LORA: Boolean = BuildConfig.FEATURE_LORA
 
     /** Store & Forward message queuing. Requires FEATURE_BLE. */
-    val FEATURE_STORE_FORWARD: Boolean = false
+    val FEATURE_STORE_FORWARD: Boolean = BuildConfig.FEATURE_BLE
 
     // ─────────────────────────────────────────────────────────────────────────
     // Security Features
@@ -50,27 +50,27 @@ object FeatureFlags {
     val FEATURE_MAPS: Boolean = BuildConfig.FEATURE_MAPS
 
     /** Voice message recording and playback. */
-    val FEATURE_VOICE: Boolean = false
+    val FEATURE_VOICE: Boolean = BuildConfig.FEATURE_BLE
 
     /** QR code contact pairing. */
-    val FEATURE_QR_PAIRING: Boolean = false
+    val FEATURE_QR_PAIRING: Boolean = BuildConfig.FEATURE_BLE
 
     // ─────────────────────────────────────────────────────────────────────────
     // Emergency Features
     // ─────────────────────────────────────────────────────────────────────────
 
     /** Emergency SOS broadcast. */
-    val FEATURE_EMERGENCY: Boolean = false
+    val FEATURE_EMERGENCY: Boolean = BuildConfig.FEATURE_BLE
 
     /** Location sharing. */
-    val FEATURE_LOCATION: Boolean = false
+    val FEATURE_LOCATION: Boolean = BuildConfig.FEATURE_BLE
 
     // ─────────────────────────────────────────────────────────────────────────
     // Developer / Debug Features
     // ─────────────────────────────────────────────────────────────────────────
 
     /** Network dashboard showing mesh topology. */
-    val FEATURE_NETWORK_DASHBOARD: Boolean = false
+    val FEATURE_NETWORK_DASHBOARD: Boolean = BuildConfig.FEATURE_BLE
 
     /** Power telemetry via INA219 sensor. */
     val FEATURE_POWER_TELEMETRY: Boolean = false

@@ -5,7 +5,13 @@
 
 package com.mesh.emergency.core.common.logging
 
+import android.content.Context
+import android.util.Log
 import timber.log.Timber
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Centralized logging abstraction for the Offline Emergency Mesh Communication System.
@@ -13,7 +19,8 @@ import timber.log.Timber
  * Wraps Timber to provide:
  * - Structured log levels (DEBUG, INFO, WARN, ERROR)
  * - Module-tagged logging for easy filtering in Logcat
- * - Release-safe: all logs are no-ops in release builds
+ * - Release-safe: DEBUG/INFO/WARN logs are no-ops in release builds
+ * - ERROR logs are written to [Context.filesDir]/logs/error.log in release builds
  * - Single initialization point in [MeshApplication]
  *
  * Usage:
@@ -28,13 +35,14 @@ object AppLogger {
      * Initializes Timber.
      *
      * @param isDebug `true` in debug builds — plants a [Timber.DebugTree].
-     *                `false` in release builds — plants a no-op [ReleaseTree].
+     *                `false` in release builds — plants a file-backed [ReleaseTree].
+     * @param context Application context required for file-backed error logging in release.
      */
-    fun initialize(isDebug: Boolean) {
+    fun initialize(isDebug: Boolean, context: Context? = null) {
         if (isDebug) {
             Timber.plant(Timber.DebugTree())
         } else {
-            Timber.plant(ReleaseTree())
+            Timber.plant(ReleaseTree(context))
         }
     }
 
@@ -73,23 +81,41 @@ object AppLogger {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Release Tree — silently discards all logs in production
+    // Release Tree — persists ERROR+ to local file, discards lower priority
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Production Timber tree that only logs WARN and ERROR levels,
-     * and never logs sensitive information.
-     *
-     * Extend this in Phase A2 to forward critical errors to a local
-     * crash log file (no network reporting — offline-first requirement).
+     * Production Timber tree that:
+     * - Silently discards VERBOSE, DEBUG, INFO, WARN logs (no Logcat leakage).
+     * - Writes ERROR and WTF entries to [Context.filesDir]/logs/error.log (200 KB cap).
      */
-    private class ReleaseTree : Timber.Tree() {
-        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-            // In release: only forward ERROR and ASSERT priority
-            // Extend this in Phase A2 to write to a local error log file
-            if (priority >= android.util.Log.ERROR) {
-                // TODO (Phase A2): Write to local crash log file
+    private class ReleaseTree(private val context: Context?) : Timber.Tree() {
+
+        private val logFile: File? by lazy {
+            context?.let {
+                File(it.filesDir, "logs/error.log").also { f -> f.parentFile?.mkdirs() }
             }
+        }
+
+        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+            if (priority < Log.ERROR) return
+
+            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+            val level = if (priority == Log.ASSERT) "WTF" else "ERROR"
+            val entry = buildString {
+                appendLine("[$timestamp] $level/$tag: $message")
+                t?.let { appendLine("  Exception: ${it::class.simpleName}: ${it.message}") }
+            }
+
+            try {
+                val file = logFile ?: return
+                // Rotate at 200 KB
+                if (file.exists() && file.length() > 200_000L) {
+                    val text = file.readText()
+                    file.writeText(text.drop(text.length / 2))
+                }
+                file.appendText(entry)
+            } catch (_: Exception) { /* Cannot log the logger failing */ }
         }
     }
 }

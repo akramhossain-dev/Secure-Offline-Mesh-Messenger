@@ -10,7 +10,7 @@ import com.mesh.emergency.core.common.config.AppConfigurationImpl
 import com.mesh.emergency.core.common.logging.Logger
 import com.mesh.emergency.core.common.logging.LoggerImpl
 import com.mesh.emergency.core.communication.TransportManager
-import com.mesh.emergency.core.communication.TransportManagerStub
+import com.mesh.emergency.data.communication.TransportManagerImpl
 import com.mesh.emergency.core.storage.StorageManager
 import com.mesh.emergency.core.storage.StorageManagerImpl
 import com.mesh.emergency.core.identity.IdentityGenerator
@@ -40,10 +40,10 @@ abstract class CoreModule {
     @Singleton
     abstract fun bindStorageManager(impl: StorageManagerImpl): StorageManager
 
-    /** Binds [TransportManagerStub] implementation to the [TransportManager] interface contract. */
+    /** Binds [TransportManagerImpl] implementation to the [TransportManager] interface contract. */
     @Binds
     @Singleton
-    abstract fun bindTransportManager(impl: TransportManagerStub): TransportManager
+    abstract fun bindTransportManager(impl: TransportManagerImpl): TransportManager
 
     /** Binds [AppConfigurationImpl] implementation to the [AppConfiguration] interface contract. */
     @Binds

@@ -16,7 +16,7 @@ import com.mesh.emergency.core.system.LocationServiceWrapperImpl
 import com.mesh.emergency.core.system.NotificationServiceWrapper
 import com.mesh.emergency.core.system.NotificationServiceWrapperImpl
 import com.mesh.emergency.core.utils.LocationProvider
-import com.mesh.emergency.core.utils.LocationProviderStub
+import com.mesh.emergency.data.location.LocationProviderImpl
 import com.mesh.emergency.core.utils.PermissionManager
 import com.mesh.emergency.core.utils.PermissionManagerImpl
 import com.mesh.emergency.core.utils.capability.DeviceCapabilityManager
@@ -43,10 +43,10 @@ abstract class UtilityModule {
     @Singleton
     abstract fun bindPermissionManager(impl: PermissionManagerImpl): PermissionManager
 
-    /** Binds [LocationProviderStub] to the [LocationProvider] interface. */
+    /** Binds [LocationProviderImpl] to the [LocationProvider] interface. */
     @Binds
     @Singleton
-    abstract fun bindLocationProvider(impl: LocationProviderStub): LocationProvider
+    abstract fun bindLocationProvider(impl: LocationProviderImpl): LocationProvider
 
     /** Binds [DeviceCapabilityManagerImpl] to the [DeviceCapabilityManager] interface. */
     @Binds

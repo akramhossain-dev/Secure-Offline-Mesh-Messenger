@@ -27,6 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.core.designsystem.component.GlassPanel
 import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
 import com.mesh.emergency.core.designsystem.component.MeshConnectionStatus
@@ -37,20 +40,20 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 /**
  * Network Status Screen — shows transport, node count, signal quality,
  * and offline mode information.
- *
- * Uses local stub data — no real mesh hardware.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NetworkScreen() {
+fun NetworkScreen(
+    viewModel: NetworkViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
     val spacing = MeshThemeTokens.spacing
     val semanticColors = MeshThemeTokens.semanticColors
 
-    // Stub data for display
-    val isConnected = false
-    val nodeCount = 0
-    val transport = "NONE"
-    val rssi = 0
+    val isConnected = uiState.isConnected
+    val nodeCount = uiState.nodeCount
+    val transport = uiState.transport
+    val rssi = uiState.rssi
 
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -99,8 +102,22 @@ fun NetworkScreen() {
                 item { SectionLabel("Transport") }
                 item {
                     NetworkInfoRow(label = "Active Transport",   value = transport.ifBlank { "None" })
-                    NetworkInfoRow(label = "Bluetooth",          value = "Disabled (Phase A28)")
-                    NetworkInfoRow(label = "LoRa",               value = "Disabled (Phase A28)")
+                    NetworkInfoRow(
+                        label = "Bluetooth",
+                        value = when {
+                            uiState.isBluetoothConnected -> "Connected"
+                            uiState.isBluetoothEnabled -> "Enabled (Available)"
+                            else -> "Disabled"
+                        }
+                    )
+                    NetworkInfoRow(
+                        label = "LoRa",
+                        value = when {
+                            uiState.isLoRaConnected -> "Connected"
+                            uiState.isLoRaEnabled -> "Enabled (Available)"
+                            else -> "Disabled"
+                        }
+                    )
                 }
 
                 // ── Signal quality ────────────────────────────────────────────

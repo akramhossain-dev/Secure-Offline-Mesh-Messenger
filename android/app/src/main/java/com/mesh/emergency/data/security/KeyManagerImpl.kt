@@ -13,6 +13,8 @@ import java.security.spec.ECGenParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.KeyAgreement
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 import javax.inject.Singleton
 import timber.log.Timber
@@ -66,10 +68,40 @@ class KeyManagerImpl @Inject constructor(
             val ka = KeyAgreement.getInstance("ECDH")
             ka.init(privateKey)
             ka.doPhase(publicKey, true)
-            ka.generateSecret()
+            val rawSecret = ka.generateSecret()
+
+            // Apply HKDF (RFC 5869) — HMAC-SHA256 extract then expand
+            // Using raw ECDH output directly as AES key is a known cryptographic weakness.
+            hkdfDerive(rawSecret, info = "mesh-e2e-key".toByteArray(), length = 32)
         } catch (e: Exception) {
             Timber.e(e, "KeyManager: ECDH derivation failed")
             throw IllegalArgumentException("Failed to derive shared secret", e)
         }
     }
-}
+
+    /**
+     * HKDF (RFC 5869) using HMAC-SHA256.
+     *
+     * @param inputKeyMaterial raw ECDH shared secret
+     * @param salt  optional salt — defaults to zero-filled SHA-256 block
+     * @param info  context and application specific information (domain separation)
+     * @param length  desired output key length in bytes (≤ 32 for SHA-256)
+     */
+    private fun hkdfDerive(
+        inputKeyMaterial: ByteArray,
+        salt: ByteArray = ByteArray(32), // zero-salt per RFC 5869 §2.2
+        info: ByteArray,
+        length: Int = 32
+    ): ByteArray {
+        // Step 1: Extract — HMAC-SHA256(salt, IKM)
+        val prk = hmacSha256(salt, inputKeyMaterial)
+        // Step 2: Expand — HMAC-SHA256(PRK, info || 0x01)
+        val okm = hmacSha256(prk, info + byteArrayOf(0x01))
+        return okm.copyOf(length)
+    }
+
+    private fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(key, "HmacSHA256"))
+        return mac.doFinal(data)
+    }

@@ -5,6 +5,7 @@
 
 package com.mesh.emergency.data.repository
 
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.UserEntity
@@ -20,7 +21,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class UserRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : UserRepository {
 
     override fun getCurrentUser(): Flow<Result<UserDomainModel>> {
@@ -35,10 +37,11 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun updateProfile(username: String, avatarUrl: String?): Result<Unit> {
         return try {
-            val existing = localDataSource.getUserById("local_user_id")
+            val userId = deviceFingerprintProvider.getDeviceFingerprint()
+            val existing = localDataSource.getUserById(userId)
             val now = System.currentTimeMillis()
             val user = UserEntity(
-                entityId = "local_user_id",
+                entityId = userId,
                 username = username,
                 profileImageRef = avatarUrl,
                 languagePreference = existing?.languagePreference ?: "en",

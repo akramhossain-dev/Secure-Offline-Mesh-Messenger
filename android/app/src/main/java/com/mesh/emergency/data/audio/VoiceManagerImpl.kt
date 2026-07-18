@@ -9,6 +9,7 @@ import com.mesh.emergency.core.audio.AudioProvider
 import com.mesh.emergency.core.audio.VoiceManager
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.core.communication.CommunicationManager
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.VoiceMessageEntity
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +25,8 @@ import javax.inject.Singleton
 class VoiceManagerImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
     private val audioProvider: AudioProvider,
-    private val communicationManager: CommunicationManager
+    private val communicationManager: CommunicationManager,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : VoiceManager {
 
     override fun getRecordedVoiceMessages(): Flow<Result<List<VoiceMessageEntity>>> {
@@ -43,7 +45,7 @@ class VoiceManagerImpl @Inject constructor(
                 val now = System.currentTimeMillis()
                 val voice = VoiceMessageEntity(
                     entityId = UUID.randomUUID().toString(),
-                    senderId = "local_user_id",
+                    senderId = deviceFingerprintProvider.getDeviceFingerprint(),
                     receiverId = receiverId,
                     fileReference = info.filePath,
                     duration = info.durationMs,

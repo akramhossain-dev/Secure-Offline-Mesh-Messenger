@@ -8,6 +8,7 @@ package com.mesh.emergency.data.emergency
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.core.communication.CommunicationManager
 import com.mesh.emergency.core.emergency.EmergencyManager
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbEmergencyStatus
 import com.mesh.emergency.data.local.entity.DbEmergencyType
@@ -27,7 +28,8 @@ import javax.inject.Singleton
 @Singleton
 class EmergencyManagerImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
-    private val communicationManager: CommunicationManager
+    private val communicationManager: CommunicationManager,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : EmergencyManager {
 
     private val _isEmergencyMode = MutableStateFlow(false)
@@ -39,7 +41,7 @@ class EmergencyManagerImpl @Inject constructor(
             val now = System.currentTimeMillis()
             val event = EmergencyEventEntity(
                 entityId = UUID.randomUUID().toString(),
-                senderId = "local_user_id",
+                senderId = deviceFingerprintProvider.getDeviceFingerprint(),
                 latitude = latitude,
                 longitude = longitude,
                 message = message,

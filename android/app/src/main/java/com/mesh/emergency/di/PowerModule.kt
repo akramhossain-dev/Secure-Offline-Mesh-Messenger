@@ -7,7 +7,7 @@ package com.mesh.emergency.di
 
 import com.mesh.emergency.core.power.BatteryProvider
 import com.mesh.emergency.core.power.PowerManager
-import com.mesh.emergency.data.power.BatteryProviderStub
+import com.mesh.emergency.data.power.BatteryProviderImpl
 import com.mesh.emergency.data.power.PowerManagerImpl
 import dagger.Binds
 import dagger.Module
@@ -22,10 +22,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class PowerModule {
 
-    /** Binds [BatteryProviderStub] to the [BatteryProvider] interface. */
+    /** Binds [BatteryProviderImpl] to the [BatteryProvider] interface. */
     @Binds
     @Singleton
-    abstract fun bindBatteryProvider(impl: BatteryProviderStub): BatteryProvider
+    abstract fun bindBatteryProvider(impl: BatteryProviderImpl): BatteryProvider
 
     /** Binds [PowerManagerImpl] to the [PowerManager] interface. */
     @Binds

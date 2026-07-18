@@ -6,6 +6,7 @@
 package com.mesh.emergency.data.repository
 
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.core.utils.LocationData
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.LocationEntity
@@ -20,7 +21,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class LocationRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : LocationRepository {
 
     override fun getSavedLocations(userId: String): Flow<Result<List<LocationData>>> {
@@ -33,7 +35,7 @@ class LocationRepositoryImpl @Inject constructor(
         return try {
             val entity = LocationEntity(
                 entityId = location.id,
-                userId = "local_user_id",
+                userId = deviceFingerprintProvider.getDeviceFingerprint(),
                 latitude = location.latitude,
                 longitude = location.longitude,
                 altitude = location.altitude,

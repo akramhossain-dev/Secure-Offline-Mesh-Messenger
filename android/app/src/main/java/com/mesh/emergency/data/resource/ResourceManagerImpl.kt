@@ -7,6 +7,7 @@ package com.mesh.emergency.data.resource
 
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.core.communication.CommunicationManager
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.core.resource.ResourceManager
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbResourcePrivacy
@@ -23,7 +24,8 @@ import javax.inject.Singleton
 @Singleton
 class ResourceManagerImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
-    private val communicationManager: CommunicationManager
+    private val communicationManager: CommunicationManager,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : ResourceManager {
 
     override suspend fun createOffer(
@@ -37,9 +39,10 @@ class ResourceManagerImpl @Inject constructor(
     ): Result<ResourceEntity> {
         return try {
             val now = System.currentTimeMillis()
+            val userId = deviceFingerprintProvider.getDeviceFingerprint()
             val offer = ResourceEntity(
                 entityId = UUID.randomUUID().toString(),
-                ownerId = "local_user_id",
+                ownerId = userId,
                 name = name,
                 type = type,
                 quantity = quantity,
@@ -70,9 +73,10 @@ class ResourceManagerImpl @Inject constructor(
     ): Result<ResourceEntity> {
         return try {
             val now = System.currentTimeMillis()
+            val userId = deviceFingerprintProvider.getDeviceFingerprint()
             val request = ResourceEntity(
                 entityId = UUID.randomUUID().toString(),
-                ownerId = "local_user_id",
+                ownerId = userId,
                 name = "Request for $type",
                 type = type,
                 quantity = requiredQuantity,

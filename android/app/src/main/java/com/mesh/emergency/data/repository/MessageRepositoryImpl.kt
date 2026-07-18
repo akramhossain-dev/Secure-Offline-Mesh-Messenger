@@ -6,6 +6,7 @@
 package com.mesh.emergency.data.repository
 
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbDeliveryStatus
 import com.mesh.emergency.data.local.entity.DbMessagePriority
@@ -25,7 +26,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class MessageRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : MessageRepository {
 
     override fun getMessages(contactId: String): Flow<Result<List<MessageDomainModel>>> {
@@ -40,7 +42,7 @@ class MessageRepositoryImpl @Inject constructor(
             val message = MessageEntity(
                 entityId = UUID.randomUUID().toString(),
                 conversationId = recipientId,
-                senderId = "local_user_id",
+                senderId = deviceFingerprintProvider.getDeviceFingerprint(),
                 recipientId = recipientId,
                 content = content,
                 timestamp = now,

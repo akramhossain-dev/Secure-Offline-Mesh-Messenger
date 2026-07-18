@@ -12,6 +12,7 @@ import com.mesh.emergency.core.communication.CommunicationManager
 import com.mesh.emergency.core.communication.DeliveryResult
 import com.mesh.emergency.data.audio.VoiceManagerImpl
 import com.mesh.emergency.data.local.LocalDataSource
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -39,12 +40,21 @@ class VoiceManagerTest {
     @Mock
     private lateinit var mockCommunicationManager: CommunicationManager
 
+    @Mock
+    private lateinit var mockDeviceFingerprintProvider: DeviceFingerprintProvider
+
     private lateinit var voiceManager: VoiceManagerImpl
 
     @Before
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        voiceManager = VoiceManagerImpl(mockLocalDataSource, mockAudioProvider, mockCommunicationManager)
+        `when`(mockDeviceFingerprintProvider.getDeviceFingerprint()).thenReturn("local_user_id")
+        voiceManager = VoiceManagerImpl(
+            mockLocalDataSource,
+            mockAudioProvider,
+            mockCommunicationManager,
+            mockDeviceFingerprintProvider
+        )
     }
 
     @Test

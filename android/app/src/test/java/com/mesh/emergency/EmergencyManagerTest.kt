@@ -12,6 +12,7 @@ import com.mesh.emergency.data.emergency.EmergencyManagerImpl
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbEmergencyStatus
 import com.mesh.emergency.data.local.entity.EmergencyEventEntity
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -38,12 +39,20 @@ class EmergencyManagerTest {
     @Mock
     private lateinit var mockCommunicationManager: CommunicationManager
 
+    @Mock
+    private lateinit var mockDeviceFingerprintProvider: DeviceFingerprintProvider
+
     private lateinit var emergencyManager: EmergencyManagerImpl
 
     @Before
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        emergencyManager = EmergencyManagerImpl(mockLocalDataSource, mockCommunicationManager)
+        `when`(mockDeviceFingerprintProvider.getDeviceFingerprint()).thenReturn("local_user_id")
+        emergencyManager = EmergencyManagerImpl(
+            mockLocalDataSource,
+            mockCommunicationManager,
+            mockDeviceFingerprintProvider
+        )
     }
 
     @Test
