@@ -164,9 +164,9 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
-    // ── Room (stub — will be activated in Phase A2) ───────────────────────────
-    // implementation(libs.bundles.room)
-    // ksp(libs.room.compiler)
+    // ── Room (Database) ───────────────────────────────────────────────────────
+    implementation(libs.bundles.room)
+    ksp(libs.room.compiler)
 
     // ── Logging ───────────────────────────────────────────────────────────────
     implementation(libs.timber)
