@@ -27,6 +27,8 @@ class MeshApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initializeLogging()
+        // Initialize global CrashHandler (A34.9)
+        com.mesh.emergency.core.error.CrashHandler.install()
     }
 
     // ─────────────────────────────────────────────────────────────────────────

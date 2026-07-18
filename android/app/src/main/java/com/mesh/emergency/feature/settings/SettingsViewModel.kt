@@ -12,6 +12,9 @@ import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
+import com.mesh.emergency.core.security.KeyManager
+import com.mesh.emergency.core.security.KeyStorage
+import com.mesh.emergency.data.local.LocalDataSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +35,12 @@ sealed interface SettingsUiEvent : BaseUiEvent {
     data class ChangeLanguage(val code: String)  : SettingsUiEvent
     data class ToggleDebugMode(val enabled: Boolean) : SettingsUiEvent
     data object ClearLogs : SettingsUiEvent
+    
+    // Privacy controls (A34.8)
+    data object ClearLocalData : SettingsUiEvent
+    data object DeleteAllMessages : SettingsUiEvent
+    data object RemoveTrustedDevices : SettingsUiEvent
+    data object ResetSecurityKeys : SettingsUiEvent
 }
 
 // ── Effects ───────────────────────────────────────────────────────────────────
@@ -42,7 +51,10 @@ sealed interface SettingsUiEffect : BaseUiEffect {
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val appStateRepository: AppStateRepository
+    private val appStateRepository: AppStateRepository,
+    private val localDataSource: LocalDataSource,
+    private val keyStorage: KeyStorage,
+    private val keyManager: KeyManager
 ) : BaseViewModel<SettingsUiState, SettingsUiEvent, SettingsUiEffect>(SettingsUiState()) {
 
     init {
@@ -75,7 +87,37 @@ class SettingsViewModel @Inject constructor(
                 updateState { copy(debugModeEnabled = event.enabled) }
             }
             SettingsUiEvent.ClearLogs -> {
-                sendEffect(SettingsUiEffect.ShowSnackbar("Diagnostic logs cleared"))
+                viewModelScope.launch {
+                    localDataSource.clearLogs()
+                    sendEffect(SettingsUiEffect.ShowSnackbar("Diagnostic logs cleared"))
+                }
+            }
+            SettingsUiEvent.ClearLocalData -> {
+                viewModelScope.launch {
+                    localDataSource.clearDatabase()
+                    keyStorage.clearAll()
+                    keyManager.initializeIdentityKeys()
+                    sendEffect(SettingsUiEffect.ShowSnackbar("All local database and key storage entries purged"))
+                }
+            }
+            SettingsUiEvent.DeleteAllMessages -> {
+                viewModelScope.launch {
+                    localDataSource.deleteAllMessages()
+                    sendEffect(SettingsUiEffect.ShowSnackbar("All conversation history deleted"))
+                }
+            }
+            SettingsUiEvent.RemoveTrustedDevices -> {
+                viewModelScope.launch {
+                    localDataSource.clearAllDevices()
+                    sendEffect(SettingsUiEffect.ShowSnackbar("All paired devices deleted"))
+                }
+            }
+            SettingsUiEvent.ResetSecurityKeys -> {
+                viewModelScope.launch {
+                    keyStorage.clearAll()
+                    keyManager.initializeIdentityKeys()
+                    sendEffect(SettingsUiEffect.ShowSnackbar("Identity keys rotated and regenerated"))
+                }
             }
         }
     }

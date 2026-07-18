@@ -46,6 +46,7 @@ interface LocalDataSource {
     suspend fun getMessageById(id: String): MessageEntity?
     suspend fun insertMessage(message: MessageEntity)
     suspend fun deleteMessage(message: MessageEntity)
+    suspend fun deleteAllMessages()
 
     // ── Network Operations ────────────────────────────────────────────────────
     fun getNetworkNodes(): Flow<List<NetworkNodeEntity>>
@@ -82,4 +83,7 @@ interface LocalDataSource {
     fun getLogs(): Flow<List<com.mesh.emergency.data.local.entity.LogEntity>>
     suspend fun insertLog(log: com.mesh.emergency.data.local.entity.LogEntity)
     suspend fun clearLogs()
+    
+    // ── Bulk Database Operations (A34.8) ──────────────────────────────────────
+    suspend fun clearDatabase()
 }

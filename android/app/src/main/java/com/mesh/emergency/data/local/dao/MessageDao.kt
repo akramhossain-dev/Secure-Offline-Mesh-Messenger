@@ -42,4 +42,8 @@ interface MessageDao {
     /** Count total messages in a conversation. */
     @Query("SELECT COUNT(*) FROM messages WHERE conversationId = :convId")
     suspend fun countMessages(convId: String): Int
+
+    /** Purges all message entries from storage (A34.8). */
+    @Query("DELETE FROM messages")
+    suspend fun deleteAllMessages()
 }

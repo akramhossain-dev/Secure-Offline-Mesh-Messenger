@@ -15,10 +15,13 @@ import java.security.spec.X509EncodedKeySpec
 import javax.crypto.KeyAgreement
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 /**
  * Implementation of [KeyManager] generating Elliptic Curve (secp256r1) keypairs.
  * Performs ECDH key agreements to derive shared secrets.
+ *
+ * Hardened to prevent insecure hardcoded fallback credentials (A34.3).
  */
 @Singleton
 class KeyManagerImpl @Inject constructor(
@@ -37,21 +40,23 @@ class KeyManagerImpl @Inject constructor(
 
             keyStorage.savePrivateKey(ALIAS_IDENTITY, kp.private.encoded)
             keyStorage.savePublicKey(ALIAS_IDENTITY, kp.public.encoded)
+            Timber.d("KeyManager: Initialized new identity EC key pair")
         } catch (e: Exception) {
-            // Falls back to mock values on outdated test dependencies
+            Timber.e(e, "KeyManager: Failed to initialize identity keys")
+            throw IllegalStateException("Failed to generate identity keys", e)
         }
     }
 
     override fun getIdentityPublicKey(): ByteArray {
         initializeIdentityKeys()
         return keyStorage.getPublicKey(ALIAS_IDENTITY)
-            ?: "mock_identity_public_key_bytes_fallback".toByteArray()
+            ?: throw IllegalStateException("Identity public key not found")
     }
 
     override fun deriveSharedSecret(theirPublicKey: ByteArray): ByteArray {
         initializeIdentityKeys()
         val privateKeyBytes = keyStorage.getPrivateKey(ALIAS_IDENTITY)
-            ?: return "mock_shared_secret_bytes_fallback".toByteArray()
+            ?: throw IllegalStateException("Identity private key not found")
 
         return try {
             val kf = KeyFactory.getInstance("EC")
@@ -63,8 +68,8 @@ class KeyManagerImpl @Inject constructor(
             ka.doPhase(publicKey, true)
             ka.generateSecret()
         } catch (e: Exception) {
-            // Return hash combination as fallback in test environments lacking ECDH
-            privateKeyBytes + theirPublicKey
+            Timber.e(e, "KeyManager: ECDH derivation failed")
+            throw IllegalArgumentException("Failed to derive shared secret", e)
         }
     }
 }

@@ -20,4 +20,7 @@ interface KeyStorage {
 
     /** Retrieves binary public keys. */
     fun getPublicKey(alias: String): ByteArray?
+
+    /** Purges all stored keys and metadata. */
+    fun clearAll()
 }

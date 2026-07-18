@@ -3,27 +3,36 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- Permissions — Phase A1 (Foundation only)                            -->
-    <!-- Additional permissions will be declared in Phase A2 as features     -->
-    <!-- are implemented.                                                     -->
+    <!-- Permissions — Phase A34 Security Hardened                           -->
     <!-- ──────────────────────────────────────────────────────────────────── -->
 
-    <!-- Internet (not used — offline-only app; reserved for future updates) -->
-    <!-- <uses-permission android:name="android.permission.INTERNET" /> -->
+    <!-- BLE Permissions (Android 12+) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+
+    <!-- Legacy Bluetooth Permissions (Android 11 and below) -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+
+    <!-- Location Permissions (Emergency SOS, location share) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Audio Recording Permission (Voice messages) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Notification Permission (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- Bluetooth — declared as stubs, activated in Phase A2               -->
+    <!-- Feature declarations for BLE hardware                                -->
     <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
-         android:usesPermissionFlags="neverForLocation" /> -->
-    <!-- <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" /> -->
-    <!-- <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" /> -->
-
-    <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- Feature declarations — stubs for future hardware requirements       -->
-    <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- <uses-feature android:name="android.hardware.bluetooth_le"
-         android:required="true" /> -->
+    <uses-feature android:name="android.hardware.bluetooth_le"
+        android:required="false" />
 
     <application
         android:name=".app.MeshApplication"

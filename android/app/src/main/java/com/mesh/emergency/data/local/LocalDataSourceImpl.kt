@@ -83,6 +83,9 @@ class LocalDataSourceImpl @Inject constructor(
     override suspend fun deleteMessage(message: MessageEntity) =
         messageDao.deleteMessage(message)
 
+    override suspend fun deleteAllMessages() =
+        messageDao.deleteAllMessages()
+
     override fun getNetworkNodes(): Flow<List<NetworkNodeEntity>> = networkDao.getNetworkNodes()
 
     override suspend fun getNodeById(nodeId: String): NetworkNodeEntity? =
@@ -138,4 +141,6 @@ class LocalDataSourceImpl @Inject constructor(
     override suspend fun insertLog(log: LogEntity) = logDao.insertLog(log)
 
     override suspend fun clearLogs() = logDao.clearLogs()
+
+    override suspend fun clearDatabase() = database.clearAllTables()
 }

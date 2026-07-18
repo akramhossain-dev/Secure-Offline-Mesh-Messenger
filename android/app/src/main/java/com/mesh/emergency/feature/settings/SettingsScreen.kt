@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -22,17 +26,21 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
@@ -42,7 +50,7 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 import com.mesh.emergency.core.designsystem.theme.ThemeMode
 
 /**
- * Settings screen — theme, language, debug mode, log management.
+ * Settings screen — theme, language, privacy settings, debug mode, log management.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +60,19 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val spacing = MeshThemeTokens.spacing
+
+    // Confirmation dialog states
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var confirmTitle by remember { mutableStateOf("") }
+    var confirmMessage by remember { mutableStateOf("") }
+    var pendingEvent by remember { mutableStateOf<SettingsUiEvent?>(null) }
+
+    val triggerAction = { title: String, message: String, event: SettingsUiEvent ->
+        confirmTitle = title
+        confirmMessage = message
+        pendingEvent = event
+        showConfirmDialog = true
+    }
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
@@ -128,12 +149,64 @@ fun SettingsScreen(
                 item { SettingsSectionHeader("Privacy & Security") }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("End-to-End Encryption", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
-                                Text("AES-256-GCM + ECDH keys", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("End-to-End Encryption", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("AES-256-GCM + ECDH keys", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(checked = uiState.encryptionEnabled, onCheckedChange = null, enabled = false)
                             }
-                            Switch(checked = uiState.encryptionEnabled, onCheckedChange = null, enabled = false)
+                            
+                            Spacer(Modifier.height(4.dp))
+                            
+                            MeshOutlinedButton(
+                                text = "Delete All Messages",
+                                onClick = {
+                                    triggerAction(
+                                        "Delete All Messages?",
+                                        "This will permanently erase all text and voice messages from local storage. This action cannot be undone.",
+                                        SettingsUiEvent.DeleteAllMessages
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            MeshOutlinedButton(
+                                text = "Remove Paired Devices",
+                                onClick = {
+                                    triggerAction(
+                                        "Remove Paired Devices?",
+                                        "This will clear the cached list of discovered devices and paired nodes.",
+                                        SettingsUiEvent.RemoveTrustedDevices
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            MeshOutlinedButton(
+                                text = "Rotate Cryptographic Keys",
+                                onClick = {
+                                    triggerAction(
+                                        "Rotate Cryptographic Keys?",
+                                        "This will invalidate your current identity key pairs and generate a fresh pair. You will need to re-pair with contacts.",
+                                        SettingsUiEvent.ResetSecurityKeys
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            MeshOutlinedButton(
+                                text = "Wipe All Application Data",
+                                onClick = {
+                                    triggerAction(
+                                        "Wipe All Local Data?",
+                                        "This will delete all messages, locations, resource shares, trusted devices, and cryptographic identity keys. The app will restart in a clean slate state.",
+                                        SettingsUiEvent.ClearLocalData
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -177,6 +250,33 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    // Confirmation dialog
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text(confirmTitle, fontWeight = FontWeight.Bold) },
+            text = { Text(confirmMessage) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pendingEvent?.let { viewModel.onEvent(it) }
+                        showConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Proceed")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
