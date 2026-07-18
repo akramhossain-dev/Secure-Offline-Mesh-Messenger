@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Backup rules — declares which files should be excluded from auto-backup.
+    Sensitive data (encryption keys, node IDs) should never be backed up.
+-->
+<full-backup-content>
+    <!-- Exclude DataStore preferences (contain private keys in Phase A2+) -->
+    <exclude domain="sharedpref" path="mesh_preferences" />
+    <!-- Exclude all databases (contain messages — privacy sensitive) -->
+    <exclude domain="database" path="." />
+</full-backup-content>

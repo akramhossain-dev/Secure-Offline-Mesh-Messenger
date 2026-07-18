@@ -1,0 +1,8 @@
+# Local properties for this machine — DO NOT COMMIT
+# Copy this file to local.properties and fill in your SDK path.
+
+# Android SDK location
+# Linux:   /home/<you>/Android/Sdk
+# macOS:   /Users/<you>/Library/Android/sdk
+# Windows: C:/Users/<you>/AppData/Local/Android/Sdk
+sdk.dir=/home/USER/Android/Sdk

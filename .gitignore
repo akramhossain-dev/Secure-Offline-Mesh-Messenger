@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Root .gitignore
+# Offline Emergency Mesh Communication System
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── OS generated files ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ── IDE files ─────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ── Android-specific (see android/.gitignore for more detail) ─────────────────
+android/local.properties
+android/*.jks
+android/*.keystore
+android/keystore.properties
+
+# ── Python (documentation scripts, if any) ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+
+# ── Node.js (documentation tools, if any) ────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Environment files ─────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Secrets (NEVER commit) ────────────────────────────────────────────────────
+secrets.properties
+*.pem
+*.p12
+google-services.json

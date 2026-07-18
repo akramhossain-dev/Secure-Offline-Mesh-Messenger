@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Offline Emergency Mesh Communication System
+    String Resources — Bengali / বাংলা (bn)
+
+    Translation status: PLACEHOLDER
+    Phase A1: Infrastructure only. All strings use English originals as placeholders.
+    Phase A2+: A professional translator or community contributor will provide
+               full Bengali translations for all strings.
+
+    IMPORTANT: Do not use machine translation for emergency communication strings.
+    Accuracy in emergency contexts is safety-critical.
+-->
+<resources>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Application Identity                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="app_name">অফলাইন ইমার্জেন্সি মেশ</string>
+    <string name="app_short_name">অফলাইনমেশ</string>
+    <string name="app_tagline">যোগাযোগ করুন। সমন্বয় করুন। বেঁচে থাকুন।</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Navigation Labels                                                     -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="nav_home">হোম</string>
+    <string name="nav_chat">চ্যাট</string>
+    <string name="nav_contacts">যোগাযোগ</string>
+    <string name="nav_emergency">জরুরি</string>
+    <string name="nav_map">মানচিত্র</string>
+    <string name="nav_dashboard">ড্যাশবোর্ড</string>
+    <string name="nav_profile">প্রোফাইল</string>
+    <string name="nav_settings">সেটিংস</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Action Labels                                                         -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="action_send">পাঠান</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="action_confirm">নিশ্চিত করুন</string>
+    <string name="action_retry">আবার চেষ্টা করুন</string>
+    <string name="action_dismiss">বাতিল করুন</string>
+    <string name="action_ok">ঠিক আছে</string>
+    <string name="action_save">সংরক্ষণ</string>
+    <string name="action_back">পিছনে</string>
+    <string name="action_close">বন্ধ করুন</string>
+    <string name="action_share">শেয়ার করুন</string>
+    <string name="action_scan_qr">QR কোড স্ক্যান করুন</string>
+    <string name="action_grant_permission">অনুমতি দিন</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Settings Screen                                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="settings_title">সেটিংস</string>
+    <string name="settings_section_appearance">চেহারা</string>
+    <string name="settings_section_language">ভাষা</string>
+    <string name="settings_section_communication">যোগাযোগ</string>
+    <string name="settings_section_privacy">গোপনীয়তা এবং অনুমতি</string>
+    <string name="settings_section_about">সম্পর্কে</string>
+
+    <string name="settings_theme">থিম</string>
+    <string name="settings_theme_system">সিস্টেম ডিফল্ট</string>
+    <string name="settings_theme_light">হালকা</string>
+    <string name="settings_theme_dark">অন্ধকার</string>
+    <string name="settings_dynamic_color">ডাইনামিক রঙ</string>
+    <string name="settings_dynamic_color_desc">ওয়ালপেপার রঙ ব্যবহার করুন (Android 12+)</string>
+
+    <string name="settings_language">ভাষা</string>
+    <string name="settings_language_system">সিস্টেম ডিফল্ট</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_bangla">বাংলা</string>
+
+    <string name="settings_about_version">সংস্করণ</string>
+    <string name="settings_about_build">বিল্ড</string>
+    <string name="settings_about_licenses">ওপেন সোর্স লাইসেন্স</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Permission Rationale                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="permission_bluetooth_title">ব্লুটুথ অনুমতি প্রয়োজন</string>
+    <string name="permission_bluetooth_message">মেশ নোডের সাথে সংযোগ করতে এবং কাছের ডিভাইসের সাথে যোগাযোগ করতে ব্লুটুথ প্রয়োজন।</string>
+
+    <string name="permission_location_title">লোকেশন অনুমতি প্রয়োজন</string>
+    <string name="permission_location_message">জরুরি SOS সম্প্রচার এবং অফলাইন মানচিত্রে আপনার অবস্থান দেখানোর জন্য লোকেশন অ্যাক্সেস প্রয়োজন।</string>
+
+    <string name="permission_camera_title">ক্যামেরা অনুমতি প্রয়োজন</string>
+    <string name="permission_camera_message">পরিচিতিদের সাথে পেয়ার করার সময় QR কোড স্ক্যান করতে ক্যামেরা অ্যাক্সেস প্রয়োজন।</string>
+
+    <string name="permission_microphone_title">মাইক্রোফোন অনুমতি প্রয়োজন</string>
+    <string name="permission_microphone_message">ভয়েস মেসেজ রেকর্ড করতে মাইক্রোফোন অ্যাক্সেস প্রয়োজন।</string>
+
+    <string name="permission_notification_title">নোটিফিকেশন অনুমতি প্রয়োজন</string>
+    <string name="permission_notification_message">আগত বার্তা এবং জরুরি সম্প্রচারের জন্য সতর্ক করতে নোটিফিকেশন প্রয়োজন।</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Generic Messages                                                      -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="msg_loading">লোড হচ্ছে…</string>
+    <string name="msg_no_data">কোনো ডেটা পাওয়া যায়নি</string>
+    <string name="msg_error_generic">কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।</string>
+    <string name="msg_error_no_connection">কোনো মেশ নোড সংযুক্ত নেই।</string>
+    <string name="msg_coming_soon">ভবিষ্যতের আপডেটে আসছে।</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Accessibility Content Descriptions                                    -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="accessibility_sos_button">জরুরি SOS বোতাম। সক্রিয় করতে চেপে ধরুন।</string>
+    <string name="accessibility_back_button">পিছনে যান</string>
+    <string name="accessibility_menu_button">মেনু খুলুন</string>
+    <string name="accessibility_send_button">বার্তা পাঠান</string>
+
+</resources>

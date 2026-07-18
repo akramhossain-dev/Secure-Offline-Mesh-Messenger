@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Offline Emergency Mesh Communication System
+    String Resources — English (default)
+
+    String naming convention:
+    - app_* : Application identity strings
+    - nav_* : Navigation labels
+    - action_* : Actionable button/menu labels
+    - label_* : Static UI labels
+    - msg_* : User-facing messages, errors, confirmations
+    - settings_* : Settings screen strings
+    - permission_* : Permission rationale strings
+    - error_* : Error messages
+    - accessibility_* : Content descriptions for accessibility
+
+    Phase A1: Foundation strings only.
+    Phase A2+: Feature strings will be added as features are implemented.
+-->
+<resources>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Application Identity                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="app_name">Offline Emergency Mesh</string>
+    <string name="app_short_name">OfflineMesh</string>
+    <string name="app_tagline">Communicate. Coordinate. Survive.</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Navigation Labels                                                     -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="nav_home">Home</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_emergency">Emergency</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_profile">Profile</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Action Labels                                                         -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="action_send">Send</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_dismiss">Dismiss</string>
+    <string name="action_ok">OK</string>
+    <string name="action_save">Save</string>
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_share">Share</string>
+    <string name="action_scan_qr">Scan QR Code</string>
+    <string name="action_grant_permission">Grant Permission</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Settings Screen                                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_language">Language</string>
+    <string name="settings_section_communication">Communication</string>
+    <string name="settings_section_privacy">Privacy &amp; Permissions</string>
+    <string name="settings_section_about">About</string>
+
+    <!-- Theme settings -->
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic Color</string>
+    <string name="settings_dynamic_color_desc">Use wallpaper colors (Android 12+)</string>
+
+    <!-- Language settings -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System Default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_bangla">বাংলা</string>
+
+    <!-- About -->
+    <string name="settings_about_version">Version</string>
+    <string name="settings_about_build">Build</string>
+    <string name="settings_about_licenses">Open Source Licenses</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Permission Rationale                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="permission_bluetooth_title">Bluetooth Permission Required</string>
+    <string name="permission_bluetooth_message">Bluetooth is required to connect to your mesh node and communicate with nearby devices.</string>
+
+    <string name="permission_location_title">Location Permission Required</string>
+    <string name="permission_location_message">Location access is required for emergency SOS broadcasts and to show your position on the offline map.</string>
+
+    <string name="permission_camera_title">Camera Permission Required</string>
+    <string name="permission_camera_message">Camera access is required to scan QR codes when pairing with contacts.</string>
+
+    <string name="permission_microphone_title">Microphone Permission Required</string>
+    <string name="permission_microphone_message">Microphone access is required to record voice messages.</string>
+
+    <string name="permission_notification_title">Notification Permission Required</string>
+    <string name="permission_notification_message">Notifications are required to alert you to incoming messages and emergency broadcasts.</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Generic Messages                                                      -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="msg_loading">Loading…</string>
+    <string name="msg_no_data">No data available</string>
+    <string name="msg_error_generic">Something went wrong. Please try again.</string>
+    <string name="msg_error_no_connection">No mesh node connected.</string>
+    <string name="msg_coming_soon">Coming soon in a future update.</string>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Accessibility Content Descriptions                                    -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+
+    <string name="accessibility_sos_button">Emergency SOS button. Press and hold to activate.</string>
+    <string name="accessibility_back_button">Navigate back</string>
+    <string name="accessibility_menu_button">Open menu</string>
+    <string name="accessibility_send_button">Send message</string>
+
+</resources>

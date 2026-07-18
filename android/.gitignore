@@ -1,0 +1,78 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Android .gitignore
+# Offline Emergency Mesh Communication System
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Build outputs ──────────────────────────────────────────────────────────────
+build/
+.gradle/
+*/build/
+**/build/
+out/
+
+# ── Android Studio IDE files ───────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+
+# ── Android Studio Navigation Editor ──────────────────────────────────────────
+.navigation/
+
+# ── Local properties (contains SDK path — machine specific) ───────────────────
+local.properties
+
+# ── Keystore files (NEVER commit signing keys) ────────────────────────────────
+*.jks
+*.keystore
+keystore.properties
+release-keystore.jks
+debug-keystore.jks
+
+# ── Gradle cache and wrapper (keep wrapper properties, not binaries) ──────────
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+
+# ── Kotlin compiled output ────────────────────────────────────────────────────
+*.class
+
+# ── ProGuard mapping files (sensitive — keep locally or in secure storage) ────
+mapping.txt
+
+# ── Test results ──────────────────────────────────────────────────────────────
+test-results/
+*/test-results/
+
+# ── Coverage reports ──────────────────────────────────────────────────────────
+coverage/
+
+# ── Generated files ───────────────────────────────────────────────────────────
+generated/
+**/generated/
+
+# ── Detekt/Ktlint reports ─────────────────────────────────────────────────────
+reports/
+
+# ── Android Profiler ──────────────────────────────────────────────────────────
+captures/
+*.hprof
+
+# ── MacOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Windows ───────────────────────────────────────────────────────────────────
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Linux ─────────────────────────────────────────────────────────────────────
+*~
+.nfs*

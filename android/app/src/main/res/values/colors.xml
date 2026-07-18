@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Offline Emergency Mesh Communication System
+    Color Resources — XML fallback for non-Compose usage (e.g., notification icons,
+    splash screen, XML-based views if any)
+
+    Primary color values mirror the Compose color palette in Color.kt.
+-->
+<resources>
+    <!-- Primary brand colors -->
+    <color name="mesh_primary">#FF4F4BD4</color>
+    <color name="mesh_primary_dark">#FFC4C3EE</color>
+    <color name="mesh_on_primary">#FFFFFFFF</color>
+
+    <!-- Secondary — Electric Teal -->
+    <color name="mesh_secondary">#FF007178</color>
+    <color name="mesh_secondary_dark">#FF5ADFF0</color>
+
+    <!-- Error / SOS — Emergency Red -->
+    <color name="mesh_error">#FFBA1A1A</color>
+    <color name="mesh_sos_active">#FFFF1744</color>
+
+    <!-- Backgrounds -->
+    <color name="mesh_background_light">#FFFFFBFF</color>
+    <color name="mesh_background_dark">#FF1B1B1F</color>
+
+    <!-- Splash screen background -->
+    <color name="splash_background">#FF0D0C2B</color>
+    <color name="splash_icon_background">#FF4F4BD4</color>
+</resources>
