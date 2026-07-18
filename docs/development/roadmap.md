@@ -14,6 +14,23 @@ Development is organized into three parallel tracks that can progress independen
 
 ---
 
+## Development Order
+
+The recommended build sequence is:
+
+| Step | Activity |
+|---|---|
+| 1 | Build Android App UI and architecture |
+| 2 | Develop Bluetooth communication |
+| 3 | Develop ESP32 firmware |
+| 4 | Integrate LoRa communication |
+| 5 | Implement mesh protocol |
+| 6 | Add security |
+| 7 | Add power monitoring |
+| 8 | Field testing |
+
+---
+
 ## Phase A — Android App Development
 
 **Goal:** A fully functional Android app that can communicate with an ESP32 node over BLE, send and receive LoRa mesh messages, and support all emergency features.
@@ -153,7 +170,7 @@ Development is organized into three parallel tracks that can progress independen
 | Task | Details |
 |---|---|
 | PlatformIO project setup | `platformio.ini` with ESP32 target |
-| Library dependencies | LoRa, ArduinoJson, NimBLE-Arduino, INA226 |
+| Library dependencies | LoRa, ArduinoJson, NimBLE-Arduino, INA219 |
 | Serial logging | Structured log levels: DEBUG, INFO, WARN, ERROR |
 | Config.h | All pin definitions and tuning constants |
 | FreeRTOS task skeleton | Empty tasks for all subsystems |
@@ -243,14 +260,14 @@ Development is organized into three parallel tracks that can progress independen
 
 | Task | Details |
 |---|---|
-| INA219/226 driver | I2C init, calibration, polling task |
+| INA219 driver | I2C init, calibration, polling task |
 | Power reading BLE notify | Push telemetry to Status characteristic |
-| Light sleep integration | Enter light sleep when BLE disconnected |
+| Battery saving mode | Enter light sleep when BLE disconnected; throttle INA polling |
 | Power logging | Periodic SPIFFS log of telemetry |
 
 **Dependencies:** B5  
 **Testing Criteria:**
-- INA readings appear in serial log every 5 seconds
+- INA219 readings appear in serial log every 5 seconds
 - Android app displays live voltage and current
 - ESP32 current drops to < 30 mA in light sleep (measured)
 

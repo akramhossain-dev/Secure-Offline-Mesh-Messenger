@@ -31,8 +31,9 @@ Communication flows over a **LoRa 433MHz mesh network**, bridged to Android phon
 | Android App | User interface, message composition, BLE bridge |
 | ESP32 V1.3 (CH340C) | Network node, BLE host, LoRa controller |
 | SX1278 RA-02 (433MHz) | Long-range RF transceiver |
-| 433MHz Spring Antenna | Signal transmission and reception |
-| INA219/INA226 | Voltage, current, and power monitoring |
+| 433MHz Rubber Duck SMA Antenna | Better signal stability and extended range |
+| U.FL/IPEX to SMA Adapter Cable | Connects RA-02 U.FL connector to external SMA antenna |
+| INA219 | Voltage, current, and power monitoring |
 | Power Bank | Portable power supply via USB |
 
 ---

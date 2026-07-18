@@ -63,7 +63,7 @@ sequenceDiagram
 ## Emergency Panel
 
 ### SOS Screen
-Activated by a large physical-style SOS button, requiring a two-step confirmation.
+Activated by a large, prominent in-app SOS button, requiring a two-step confirmation.
 
 On activation:
 1. App captures current GPS coordinates
@@ -148,14 +148,14 @@ Resource sharing enables coordinated logistics during emergencies.
 
 ## Power Monitor Screen
 
-Accessible from the status bar when connected to a node that includes an INA219/INA226 sensor.
+Accessible from the status bar when connected to a node that includes an INA219 sensor.
 
 | Displayed Value | Source | Refresh Rate |
 |---|---|---|
-| Bus Voltage | INA219/226 | 5 seconds |
-| Current Draw | INA219/226 | 5 seconds |
+| Bus Voltage | INA219 | 5 seconds |
+| Current Draw | INA219 | 5 seconds |
 | Power Consumption | Calculated (V × A) | 5 seconds |
-| Estimated Remaining | Configured battery Ah | Derived |
+| Device Health | Derived | 5 seconds |
 | Node Temperature (if available) | ESP32 internal sensor | 30 seconds |
 
 ---

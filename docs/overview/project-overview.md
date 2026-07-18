@@ -41,7 +41,7 @@ SOS packets carry the highest routing priority and are forwarded by all nodes re
 Location sharing is explicit and user-controlled. No background tracking. No persistent identifiers are exposed without user consent. End-to-end encryption is applied to all private messages.
 
 ### 5. Low Barrier to Deployment
-A node consists of three components: an ESP32 board, an SX1278 LoRa module, and a power bank. No specialized tools, soldering, or enclosures are required for basic deployment.
+A node consists of five components: an ESP32 board, an SX1278 LoRa module, a 433MHz Rubber Duck SMA antenna, a U.FL/SMA adapter cable, and a power bank. No specialized tools, soldering, or enclosures are required for basic deployment.
 
 ---
 
@@ -69,8 +69,8 @@ Remote villages, off-grid communities, and humanitarian camps deploy fixed nodes
 | Android messaging application | iOS application |
 | Mesh routing and store-and-forward | Centralized dispatch systems |
 | AES-encrypted private messaging | Certificate authority or PKI infrastructure |
-| Power monitoring via INA219/INA226 | Battery management or charging circuits |
-| GPS coordinate sharing | GPS hardware (uses Android device GPS) |
+| Power monitoring via INA219 | Battery management or charging circuits |
+| GPS coordinate sharing (via phone GPS) | External GPS hardware module |
 
 ---
 
@@ -80,6 +80,9 @@ The hardware is deliberately minimal and commercially available:
 
 - **ESP32 V1.3 Dev Board (CH340C)** — widely available, well-documented, dual-core processor
 - **SX1278 RA-02 (433MHz)** — proven LoRa chipset, long range, low power
+- **433MHz Rubber Duck SMA Antenna** — improved gain and signal stability
+- **U.FL/IPEX to SMA Adapter Cable** — connects RA-02 to external SMA antenna
+- **INA219** — precise power monitoring for device health tracking
 - **Power Bank** — universally available, rechargeable, no custom power circuit needed
 
 This approach ensures that nodes can be built by non-specialists, sourced globally, and replaced in the field without specialized components.

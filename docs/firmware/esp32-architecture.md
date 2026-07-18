@@ -47,7 +47,7 @@ graph TD
         SPI["SPI Bus\n(GPIO18/19/23/5/14/26)"]
         I2C["I2C Bus\n(SDA/SCL)"]
         SX1278["SX1278 LoRa Module"]
-        INA["INA219/INA226"]
+        INA["INA219"]
     end
 
     BLE_GATT -->|"Received BLE packet"| TX_Q
@@ -101,7 +101,7 @@ firmware/
 │   │   └── CryptoEngine.h
 │   │
 │   ├── power/
-│   │   ├── PowerMonitor.cpp  # INA219/226 I2C driver and polling task
+│   │   ├── PowerMonitor.cpp  # INA219 I2C driver and polling task
 │   │   └── PowerMonitor.h
 │   │
 │   └── identity/
@@ -270,7 +270,7 @@ Packets destined for unreachable nodes are written to SPIFFS as JSON files. The 
 
 ```cpp
 void TaskPowerMonitor(void* param) {
-    INA226 ina(0x40, &Wire);
+    INA219 ina(0x40, &Wire);
     ina.begin();
     ina.calibrate(0.1, 1.0);  // 0.1 ohm shunt, 1A max
 

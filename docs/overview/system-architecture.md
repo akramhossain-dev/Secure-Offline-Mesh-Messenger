@@ -20,7 +20,7 @@ graph TD
         BLE_A["BLE GATT Server"]
         MCU_A["ESP32 Core\n(FreeRTOS Tasks)"]
         LORA_A["SX1278 LoRa\n(SPI)"]
-        INA_A["INA219/INA226\n(I2C)"]
+        INA_A["INA219\n(I2C)"]
     end
 
     subgraph Mesh["LoRa 433MHz Mesh Network"]
@@ -32,7 +32,7 @@ graph TD
         BLE_B["BLE GATT Server"]
         MCU_B["ESP32 Core\n(FreeRTOS Tasks)"]
         LORA_B["SX1278 LoRa\n(SPI)"]
-        INA_B["INA219/INA226\n(I2C)"]
+        INA_B["INA219\n(I2C)"]
     end
 
     subgraph UserB["User B — Android Device"]
@@ -81,9 +81,22 @@ The ESP32 communicates with the SX1278 module over the SPI bus using the hardwar
 | Reset (RST) | GPIO14 |
 | IRQ (DIO0) | GPIO26 |
 
-### ESP32 ↔ INA219/INA226 (I2C)
+### ESP32 ↔ INA219 (I2C)
 
-The current sensor sits on the I2C bus (SDA/SCL). The ESP32 polls it periodically and includes power telemetry in BLE status notifications to the Android app.
+The INA219 current sensor sits on the I2C bus (SDA/SCL). The ESP32 polls it periodically and includes power telemetry in BLE status notifications to the Android app.
+
+The power monitoring architecture follows this path:
+
+```
+Power Bank → INA219 → ESP32 → Bluetooth → Android App
+```
+
+| Measured Value | Source |
+|---|---|
+| Voltage | INA219 bus voltage register |
+| Current | INA219 shunt measurement |
+| Power | Calculated: V × I |
+| Device Health | Derived from power readings |
 
 ---
 
@@ -206,13 +219,95 @@ Each node automatically participates in routing. A packet from Node 1 to Node 6 
 
 ```mermaid
 flowchart TD
-    PB["Power Bank\n(USB 5V)"] -->|"USB Cable"| ESP32_USB["ESP32 USB Input"]
-    PB -->|"Inline"| INA["INA219 / INA226\n(I2C 0x40)"]
+    PB["Power Bank\n(USB 5V)"] -->|"USB Cable"| INA["INA219\n(I2C 0x40)"]
+    INA -->|"Inline"| ESP32_USB["ESP32 USB Input"]
     INA -->|"I2C SDA/SCL"| ESP32_CORE["ESP32 Core"]
     ESP32_CORE -->|"3.3V regulated"| SX1278["SX1278 LoRa Module"]
     ESP32_CORE -->|"BLE Notification"| APP["Android App\nPower Monitor Screen"]
 
-    INA -->|"Measures"| M1["Bus Voltage"]
-    INA -->|"Measures"| M2["Shunt Current"]
-    INA -->|"Measures"| M3["Power (W)"]
+    INA -->|"Measures"| M1["Bus Voltage (V)"]
+    INA -->|"Measures"| M2["Shunt Current (mA)"]
+    INA -->|"Measures"| M3["Power (mW)"]
+    ESP32_CORE -->|"Derives"| M4["Device Health Status"]
 ```
+
+---
+
+## Scalability Design
+
+The system is designed to scale from small local deployments to large regional mesh networks.
+
+### Network Size Tiers
+
+| Tier | Node Count | Architecture |
+|---|---|---|
+| Small Network | 10–100 nodes | Flat flood mesh with TTL |
+| Large Network | 100–1000+ nodes | Cluster-based mesh architecture |
+
+### Small Network (10–100 Nodes)
+
+All nodes participate equally in routing. The flood-with-TTL approach is efficient at this scale:
+
+- Every node forwards all non-duplicate packets
+- Seen-packet cache prevents loops (128-entry circular buffer)
+- TTL (default: 5 hops) bounds propagation
+- Routing table not required — broadcast handles delivery
+
+```mermaid
+graph TB
+    subgraph Small["Small Network (10–100 Nodes)"]
+        N1["Node 1"] <--> N2["Node 2"]
+        N2 <--> N3["Node 3"]
+        N3 <--> N4["Node 4"]
+        N1 <--> N3
+        N2 <--> N4
+    end
+```
+
+### Large Network (100–1000+ Nodes)
+
+At large scale, flood routing becomes inefficient. The system uses a **cluster-based mesh architecture**:
+
+- Nodes self-organize into geographic or logical clusters
+- Each cluster has a designated **Cluster Head** node that maintains a routing table
+- Inter-cluster traffic is routed via Cluster Head nodes only
+- Intra-cluster traffic uses local flood routing
+
+```mermaid
+graph TB
+    subgraph ClusterA["Cluster A"]
+        CH_A["Cluster Head A"]
+        N1A["Node"] & N2A["Node"] & N3A["Node"]
+        CH_A <--> N1A
+        CH_A <--> N2A
+        CH_A <--> N3A
+    end
+    subgraph ClusterB["Cluster B"]
+        CH_B["Cluster Head B"]
+        N1B["Node"] & N2B["Node"] & N3B["Node"]
+        CH_B <--> N1B
+        CH_B <--> N2B
+        CH_B <--> N3B
+    end
+    subgraph ClusterC["Cluster C"]
+        CH_C["Cluster Head C"]
+        N1C["Node"] & N2C["Node"]
+        CH_C <--> N1C
+        CH_C <--> N2C
+    end
+    CH_A <-->|"LoRa"| CH_B
+    CH_B <-->|"LoRa"| CH_C
+    CH_A <-->|"LoRa"| CH_C
+```
+
+### Mesh Protocol Primitives
+
+| Primitive | Purpose |
+|---|---|
+| Packet ID (UUID v4) | Unique identifier for every packet |
+| TTL | Limits hop count; decremented at each relay node |
+| Hop Count | Tracked alongside TTL for routing metrics |
+| Routing Table | Maintained by Cluster Head nodes for inter-cluster routing |
+| Duplicate Detection | Seen-packet cache (sender + packet ID hash) |
+| Priority Queue | TX queue ordered by priority: Critical > High > Normal > Low |
+| Store and Forward | Cache undelivered packets in SPIFFS; retry on node reappearance |

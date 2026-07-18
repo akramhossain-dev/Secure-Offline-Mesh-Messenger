@@ -7,13 +7,14 @@
 | # | Component | Specification | Purpose |
 |---|---|---|---|
 | 1 | ESP32 Dev Board | V1.3, CH340C, NodeMCU-32S | Main controller, BLE host, SPI master |
-| 2 | SX1278 LoRa Module | RA-02, 433 MHz, AI Thinker | Long-range RF transceiver |
-| 3 | Spring Antenna | 433 MHz, ~17 cm, 50 Ω | RF signal transmission and reception |
-| 4 | INA219 / INA226 | Current sensor, I2C | Power monitoring |
-| 5 | Power Bank | 5V USB output, ≥ 5000 mAh | Power supply |
-| 6 | USB Cable | Micro-USB or USB-C | Power delivery to ESP32 |
-| 7 | Jumper Wires | Male-to-Male, Male-to-Female | Breadboard connections |
-| 8 | Breadboard | 830-point | Prototype assembly |
+| 2 | SX1278 LoRa Module | RA-02, 433 MHz, Original AI Thinker | Long-range RF transceiver |
+| 3 | 433MHz Rubber Duck SMA Antenna | 433 MHz, SMA connector, 50 Ω | Better signal stability and extended range |
+| 4 | U.FL/IPEX to SMA Adapter Cable | Connects RA-02 U.FL to SMA antenna | External antenna support |
+| 5 | INA219 | Current sensor, I2C | Power monitoring |
+| 6 | Power Bank | 5V USB output, ≥ 5000 mAh | Power supply |
+| 7 | USB Cable | Micro-USB or USB-C | Power delivery to ESP32 |
+| 8 | Jumper Wires | Male-to-Male, Male-to-Female | Breadboard connections |
+| 9 | Breadboard | 830-point | Prototype assembly |
 
 ---
 
@@ -95,41 +96,65 @@
 
 ---
 
-## 433 MHz Spring Antenna
+## 433MHz Rubber Duck SMA Antenna
 
 | Specification | Value |
 |---|---|
-| Type | Spring / Helical whip |
+| Type | Rubber Duck / Flexible whip |
 | Frequency | 433 MHz |
 | Impedance | 50 Ω |
-| Gain | ~2 dBi |
-| Length | ~17 cm (quarter-wave: 300/433 × 0.25 ≈ 17.3 cm) |
-| Connector | IPX / U.FL (mates with RA-02) |
+| Gain | ~3 dBi (improved over spring) |
+| Connector | SMA (male) — mates with U.FL/SMA adapter |
 | Radiation Pattern | Omnidirectional |
 
 ### Antenna Handling Notes
 - Always connect the antenna before powering the RA-02 when transmitting
-- Do not bend the spring antenna at sharp angles — this degrades resonance
-- Position the antenna away from the ESP32 board and USB cable to minimize interference
-- For fixed node deployments, a vertical whip antenna improves range versus a coiled spring
+- Connect via the U.FL/IPEX to SMA Adapter Cable (see below)
+- Position the antenna vertically for maximum omnidirectional coverage
+- Keep the antenna ≥ 5 cm away from the ESP32 board, USB cable, and power bank to minimize RF interference
 
 ---
 
-## INA219 / INA226 Current Sensor
+## U.FL/IPEX to SMA Adapter Cable
 
-Both INA219 and INA226 are compatible with this project. The INA226 offers higher precision and configurable alert thresholds.
+| Specification | Value |
+|---|---|
+| Purpose | Connect RA-02 U.FL antenna connector to external SMA antenna |
+| Connector A | U.FL / IPEX (female, mates with RA-02 onboard IPX connector) |
+| Connector B | SMA (female, accepts SMA male from Rubber Duck antenna) |
+| Impedance | 50 Ω |
 
-| Specification | INA219 | INA226 |
-|---|---|---|
-| Interface | I2C | I2C |
-| I2C Address (default) | 0x40 | 0x40 |
-| Shunt Voltage | ±320 mV | ±81.92 mV |
-| Bus Voltage | 0–26 V | 0–36 V |
-| Current Resolution | 1 mA (default config) | 1.25 mA (default) |
-| Power Resolution | 2 mW | Calculated |
-| Calibration | Register-based | Register-based |
-| Alert Pin | No | Yes |
-| Supply Voltage | 3.0–5.5 V | 2.7–5.5 V |
+### Notes
+- Essential for using the Rubber Duck SMA Antenna with the RA-02 module
+- Press the U.FL connector firmly onto the RA-02 IPX socket until it clicks
+- Secure the adapter cable with hot glue or a cable tie to prevent accidental disconnection in the field
+
+---
+
+## INA219 Current Sensor
+
+The INA219 is a precision current/power monitor IC used to measure the node's power consumption in real time.
+
+| Specification | Value |
+|---|---|
+| Interface | I2C |
+| I2C Address (default) | 0x40 |
+| Shunt Voltage Range | ±320 mV |
+| Bus Voltage Range | 0–26 V |
+| Current Resolution | 1 mA (default config) |
+| Power Resolution | 2 mW |
+| Calibration | Register-based |
+| Alert Pin | No |
+| Supply Voltage | 3.0–5.5 V |
+
+### Monitored Values
+
+| Metric | Unit |
+|---|---|
+| Bus Voltage | V |
+| Shunt Current | mA |
+| Power Consumption | mW |
+| Estimated Device Health | Derived |
 
 ### Recommended Shunt Resistor
 
@@ -164,3 +189,18 @@ At 160 mA average draw (ESP32 active + LoRa RX):
 | 20000 mAh | ~125 hours |
 
 *Estimates assume 80% power bank efficiency and 5V to 3.3V conversion losses.*
+
+---
+
+## Approximate Cost Per Node (BDT)
+
+| Component | Approximate Cost |
+|---|---|
+| ESP32 V1.3 Dev Board (CH340C) | ~580 BDT |
+| SX1278 RA-02 433MHz LoRa Module | ~859 BDT |
+| 433MHz Rubber Duck SMA Antenna | ~160 BDT |
+| U.FL/IPEX to SMA Adapter Cable | ~150–160 BDT |
+| INA219 Current Sensor | ~150–250 BDT |
+| **Total per node** | **~2000 BDT** |
+
+> Power Bank is excluded — assumed to be already available.

@@ -8,13 +8,14 @@ Before assembling the hardware, ensure you have:
 
 - [ ] ESP32 V1.3 Dev Board (CH340C)
 - [ ] SX1278 RA-02 433 MHz LoRa module
-- [ ] 433 MHz spring antenna (with U.FL connector)
-- [ ] INA219 or INA226 breakout board
+- [ ] 433MHz Rubber Duck SMA Antenna
+- [ ] U.FL/IPEX to SMA Adapter Cable
+- [ ] INA219 breakout board
 - [ ] 830-point breadboard
 - [ ] Jumper wires (male-to-male and male-to-female)
 - [ ] USB cable (Micro-USB to USB-A, or USB-C depending on ESP32 board)
 - [ ] Power bank (5V USB, ≥ 2A output)
-- [ ] 0.1 Ω shunt resistor (for INA219/226 inline measurement)
+- [ ] 0.1 Ω shunt resistor (for INA219 inline measurement)
 - [ ] 4.7 kΩ resistors × 2 (I2C pull-ups, if not on INA breakout)
 - [ ] PC with PlatformIO or Arduino IDE installed
 
@@ -43,10 +44,14 @@ Before assembling the hardware, ensure you have:
 
 > **Always attach the antenna before powering on the SX1278.**
 
-1. Take the 433 MHz spring antenna with U.FL connector
-2. Align the U.FL connector with the IPX socket on the RA-02 module
-3. Press down firmly until you hear/feel a click
-4. The antenna should be secure and not rotate freely
+1. Attach the U.FL/IPEX to SMA Adapter Cable:
+   - Locate the small IPX/U.FL socket on the RA-02 module
+   - Align the U.FL end of the adapter cable
+   - Press down firmly until you hear/feel a click
+2. Connect the 433MHz Rubber Duck SMA Antenna:
+   - Screw the SMA male connector of the Rubber Duck antenna into the SMA female end of the adapter cable
+   - Tighten finger-tight — do not over-torque
+3. The antenna should stand vertically and be secure
 
 ---
 
@@ -122,7 +127,7 @@ Skip the inline INA connection initially. Power the ESP32 via USB directly from 
 
 Before first power-on:
 
-- [ ] Antenna connected to SX1278
+- [ ] Antenna connected to SX1278 via U.FL/SMA adapter
 - [ ] SX1278 VCC → 3.3V only (not 5V)
 - [ ] All SPI pins connected as per the wiring table
 - [ ] DIO0 connected to GPIO26

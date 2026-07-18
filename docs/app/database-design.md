@@ -209,7 +209,7 @@ Aggregated resource offers received from the mesh.
 
 ### `power_log` Table
 
-Historical power telemetry from the INA219/INA226 sensor.
+Historical power telemetry from the INA219 sensor.
 
 | Column | Type | Constraints | Description |
 |---|---|---|---|

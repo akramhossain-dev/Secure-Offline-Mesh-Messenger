@@ -35,7 +35,7 @@ The ESP32 on-board AMS1117 LDO regulator converts 5V USB input to 3.3V for its o
 
 ---
 
-## INA219 / INA226 → ESP32 Wiring Table
+## INA219 → ESP32 Wiring Table
 
 | INA Pin | ESP32 GPIO | Notes |
 |---|---|---|
@@ -46,7 +46,7 @@ The ESP32 on-board AMS1117 LDO regulator converts 5V USB input to 3.3V for its o
 | VIN+ | Power Bank (+) | Positive power input |
 | VIN- | ESP32 VIN | After shunt resistor |
 
-> Place a 0.1 Ω shunt resistor between VIN+ and VIN−. The INA219/226 measures the voltage drop across this resistor to calculate current.
+> Place a 0.1 Ω shunt resistor between VIN+ and VIN−. The INA219 measures the voltage drop across this resistor to calculate current.
 
 ---
 
@@ -78,7 +78,7 @@ Power Bank ─USB─►  │ VIN(5V)    3.3V ─────────┼─�
                     │ SCK   MISO     │
                     │ MOSI  NSS      │
                     │ RST   DIO0     │
-                    │       ANT ─────┼──► 433MHz Spring Antenna
+                    │       ANT ─────┼──► U.FL/IPEX Cable ──► SMA Adapter ──► 433MHz Rubber Duck SMA Antenna
                     └────────────────┘
 ```
 
@@ -96,7 +96,7 @@ Power Bank ─USB─►  │ VIN(5V)    3.3V ─────────┼─�
 ## I2C Bus Notes
 
 - GPIO21 (SDA) and GPIO22 (SCL) are the default I2C pins for ESP32.
-- The INA219/226 I2C address is `0x40` by default (A0 and A1 pins floating/GND).
+- The INA219 I2C address is `0x40` by default (A0 and A1 pins floating/GND).
 - Pull-up resistors (4.7 kΩ to 3.3V) are required on SDA and SCL lines. Some INA219 breakout boards include them — check your module.
 - If pull-ups are not on the breakout board, add 4.7 kΩ resistors from SDA → 3.3V and SCL → 3.3V on the breadboard.
 
@@ -123,7 +123,7 @@ For prototype assembly on a 830-point breadboard:
 
 1. Place ESP32 Dev Board spanning the center divide
 2. Place SX1278 RA-02 on the right side of the breadboard
-3. Place INA219/226 breakout board below the SX1278
+3. Place INA219 breakout board below the SX1278
 4. Run power rails: 3.3V from ESP32 to the left power rail; GND to the right power rail
 5. Use the power rails to supply VCC and GND to both the SX1278 and INA
 
@@ -134,7 +134,7 @@ For prototype assembly on a 830-point breadboard:
 | A1–A30 | Left ESP32 pins |
 | J1–J30 | Right ESP32 pins |
 | A32–A40 | SX1278 RA-02 |
-| A42–A48 | INA219/226 |
+| A42–A48 | INA219 |
 | + Rail (left) | 3.3V from ESP32 |
 | – Rail (left) | GND |
 
@@ -142,21 +142,22 @@ For prototype assembly on a 830-point breadboard:
 
 ## Antenna Placement
 
-- Connect the 433 MHz spring antenna to the U.FL/IPX connector on the SX1278 RA-02 **before powering on**
+- Attach the U.FL/IPEX to SMA Adapter Cable to the IPX connector on the SX1278 RA-02 **before powering on**
+- Connect the 433MHz Rubber Duck SMA Antenna to the SMA end of the adapter cable
 - Position the antenna **vertically** for omnidirectional radiation
 - Keep the antenna ≥ 5 cm away from the ESP32 board, USB cable, and power bank to minimize RF interference
-- Avoid coiling or bending the spring antenna — this detunes it from 433 MHz
+- Secure the U.FL connector with a small dab of hot glue to prevent accidental disconnection
 
 ---
 
 ## Power Monitoring Inline Connection
 
-The INA219/226 is placed **inline** between the Power Bank and the ESP32 VIN:
+The INA219 is placed **inline** between the Power Bank and the ESP32 VIN:
 
 ```
 Power Bank (+5V USB)
     |
-    └── [VIN+] INA219/226 [VIN−] ── [0.1Ω Shunt] ── ESP32 VIN/USB
+    └── [VIN+] INA219 [VIN−] ── [0.1Ω Shunt] ── ESP32 VIN/USB
 ```
 
 In practice for breadboard prototyping:
@@ -164,4 +165,4 @@ In practice for breadboard prototyping:
 2. Route the +5V wire through the INA's VIN+ → Shunt → VIN− path
 3. GND connects directly from Power Bank to ESP32 GND
 
-Alternatively, if using the ESP32 USB port directly (not bare VIN), power monitoring can measure current from a USB power meter as an external tool during testing, and the INA219/226 can monitor the 3.3V rail instead with an inline shunt resistor on the 3.3V output.
+Alternatively, if using the ESP32 USB port directly (not bare VIN), power monitoring can measure current from a USB power meter as an external tool during testing, and the INA219 can monitor the 3.3V rail instead with an inline shunt resistor on the 3.3V output.

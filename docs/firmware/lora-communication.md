@@ -78,9 +78,9 @@ This data rate is intentionally low to maximize range and link budget.
 
 Range is calculated assuming:
 - TX power: +17 dBm
-- 433 MHz spring antenna (gain ≈ 2 dBi) on both ends
+- 433MHz Rubber Duck SMA antenna (gain ≈ 3 dBi) on both ends
 - Receiver sensitivity: –137 dBm (at SF10)
-- Link budget: ≈ 156 dB
+- Link budget: ≈ 157 dB
 
 ---
 
@@ -100,15 +100,15 @@ After each TX operation, the firmware immediately returns the radio to Receive C
 
 ## Antenna
 
-**Type:** 433 MHz Spring (Helical) Antenna  
-**Gain:** ~2 dBi  
+**Type:** 433MHz Rubber Duck SMA Antenna  
+**Gain:** ~3 dBi  
 **Impedance:** 50 Ω  
-**Connector:** IPX/U.FL on RA-02 module  
+**Connection:** Via U.FL/IPEX to SMA Adapter Cable → RA-02 IPX connector  
 
 > **Important:** The SX1278 RA-02 module must never be powered with the antenna disconnected while transmitting. Doing so can damage the RF output stage due to impedance mismatch and reflected power.
 
 ### Antenna Orientation
-For maximum range, orient the antenna vertically (perpendicular to the ground plane). Horizontal polarization reduces effective range by 20–30%.
+For maximum range, orient the Rubber Duck antenna vertically (perpendicular to the ground plane). Horizontal polarization reduces effective range by 20–30%.
 
 ---
 

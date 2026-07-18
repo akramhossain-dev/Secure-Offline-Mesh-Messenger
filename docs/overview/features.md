@@ -85,20 +85,24 @@ Audio is recorded on the Android device, compressed, chunked into LoRa-compatibl
 ## Emergency Features
 
 ### SOS System
-Pressing the SOS button:
+Pressing the SOS button inside the Android app:
 1. Sets the user's emergency status flag
-2. Sends a high-priority SOS packet with current GPS coordinates
+2. Sends a high-priority SOS packet with current phone GPS coordinates
 3. Repeats the SOS broadcast every 60 seconds until cancelled
 4. Other nodes store and forward the SOS across the mesh
+
+> GPS coordinates are sourced from the Android device's built-in GPS via the app. No external GPS hardware is required.
 
 ### Emergency Status
 Users can set themselves as "Emergency" or "Rescue" status. This status is embedded in HELLO packets and visible to all mesh participants. Rescue-status users receive priority routing.
 
 ### Location Sharing
-GPS coordinates are included in LOCATION packets. Sharing is:
-- Explicit — the user initiates it
+GPS coordinates are obtained from the Android device's built-in GPS and sent as LOCATION packets. Sharing is:
+- Explicit — the user initiates it from within the app
 - Time-limited — coordinates expire after a configurable duration
 - Visible only to contacts with permission granted
+
+The location data flows: **Phone GPS → Android App → Encrypted Location Data → LoRa Network**.
 
 ### Offline Maps
 The app includes a pre-loaded offline map (OpenStreetMap tiles). Contacts with active location sharing appear as map markers. The map works entirely without internet.
@@ -146,7 +150,7 @@ Users control whether their Node ID is advertised in BLE discovery. Setting visi
 
 ## Power Monitoring
 
-### INA219 / INA226 Integration
+### INA219 Integration
 The current sensor is polled every 5 seconds by the ESP32. Readings are:
 - Logged to SPIFFS for historical trending
 - Transmitted to the Android app via BLE status notification
@@ -154,7 +158,14 @@ The current sensor is polled every 5 seconds by the ESP32. Readings are:
 
 | Monitored Value | Source | Unit |
 |---|---|---|
-| Bus voltage | INA219/226 | V |
-| Shunt current | INA219/226 | mA |
+| Bus voltage | INA219 | V |
+| Shunt current | INA219 | mA |
 | Power consumption | Calculated | mW |
-| Estimated battery remaining | Calculated from Ah | % |
+| Device health | Derived | Status |
+
+### Battery Saving Mode
+When no BLE client is connected, the node automatically enters power-saving mode:
+- ESP32 enters light sleep between LoRa receive windows
+- LoRa transceiver reduces polling interval
+- BLE advertising interval is extended
+- INA219 polling is throttled to every 30 seconds
