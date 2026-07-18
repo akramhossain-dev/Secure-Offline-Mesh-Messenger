@@ -6,13 +6,24 @@
 package com.mesh.emergency.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
  * Database Entity mapping resources offers and requests logs.
+ *
+ * Indexes:
+ * - [type] for category-based filtering (A33.3)
+ * - [availabilityStatus] for status-based queries (A33.3)
  */
-@Entity(tableName = "resources")
+@Entity(
+    tableName = "resources",
+    indices = [
+        Index(value = ["type"]),
+        Index(value = ["availabilityStatus"])
+    ]
+)
 data class ResourceEntity(
     @PrimaryKey override val entityId: String,
     val ownerId: String,

@@ -20,8 +20,16 @@ import kotlinx.coroutines.flow.Flow
 interface ResourceDao {
 
     /** Streams published supply items. */
-    @Query("SELECT * FROM resources ORDER BY timestamp DESC")
+    @Query("SELECT * FROM resources ORDER BY createdTime DESC")
     fun getResources(): Flow<List<ResourceEntity>>
+
+    /** Paginated resource query with optional type filter (A33.3). */
+    @Query("SELECT * FROM resources WHERE (:type IS NULL OR type = :type) ORDER BY createdTime DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPagedResources(type: String?, limit: Int, offset: Int): List<ResourceEntity>
+
+    /** Get only available resources using index hint (A33.3). */
+    @Query("SELECT * FROM resources WHERE availabilityStatus IN ('AVAILABLE', 'LIMITED') ORDER BY createdTime DESC")
+    fun getAvailableResources(): Flow<List<ResourceEntity>>
 
     /** Insert or replace resource supply posts. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)

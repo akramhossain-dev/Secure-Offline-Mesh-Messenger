@@ -6,13 +6,24 @@
 package com.mesh.emergency.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
  * Database Entity mapping discovered mesh router nodes parameters.
+ *
+ * Indexes:
+ * - [deviceId] for fast device-based lookup (A33.3)
+ * - [lastSeen] for recency sorting (A33.3)
  */
-@Entity(tableName = "network_nodes")
+@Entity(
+    tableName = "network_nodes",
+    indices = [
+        Index(value = ["deviceId"]),
+        Index(value = ["lastSeen"])
+    ]
+)
 data class NetworkNodeEntity(
     @PrimaryKey override val entityId: String,
     val deviceId: String,

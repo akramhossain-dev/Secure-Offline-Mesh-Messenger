@@ -34,4 +34,12 @@ interface MessageDao {
     /** Delete message log. */
     @Delete
     suspend fun deleteMessage(message: MessageEntity)
+
+    /** Paginated message query for large conversations (A33.3). */
+    @Query("SELECT * FROM messages WHERE conversationId = :convId ORDER BY timestamp DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPagedMessages(convId: String, limit: Int, offset: Int): List<MessageEntity>
+
+    /** Count total messages in a conversation. */
+    @Query("SELECT COUNT(*) FROM messages WHERE conversationId = :convId")
+    suspend fun countMessages(convId: String): Int
 }

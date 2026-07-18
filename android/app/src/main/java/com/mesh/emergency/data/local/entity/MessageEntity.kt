@@ -6,13 +6,24 @@
 package com.mesh.emergency.data.local.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
  * Database Entity mapping message logs.
+ *
+ * Indexes:
+ * - [conversationId] for fast conversation query (A33.3)
+ * - [timestamp] for chronological sorting (A33.3)
  */
-@Entity(tableName = "messages")
+@Entity(
+    tableName = "messages",
+    indices = [
+        Index(value = ["conversationId"]),
+        Index(value = ["timestamp"])
+    ]
+)
 data class MessageEntity(
     @PrimaryKey override val entityId: String,
     val conversationId: String,

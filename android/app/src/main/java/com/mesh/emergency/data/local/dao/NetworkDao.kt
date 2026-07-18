@@ -34,4 +34,12 @@ interface NetworkDao {
     /** Delete node telemetry logs. */
     @Delete
     suspend fun deleteNode(node: NetworkNodeEntity)
+
+    /** Get only active (online/weak) nodes using indexed status lookup (A33.3). */
+    @Query("SELECT * FROM network_nodes WHERE status IN ('ONLINE', 'WEAK_CONNECTION') ORDER BY lastSeen DESC")
+    fun getActiveNodes(): Flow<List<NetworkNodeEntity>>
+
+    /** Get by device ID using index (A33.3). */
+    @Query("SELECT * FROM network_nodes WHERE deviceId = :deviceId LIMIT 1")
+    suspend fun getNodeByDeviceId(deviceId: String): NetworkNodeEntity?
 }

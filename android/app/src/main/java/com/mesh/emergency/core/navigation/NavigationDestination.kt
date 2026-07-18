@@ -53,6 +53,12 @@ sealed class NavigationDestination(val route: String) {
     /** Offline geographic map screen overlaying nearby contacts. */
     data object Map : NavigationDestination(NavRoutes.MAP)
 
+    /** Emergency resource sharing screen (A32.3). */
+    data object Resources : NavigationDestination(NavRoutes.RESOURCES)
+
+    /** Mesh node visualization screen (A32.5). */
+    data object Nodes : NavigationDestination(NavRoutes.NODES)
+
     /** Node network visualizer displaying route hops. */
     data object NetworkDashboard : NavigationDestination(NavRoutes.NETWORK_DASHBOARD)
 

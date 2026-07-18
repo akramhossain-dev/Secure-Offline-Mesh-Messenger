@@ -17,18 +17,20 @@ import com.mesh.emergency.core.presentation.base.PlaceholderScreen
 import com.mesh.emergency.feature.chat.CommunicationScreen
 import com.mesh.emergency.feature.contacts.DeviceScreen
 import com.mesh.emergency.feature.dashboard.HomeScreen
-import com.mesh.emergency.feature.dashboard.NetworkScreen
+import com.mesh.emergency.feature.dashboard.NetworkHealthScreen
+import com.mesh.emergency.feature.dashboard.NodeVisualizationScreen
 import com.mesh.emergency.feature.dashboard.SplashScreen
 import com.mesh.emergency.feature.emergency.presentation.EmergencyScreen
+import com.mesh.emergency.feature.map.MapScreen
 import com.mesh.emergency.feature.message.presentation.ChatScreen
 import com.mesh.emergency.feature.message.presentation.MessageListScreen
+import com.mesh.emergency.feature.resources.ResourceScreen
 import com.mesh.emergency.feature.settings.SettingsScreen
 
 /**
  * Main application navigation graph.
  *
- * Phase A28/A29: Emergency, MessageList, and Chat screens are wired.
- * Remaining destinations retain placeholder screens until Phases A30+.
+ * Phase A32: MapScreen, ResourceScreen, NetworkHealthScreen, NodeVisualizationScreen wired.
  */
 @Composable
 fun AppNavGraph(
@@ -158,14 +160,24 @@ fun AppNavGraph(
             EmergencyScreen()
         }
 
-        // ── Offline Map ───────────────────────────────────────────────────────
+        // ── Offline Map ─────────────────────────────────────────────────────────────────
         composable(route = NavigationDestination.Map.route) {
-            PlaceholderScreen(title = "Offline Maps")
+            MapScreen(onBack = { navController.popBackStack() })
         }
 
-        // ── Network Dashboard ─────────────────────────────────────────────────
+        // ── Network Health Dashboard (A32.4) ──────────────────────────────────────────
         composable(route = NavigationDestination.NetworkDashboard.route) {
-            NetworkScreen()
+            NetworkHealthScreen()
+        }
+
+        // ── Resource Sharing (A32.3) ────────────────────────────────────────────────
+        composable(route = NavigationDestination.Resources.route) {
+            ResourceScreen()
+        }
+
+        // ── Node Visualization (A32.5) ───────────────────────────────────────────────
+        composable(route = NavigationDestination.Nodes.route) {
+            NodeVisualizationScreen()
         }
 
         // ── Profile ───────────────────────────────────────────────────────────
