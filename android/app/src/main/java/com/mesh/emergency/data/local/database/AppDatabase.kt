@@ -17,6 +17,7 @@ import com.mesh.emergency.data.local.dao.MessageDao
 import com.mesh.emergency.data.local.dao.NetworkDao
 import com.mesh.emergency.data.local.dao.ResourceDao
 import com.mesh.emergency.data.local.dao.UserDao
+import com.mesh.emergency.data.local.dao.VoiceMessageDao
 import com.mesh.emergency.data.local.entity.ConversationEntity
 import com.mesh.emergency.data.local.entity.DeliveryStatusEntity
 import com.mesh.emergency.data.local.entity.DeviceEntity
@@ -26,6 +27,7 @@ import com.mesh.emergency.data.local.entity.MessageEntity
 import com.mesh.emergency.data.local.entity.NetworkNodeEntity
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.data.local.entity.UserEntity
+import com.mesh.emergency.data.local.entity.VoiceMessageEntity
 
 /**
  * Main persistent Room Database containing all offline tables.
@@ -40,7 +42,8 @@ import com.mesh.emergency.data.local.entity.UserEntity
         EmergencyEventEntity::class,
         LocationEntity::class,
         ResourceEntity::class,
-        DeliveryStatusEntity::class
+        DeliveryStatusEntity::class,
+        VoiceMessageEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -57,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun resourceDao(): ResourceDao
     abstract fun emergencyEventDao(): EmergencyEventDao
     abstract fun deliveryStatusDao(): DeliveryStatusDao
+    abstract fun voiceMessageDao(): VoiceMessageDao
 
     companion object {
         const val DATABASE_NAME = "mesh_emergency.db"

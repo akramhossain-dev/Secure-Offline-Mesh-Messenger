@@ -72,4 +72,9 @@ interface LocalDataSource {
     fun getDeliveryStatusesForMessage(msgId: String): Flow<List<DeliveryStatusEntity>>
     suspend fun insertDeliveryStatus(status: DeliveryStatusEntity)
     suspend fun deleteDeliveryStatus(status: DeliveryStatusEntity)
+
+    // ── Voice Message Operations ──────────────────────────────────────────────
+    fun getVoiceMessages(): Flow<List<com.mesh.emergency.data.local.entity.VoiceMessageEntity>>
+    suspend fun insertVoiceMessage(voice: com.mesh.emergency.data.local.entity.VoiceMessageEntity)
+    suspend fun deleteVoiceMessage(id: String)
 }

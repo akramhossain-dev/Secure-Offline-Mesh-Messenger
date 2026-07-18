@@ -10,14 +10,43 @@ import androidx.room.PrimaryKey
 import com.mesh.emergency.core.model.BaseEntity
 
 /**
- * Database Entity representing active mesh hardware bridges (ESP32/LoRa).
+ * Database Entity mapping discovered mesh router nodes parameters.
  */
 @Entity(tableName = "network_nodes")
 data class NetworkNodeEntity(
     @PrimaryKey override val entityId: String,
-    val nodeName: String,
-    val nodeType: String,
-    val status: String,
-    val lastSeen: Long,
-    val signalPlaceholder: String?
+    val deviceId: String,
+    val nodeType: DbNodeType = DbNodeType.PHONE_NODE,
+    val status: DbNodeStatus = DbNodeStatus.UNKNOWN,
+    val rssi: Int = -100,
+    val signalQuality: Float = 0.0f,
+    val connectionType: String = "BLE",
+    val batteryLevel: Int = 100,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val lastSeen: Long = System.currentTimeMillis(),
+    val hopCount: Int = 1,
+    val relayCapability: Boolean = true,
+    val networkDistance: Int = 1
 ) : BaseEntity
+
+/**
+ * Node hardware categories.
+ */
+enum class DbNodeType {
+    PHONE_NODE,
+    LORA_NODE,
+    RELAY_NODE,
+    GATEWAY_NODE
+}
+
+/**
+ * Node connectivity check state.
+ */
+enum class DbNodeStatus {
+    ONLINE,
+    OFFLINE,
+    WEAK_CONNECTION,
+    UNKNOWN,
+    UNAVAILABLE
+}

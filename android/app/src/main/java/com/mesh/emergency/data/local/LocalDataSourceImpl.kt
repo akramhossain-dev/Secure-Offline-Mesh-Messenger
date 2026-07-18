@@ -36,6 +36,7 @@ class LocalDataSourceImpl @Inject constructor(
     private val resourceDao = database.resourceDao()
     private val emergencyEventDao = database.emergencyEventDao()
     private val deliveryStatusDao = database.deliveryStatusDao()
+    private val voiceMessageDao = database.voiceMessageDao()
 
     override fun getCurrentUser(): Flow<UserEntity?> = userDao.getCurrentUser()
 
@@ -124,4 +125,10 @@ class LocalDataSourceImpl @Inject constructor(
 
     override suspend fun deleteDeliveryStatus(status: DeliveryStatusEntity) =
         deliveryStatusDao.deleteDeliveryStatus(status)
+
+    override fun getVoiceMessages(): Flow<List<VoiceMessageEntity>> = voiceMessageDao.getVoiceMessages()
+
+    override suspend fun insertVoiceMessage(voice: VoiceMessageEntity) = voiceMessageDao.insertVoiceMessage(voice)
+
+    override suspend fun deleteVoiceMessage(id: String) = voiceMessageDao.deleteVoiceMessage(id)
 }

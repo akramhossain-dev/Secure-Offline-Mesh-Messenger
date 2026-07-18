@@ -11,6 +11,10 @@ import com.mesh.emergency.data.local.entity.DbEmergencyStatus
 import com.mesh.emergency.data.local.entity.DbEmergencyType
 import com.mesh.emergency.data.local.entity.DbMessagePriority
 import com.mesh.emergency.data.local.entity.DbMessageType
+import com.mesh.emergency.data.local.entity.DbNodeStatus
+import com.mesh.emergency.data.local.entity.DbNodeType
+import com.mesh.emergency.data.local.entity.DbResourcePrivacy
+import com.mesh.emergency.data.local.entity.DbResourceStatus
 import com.mesh.emergency.data.local.entity.DbTrustStatus
 
 /**
@@ -59,4 +63,32 @@ class Converters {
     @TypeConverter
     fun toEmergencyStatus(value: String): DbEmergencyStatus =
         DbEmergencyStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromResourceStatus(status: DbResourceStatus): String = status.name
+
+    @TypeConverter
+    fun toResourceStatus(value: String): DbResourceStatus =
+        DbResourceStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromResourcePrivacy(privacy: DbResourcePrivacy): String = privacy.name
+
+    @TypeConverter
+    fun toResourcePrivacy(value: String): DbResourcePrivacy =
+        DbResourcePrivacy.valueOf(value)
+
+    @TypeConverter
+    fun fromNodeType(type: DbNodeType): String = type.name
+
+    @TypeConverter
+    fun toNodeType(value: String): DbNodeType =
+        DbNodeType.valueOf(value)
+
+    @TypeConverter
+    fun fromNodeStatus(status: DbNodeStatus): String = status.name
+
+    @TypeConverter
+    fun toNodeStatus(value: String): DbNodeStatus =
+        DbNodeStatus.valueOf(value)
 }
