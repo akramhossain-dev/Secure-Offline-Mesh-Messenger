@@ -14,9 +14,19 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.mesh.emergency.core.presentation.base.PlaceholderScreen
+import com.mesh.emergency.feature.chat.CommunicationScreen
+import com.mesh.emergency.feature.contacts.DeviceScreen
+import com.mesh.emergency.feature.dashboard.HomeScreen
+import com.mesh.emergency.feature.dashboard.NetworkScreen
+import com.mesh.emergency.feature.dashboard.SplashScreen
+import com.mesh.emergency.feature.settings.SettingsScreen
 
 /**
- * Main application navigation graph mapping routes and deep-links to placeholder screens.
+ * Main application navigation graph.
+ *
+ * Phase A26/A27: Splash, Home, Devices, Network, Communication, and Settings
+ * are wired to real composable screens. Remaining destinations retain placeholder
+ * screens until Phases A28–A30.
  */
 @Composable
 fun AppNavGraph(
@@ -34,25 +44,36 @@ fun AppNavGraph(
     ) {
         // ── Splash ────────────────────────────────────────────────────────────
         composable(route = NavigationDestination.Splash.route) {
-            PlaceholderScreen(title = "Splash")
+            SplashScreen(
+                onNavigateToHome = {
+                    navController.navigate(NavigationDestination.Home.route) {
+                        popUpTo(NavigationDestination.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
-        // ── Onboarding ────────────────────────────────────────────────────────
+        // ── Onboarding (future A28) ───────────────────────────────────────────
         composable(route = NavigationDestination.Onboarding.route) {
             PlaceholderScreen(title = "Onboarding")
         }
 
-        // ── Home ──────────────────────────────────────────────────────────────
+        // ── Home Dashboard ────────────────────────────────────────────────────
         composable(route = NavigationDestination.Home.route) {
-            PlaceholderScreen(title = "Home")
+            HomeScreen(
+                onNavigateToEmergency = {
+                    navController.navigate(NavigationDestination.Emergency.route)
+                }
+            )
         }
 
-        // ── Chat List ─────────────────────────────────────────────────────────
+        // ── Chat List (future A28) ────────────────────────────────────────────
         composable(route = NavigationDestination.ChatList.route) {
-            PlaceholderScreen(title = "Chats")
+            CommunicationScreen()
         }
 
-        // ── Chat Detail (with parameter and deep link support) ────────────────
+        // ── Chat Detail ───────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.ChatDetail.route,
             arguments = listOf(
@@ -63,7 +84,7 @@ fun AppNavGraph(
             )
         ) { backStackEntry ->
             val contactId = backStackEntry.arguments?.getString("contactId") ?: "unknown"
-            PlaceholderScreen(title = "Chat Session with $contactId")
+            PlaceholderScreen(title = "Chat with $contactId")
         }
 
         // ── Global Chat ───────────────────────────────────────────────────────
@@ -71,9 +92,13 @@ fun AppNavGraph(
             PlaceholderScreen(title = "Global Broadcast Chat")
         }
 
-        // ── Contacts ──────────────────────────────────────────────────────────
+        // ── Devices / Contacts ────────────────────────────────────────────────
         composable(route = NavigationDestination.Contacts.route) {
-            PlaceholderScreen(title = "Contacts")
+            DeviceScreen(
+                onNavigateToQrPair = {
+                    navController.navigate(NavigationDestination.QrPair.route)
+                }
+            )
         }
 
         // ── QR Pair ───────────────────────────────────────────────────────────
@@ -97,7 +122,7 @@ fun AppNavGraph(
             PlaceholderScreen(title = "Emergency Console")
         }
 
-        // ── SOS Active (with deep link support) ──────────────────────────────
+        // ── SOS Active ────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.SosActive.route,
             deepLinks = listOf(
@@ -114,10 +139,10 @@ fun AppNavGraph(
 
         // ── Network Dashboard ─────────────────────────────────────────────────
         composable(route = NavigationDestination.NetworkDashboard.route) {
-            PlaceholderScreen(title = "Network Diagnostics")
+            NetworkScreen()
         }
 
-        // ── Profile (with deep link support) ──────────────────────────────────
+        // ── Profile ───────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.Profile.route,
             deepLinks = listOf(
@@ -127,14 +152,14 @@ fun AppNavGraph(
             PlaceholderScreen(title = "My Profile")
         }
 
-        // ── Settings (with deep link support) ─────────────────────────────────
+        // ── Settings ──────────────────────────────────────────────────────────
         composable(
             route = NavigationDestination.Settings.route,
             deepLinks = listOf(
                 navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/settings" }
             )
         ) {
-            PlaceholderScreen(title = "Settings")
+            SettingsScreen()
         }
 
         // ── About ─────────────────────────────────────────────────────────────

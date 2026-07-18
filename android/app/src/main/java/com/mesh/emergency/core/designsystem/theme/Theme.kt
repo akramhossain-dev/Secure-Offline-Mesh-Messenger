@@ -131,7 +131,8 @@ fun MeshTheme(
 
     CompositionLocalProvider(
         LocalSpacing provides Spacing(),
-        LocalSemanticColors provides semanticColors
+        LocalSemanticColors provides semanticColors,
+        LocalAuroraColors provides if (darkTheme) DarkAuroraColors else LightAuroraColors
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
@@ -155,4 +156,7 @@ object MeshThemeTokens {
 
     val semanticColors: SemanticColors
         @Composable get() = LocalSemanticColors.current
+
+    val auroraColors: AuroraColors
+        @Composable get() = LocalAuroraColors.current
 }
