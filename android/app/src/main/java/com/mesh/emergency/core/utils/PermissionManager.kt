@@ -6,23 +6,26 @@
 package com.mesh.emergency.core.utils
 
 import android.content.Context
+import com.mesh.emergency.core.utils.permission.PermissionState
+import com.mesh.emergency.core.utils.permission.PermissionType
 
 /**
- * Interface contract for managing Android runtime permissions.
+ * Interface contract for managing Android runtime permissions using typed categories.
  */
 interface PermissionManager {
-    /**
-     * Checks if a single [permission] has been granted.
-     */
-    fun hasPermission(context: Context, permission: String): Boolean
 
     /**
-     * Checks if all listed [permissions] have been granted.
+     * Inspects permission states for a specific [type].
      */
-    fun hasPermissions(context: Context, vararg permissions: String): Boolean
+    fun getPermissionState(context: Context, type: PermissionType): PermissionState
 
     /**
-     * Returns true if the app should show UI explaining why the permission is needed.
+     * Checks if all required permissions for a [type] have been granted.
      */
-    fun shouldShowRationale(activity: android.app.Activity, permission: String): Boolean
+    fun hasPermission(context: Context, type: PermissionType): Boolean
+
+    /**
+     * Returns true if the app should show UI explaining why the permissions are needed.
+     */
+    fun shouldShowRationale(activity: android.app.Activity, type: PermissionType): Boolean
 }
