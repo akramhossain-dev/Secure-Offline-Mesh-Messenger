@@ -1,12 +1,8 @@
-# Architecture Overview — Phase A1
+# Architecture Overview — Phase A2
 
-## Pattern: Clean Architecture + MVVM
+## Pattern: Clean Architecture + MVVM + MVI
 
-The Offline Emergency Mesh Communication System follows **Clean Architecture** with **MVVM** presentation pattern. This enforces strict separation of concerns, making the codebase:
-
-- **Testable** — domain logic has no Android dependencies
-- **Maintainable** — each layer has a single responsibility
-- **Scalable** — new features are added without modifying existing layers
+The Offline Emergency Mesh Communication System follows **Clean Architecture** with an **MVI-inspired MVVM** (Model-View-Intent / Model-View-ViewModel) presentation pattern. This enforces strict separation of concerns, making the codebase testable, maintainable, and robust against offline sync environments.
 
 ---
 
@@ -20,12 +16,12 @@ The Offline Emergency Mesh Communication System follows **Clean Architecture** w
 │  │  (Stateless UI)   │       │  (StateFlow, UDF) │             │
 │  └───────────────────┘       └─────────┬─────────┘             │
 └─────────────────────────────────────────│───────────────────────┘
-                                          │ invokes
+                                          │ invokes UseCases
 ┌─────────────────────────────────────────▼───────────────────────┐
 │                       Domain Layer                              │
 │  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐  │
 │  │   Use Cases    │  │ Domain Models  │  │ Repository       │  │
-│  │ (1 per action) │  │ (pure Kotlin)  │  │ Interfaces       │  │
+│  │ (Suspend/Flow) │  │  (BaseModel)   │  │ Interfaces       │  │
 │  └────────────────┘  └────────────────┘  └─────────┬────────┘  │
 └─────────────────────────────────────────────────────│───────────┘
                                                       │ implemented by
@@ -33,10 +29,9 @@ The Offline Emergency Mesh Communication System follows **Clean Architecture** w
 │                        Data Layer                               │
 │  ┌────────────────┐  ┌────────────────┐  ┌──────────────────┐  │
 │  │  Repository    │  │  Room Database │  │ Communication    │  │
-│  │  Impls         │  │  (DAOs, DAOs)  │  │ Manager (BLE,    │  │
-│  └────────────────┘  └────────────────┘  │ LoRa, S&F)       │  │
-│                                           └──────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+│  │  Impls         │  │ (BaseEntity DB)│  │ Managers (BLE,   │  │
+│  └────────────────┘  └────────────────┘  │ LoRa stubs)      │  │
+└──────────────────────────────────────────┴──────────────────────┘
 ```
 
 ---
@@ -47,50 +42,43 @@ The Offline Emergency Mesh Communication System follows **Clean Architecture** w
 com.mesh.emergency/
 │
 ├── app/                          # Application + Activity
-│   ├── MeshApplication.kt        # @HiltAndroidApp, Timber init
+│   ├── MeshApplication.kt        # @HiltAndroidApp, Timber/Logger init
 │   └── MainActivity.kt           # Compose host, edge-to-edge
 │
 ├── core/
 │   ├── common/
-│   │   ├── config/               # AppConfig, BuildInfo, FeatureFlags
+│   │   ├── config/               # AppConfiguration, Feature, AppConfig, BuildInfo
 │   │   ├── constants/            # AppConstants (BLE UUIDs, keys, etc.)
 │   │   ├── extensions/           # Context, String, Flow extensions
 │   │   ├── localization/         # LocaleManager, SupportedLanguage
-│   │   ├── logging/              # AppLogger (Timber wrapper)
+│   │   ├── logging/              # Logger, LoggerImpl, AppLogger (wrapper)
 │   │   └── result/               # Result<T> sealed class
 │   │
+│   ├── communication/            # TransportManager, TransportManagerStub, ConnectionState
 │   ├── designsystem/
 │   │   └── theme/                # Color, Theme, Typography, Shape, Spacing
 │   │
-│   ├── navigation/               # NavRoutes (route constants)
-│   └── utils/                    # DateUtils, PermissionHelper
+│   ├── error/                    # AppException, Failure, ErrorMapper
+│   ├── model/                    # BaseModel (domain), BaseEntity (data)
+│   ├── navigation/               # NavRoutes, NavigationDestination, AppNavigator
+│   ├── presentation/
+│   │   └── base/                 # BaseUiState, BaseUiEvent, BaseUiEffect, BaseViewModel, BaseScreen
+│   ├── storage/                  # StorageManager, StorageManagerImpl
+│   └── utils/                    # LocationProvider, LocationProviderStub, PermissionManager, PermissionManagerImpl
 │
 ├── di/                           # Hilt modules
-│   └── AppModule.kt              # DataStore provision
+│   ├── AppModule.kt              # DataStore + StorageManager provision
+│   ├── CoreModule.kt             # Logger, Transport, Config bindings
+│   ├── UtilityModule.kt          # PermissionManager, LocationProvider bindings
+│   ├── DispatcherModule.kt       # IO, Default, Main Dispatchers
+│   └── RepositoryModule.kt       # Repositories contracts bindings
 │
-├── feature/                      # Feature modules (Phase A2+)
-│   ├── chat/
-│   ├── contacts/
-│   ├── emergency/
-│   ├── map/
-│   ├── dashboard/
-│   ├── settings/
-│   └── profile/
+├── feature/                      # Feature modules (stubs)
+├── domain/                       # Domain layer contracts
+│   └── repository/               # UserRepository, MessageRepository, DeviceRepository, etc.
 │
-├── domain/                       # Domain layer (Phase A2+)
-│   ├── model/                    # Pure Kotlin domain models
-│   ├── usecase/                  # Use case interfaces
-│   └── repository/               # Repository interfaces
-│
-├── data/                         # Data layer (Phase A2+)
-│   ├── local/                    # Room database, DAOs
-│   ├── communication/            # BLE + LoRa + Store & Forward
-│   ├── crypto/                   # AES-256-GCM encryption
-│   └── repository/               # Repository implementations
-│
-└── hardware/                     # Hardware abstraction (Phase A2+)
-    ├── bluetooth/                # BLE hardware interface
-    └── lora/                     # LoRa hardware interface
+└── data/                         # Data layer
+    └── repository/               # UserRepositoryImpl, MessageRepositoryImpl, etc.
 ```
 
 ---
@@ -105,70 +93,87 @@ Presentation → Domain ← Data
 
 | Layer | Can Import | Cannot Import |
 |---|---|---|
-| Presentation | Domain only | Data, Hardware |
-| Domain | Nothing (pure Kotlin) | Presentation, Data, Android |
-| Data | Domain (interfaces) | Presentation |
-| Hardware | Nothing | All layers |
+| **Presentation** | `Domain`, `Core` | `Data`, `Hardware` |
+| **Domain** | `Core` (only models/contracts) | `Presentation`, `Data`, Android SDK |
+| **Data** | `Domain` (interfaces), `Core` | `Presentation` |
+| **Core** | Minimal external deps (Base types only) | `Presentation`, `Domain`, `Data` |
 
 ---
 
-## Key Design Decisions
+## MVVM / MVI Implementation Rules
 
 ### 1. Unidirectional Data Flow (UDF)
-All state flows from ViewModel → Compose. User events flow Compose → ViewModel → UseCase.
+Compose screens observe a single read-only state and pass user actions to ViewModels as events.
+
+- **State (`BaseUiState`)**: Represents the absolute state of the UI at any point. Must be immutable.
+- **Event (`BaseUiEvent`)**: User intentions triggered by widgets (e.g. typing, clicking buttons).
+- **Effect (`BaseUiEffect`)**: Fire-and-forget transient commands handled on the UI thread (e.g. Navigating, showing Snackbar).
 
 ```
-User action → Composable → ViewModel.onEvent() → UseCase → Repository
-                                ↑
-Result → StateFlow<UiState> → Composable rerenders
+Compose Layout ──[Event]──► BaseViewModel.onEvent() ──► Business Logic
+      ▲                                                    │
+      │                                                Update State
+      └──────────[StateFlow<BaseUiState>]──────────────────┘
 ```
 
-### 2. StateFlow for UI state
-Each ViewModel exposes a single `StateFlow<UiState>` representing the complete screen state:
-
+### 2. BaseViewModel Contract
+Every ViewModel must extend `BaseViewModel`:
 ```kotlin
-data class ChatUiState(
-    val messages: List<Message> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-)
+class ChatViewModel @Inject constructor(
+    private val sendMessageUseCase: SendMessageUseCase
+) : BaseViewModel<ChatUiState, ChatUiEvent, ChatUiEffect>(ChatUiState()) {
+
+    override fun onEvent(event: ChatUiEvent) {
+        when (event) {
+            is ChatUiEvent.SendMessage -> performSend(event.text)
+        }
+    }
+}
 ```
-
-### 3. Result wrapper
-All repository and use case functions return `Result<T>`:
-- `Result.Loading` — operation in progress
-- `Result.Success(data)` — operation succeeded
-- `Result.Error(exception)` — operation failed
-
-### 4. Hilt for dependency injection
-All `@Singleton` and `@HiltViewModel` annotated classes are injected automatically. No manual factory construction.
-
-### 5. Feature flags
-Every feature is gated behind a `FeatureFlags` constant. In Phase A1, all flags are `false`. This allows safe deployment of incomplete features.
 
 ---
 
-## Phase A1 Status
+## Use Case Architectural Mechanics
 
-Phase A1 implements the **foundation only**:
+Use Cases execute business logic off the Main thread and return standard `Result` wrappers:
 
-| Component | Status |
-|---|---|
-| Gradle + Version Catalog | ✅ Complete |
-| Package structure | ✅ Stubs created |
-| Material Design 3 theme | ✅ Complete |
-| Localization infrastructure | ✅ Complete |
-| Logging (Timber) | ✅ Complete |
-| Result wrapper | ✅ Complete |
-| Extension functions | ✅ Complete |
-| DI foundation (Hilt + DataStore) | ✅ Complete |
-| Code quality tooling | ✅ Complete |
-| Git foundation | ✅ Complete |
-| Feature modules | 🔲 Stubs only (Phase A2+) |
-| Navigation graph | 🔲 Phase A2 |
-| Room Database | 🔲 Phase A2 |
-| BLE transport | 🔲 Phase A2 |
-| LoRa transport | 🔲 Phase A3 |
+- **`SuspendUseCase`**: Use for single one-shot transactional operations (e.g. setting profile, sending commands).
+- **`FlowUseCase`**: Use for continuous data stream queries (e.g. database change observers, location updates).
+
+---
+
+## Error Handling Standards
+
+All exceptions should be parsed into user-friendly failures:
+1. Lower layers raise an `AppException` (e.g. `AppException.Database`, `AppException.Bluetooth`).
+2. UseCases/Repositories catch standard exceptions and map them.
+3. `ErrorMapper` maps `AppException` to a domain-level `Failure` class (e.g. `Failure.Database`).
+4. Presentation displays appropriate error strings using the `Failure` details.
+
+---
+
+## Navigation Architecture
+
+Navigation is coordinate-managed:
+- **`NavigationDestination`** specifies logical paths (e.g. `ChatDetail.createRoute(id)`).
+- **`AppNavigator`** coordinates the NavActions list. ViewModels inject `AppNavigator` to trigger route jumps without direct references to Jetpack Navigation components.
+
+---
+
+## Phase A2 Status
+
+Phase A2 implements the **complete core application architecture**:
+
+| Component | Status | Description |
+|---|---|---|
+| **MVVM Foundation** | ✅ Complete | BaseUiState, BaseUiEvent, BaseUiEffect, BaseViewModel, BaseScreen |
+| **DI Abstractions** | ✅ Complete | DispatcherModule, CoreModule, UtilityModule, RepositoryModule |
+| **Repository Contracts**| ✅ Complete | UserRepository, MessageRepository, DeviceRepository, SettingsRepository, etc. |
+| **Use Case Core** | ✅ Complete | SuspendUseCase, FlowUseCase, BaseUseCase |
+| **Error Handling** | ✅ Complete | AppException, Failure, ErrorMapper |
+| **Navigation Core** | ✅ Complete | NavigationDestination, AppNavigator, NavigationAction |
+| **Service Contracts** | ✅ Complete | Logger, PermissionManager, LocationProvider, TransportManager, StorageManager |
+| **Config Core** | ✅ Complete | AppConfiguration, AppConfigurationImpl, Feature enum |
 
 ---
 
