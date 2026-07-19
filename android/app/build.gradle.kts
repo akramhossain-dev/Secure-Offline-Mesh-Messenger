@@ -199,6 +199,8 @@ dependencies {
 
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation(libs.bundles.testing.unit)
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     androidTestImplementation(libs.bundles.testing.android)
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)

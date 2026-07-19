@@ -56,6 +56,7 @@ interface LocalDataSource {
 
     // ── Location Operations ───────────────────────────────────────────────────
     fun getLocationsForUser(userId: String): Flow<List<LocationEntity>>
+    fun getAllLocations(): Flow<List<LocationEntity>>
     suspend fun insertLocation(location: LocationEntity)
     suspend fun deleteLocation(location: LocationEntity)
 

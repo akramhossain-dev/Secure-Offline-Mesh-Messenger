@@ -31,6 +31,12 @@ class LocationRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllLocations(): Flow<Result<List<LocationData>>> {
+        return localDataSource.getAllLocations().map { list ->
+            Result.Success(list.map { it.toDomain() })
+        }
+    }
+
     override suspend fun saveLocation(location: LocationData): Result<Unit> {
         return try {
             val entity = LocationEntity(

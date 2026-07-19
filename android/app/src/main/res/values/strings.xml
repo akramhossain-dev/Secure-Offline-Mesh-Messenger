@@ -82,6 +82,24 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_bangla">বাংলা</string>
 
+    <!-- Actions & Developer Settings -->
+    <string name="settings_delete_messages">Delete All Messages</string>
+    <string name="settings_remove_devices">Remove Paired Devices</string>
+    <string name="settings_rotate_keys">Rotate Cryptographic Keys</string>
+    <string name="settings_wipe_data">Wipe All Application Data</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_debug_mode">Debug Mode</string>
+    <string name="settings_debug_mode_desc">Show verbose logs</string>
+    <string name="settings_clear_logs">Clear Diagnostic Logs</string>
+
+    <!-- Home Screen -->
+    <string name="home_mesh_connected">Mesh Connected</string>
+    <string name="home_offline_mode">Offline Mode</string>
+    <string name="home_sos_broadcasting">Emergency SOS is broadcasting to all mesh nodes</string>
+    <string name="home_sos_button_desc">Press and hold to broadcast distress signal</string>
+    <string name="home_recent_activity">Recent Activity</string>
+    <string name="home_no_activity">No recent activity</string>
+
     <!-- About -->
     <string name="settings_about_version">Version</string>
     <string name="settings_about_build">Build</string>

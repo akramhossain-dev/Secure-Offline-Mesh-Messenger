@@ -42,7 +42,7 @@ class LocaleManager @Inject constructor(
 ) {
 
     private val TAG = "LocaleManager"
-    private val keyLanguage = stringPreferencesKey(AppConstants.PREF_KEY_LANGUAGE)
+    private val keyLanguage = stringPreferencesKey("app_language_code")
 
     // ─────────────────────────────────────────────────────────────────────────
     // Observe preference

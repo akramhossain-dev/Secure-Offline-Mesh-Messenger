@@ -38,9 +38,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.BatteryStatusCard
 import com.mesh.emergency.core.designsystem.component.GlassPanel
@@ -60,6 +62,7 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 @Composable
 fun HomeScreen(
     onNavigateToEmergency: () -> Unit,
+    onOpenDrawer: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -81,14 +84,22 @@ fun HomeScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(
+                                imageVector = com.mesh.emergency.core.designsystem.icon.MeshIcons.Menu,
+                                contentDescription = "Menu"
+                            )
+                        }
+                    },
                     title = {
                         Column {
                             Text(
-                                text = uiState.appName,
+                                text = stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                text = if (uiState.isOnline) "Mesh Connected" else "Offline Mode",
+                                text = if (uiState.isOnline) stringResource(R.string.home_mesh_connected) else stringResource(R.string.home_offline_mode),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (uiState.isOnline)
                                     MeshThemeTokens.semanticColors.connected
@@ -122,7 +133,7 @@ fun HomeScreen(
                     item {
                         SosIndicatorBanner(
                             isActive = true,
-                            messageText = "Emergency SOS is broadcasting to all mesh nodes",
+                            messageText = stringResource(R.string.home_sos_broadcasting),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -158,13 +169,13 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "Emergency SOS",
+                                text = stringResource(R.string.nav_emergency),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "Press and hold to broadcast distress signal",
+                                text = stringResource(R.string.home_sos_button_desc),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -179,7 +190,7 @@ fun HomeScreen(
                 // ── Recent Activity ───────────────────────────────────────────
                 item {
                     Text(
-                        text = "Recent Activity",
+                        text = stringResource(R.string.home_recent_activity),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -193,7 +204,7 @@ fun HomeScreen(
                     item {
                         GlassPanel(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "No recent activity",
+                                text = stringResource(R.string.home_no_activity),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

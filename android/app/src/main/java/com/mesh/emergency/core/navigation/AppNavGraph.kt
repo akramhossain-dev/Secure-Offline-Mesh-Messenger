@@ -24,8 +24,11 @@ import com.mesh.emergency.feature.emergency.presentation.EmergencyScreen
 import com.mesh.emergency.feature.map.MapScreen
 import com.mesh.emergency.feature.message.presentation.ChatScreen
 import com.mesh.emergency.feature.message.presentation.MessageListScreen
+import com.mesh.emergency.feature.message.presentation.QrPairScreen
+import com.mesh.emergency.feature.profile.ProfileScreen
 import com.mesh.emergency.feature.resources.ResourceScreen
 import com.mesh.emergency.feature.settings.SettingsScreen
+import com.mesh.emergency.feature.settings.AboutScreen
 
 /**
  * Main application navigation graph.
@@ -35,6 +38,7 @@ import com.mesh.emergency.feature.settings.SettingsScreen
 @Composable
 fun AppNavGraph(
     navController: NavHostController,
+    onOpenDrawer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     NavHost(
@@ -66,6 +70,7 @@ fun AppNavGraph(
         // ── Home Dashboard ────────────────────────────────────────────────────
         composable(route = NavigationDestination.Home.route) {
             HomeScreen(
+                onOpenDrawer = onOpenDrawer,
                 onNavigateToEmergency = {
                     navController.navigate(NavRoutes.EMERGENCY_DASHBOARD)
                 }
@@ -130,7 +135,7 @@ fun AppNavGraph(
 
         // ── QR Pair ───────────────────────────────────────────────────────────
         composable(route = NavigationDestination.QrPair.route) {
-            PlaceholderScreen(title = "QR Scanner Pair")
+            QrPairScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Contact Detail ────────────────────────────────────────────────────
@@ -185,7 +190,7 @@ fun AppNavGraph(
             route = NavigationDestination.Profile.route,
             deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/profile" })
         ) {
-            PlaceholderScreen(title = "My Profile")
+            ProfileScreen()
         }
 
         // ── Settings ──────────────────────────────────────────────────────────
@@ -198,7 +203,7 @@ fun AppNavGraph(
 
         // ── About ─────────────────────────────────────────────────────────────
         composable(route = NavigationDestination.About.route) {
-            PlaceholderScreen(title = "About App")
+            AboutScreen()
         }
     }
 }

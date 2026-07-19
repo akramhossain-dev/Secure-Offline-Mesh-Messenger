@@ -10,21 +10,29 @@ import com.mesh.emergency.core.notification.AlertPriority
 import com.mesh.emergency.core.notification.AlertType
 import com.mesh.emergency.data.local.entity.ConversationEntity
 import com.mesh.emergency.data.local.entity.DeviceEntity
+import com.mesh.emergency.data.local.entity.DbTrustStatus
 import com.mesh.emergency.data.local.entity.EmergencyEventEntity
+import com.mesh.emergency.data.local.entity.DbEmergencyType
+import com.mesh.emergency.data.local.entity.DbEmergencyStatus
 import com.mesh.emergency.data.local.entity.LocationEntity
 import com.mesh.emergency.data.local.entity.LogEntity
 import com.mesh.emergency.data.local.entity.MessageEntity
+import com.mesh.emergency.data.local.entity.DbDeliveryStatus
+import com.mesh.emergency.data.local.entity.DbMessageType
+import com.mesh.emergency.data.local.entity.DbMessagePriority
 import com.mesh.emergency.data.local.entity.NetworkNodeEntity
+import com.mesh.emergency.data.local.entity.DbNodeType
+import com.mesh.emergency.data.local.entity.DbNodeStatus
 import com.mesh.emergency.data.local.entity.ResourceEntity
+import com.mesh.emergency.data.local.entity.DbResourceStatus
+import com.mesh.emergency.data.local.entity.DbResourcePrivacy
 import com.mesh.emergency.data.local.entity.UserEntity
 import com.mesh.emergency.data.local.entity.VoiceMessageEntity
 import java.util.UUID
 
 /**
  * Centralized fake data factory for unit and integration tests.
- *
- * All generated data is deterministic by default (fixed seeds / IDs), but
- * callers may override individual fields via named parameters.
+ * All generated data is deterministic by default.
  */
 object TestDataFactory {
 
@@ -32,16 +40,20 @@ object TestDataFactory {
 
     fun fakeUser(
         id: String = "user-test-01",
-        displayName: String = "Test Operator",
-        deviceId: String = "device-test-01",
-        publicKey: String = "MFkwEwYHKoZIzj0CAQYFK4EEAAoDQgAE==",
-        isOnline: Boolean = false
+        username: String = "Test Operator",
+        nickname: String = "Operator"
     ) = UserEntity(
         entityId = id,
-        displayName = displayName,
-        deviceId = deviceId,
-        publicKey = publicKey,
-        isOnline = isOnline
+        username = username,
+        profileImageRef = null,
+        languagePreference = "en",
+        createdTime = System.currentTimeMillis(),
+        updatedTime = System.currentTimeMillis(),
+        status = "ACTIVE",
+        isCurrentUser = true,
+        lastSeen = System.currentTimeMillis(),
+        trustedStatus = true,
+        nickname = nickname
     )
 
     // ── Devices ───────────────────────────────────────────────────────────────
@@ -49,17 +61,18 @@ object TestDataFactory {
     fun fakeDevice(
         id: String = "device-test-01",
         name: String = "Emergency Node Alpha",
-        macAddress: String = "AA:BB:CC:DD:EE:FF",
         isTrusted: Boolean = true
     ) = DeviceEntity(
         entityId = id,
         name = name,
-        macAddress = macAddress,
-        isTrusted = isTrusted,
-        publicKey = "MFkwEwYHKoZIzj0CAQYFK4EEAAoDQgAE==",
+        rssi = -55,
         lastSeen = System.currentTimeMillis(),
-        nickname = "Alpha",
-        trustState = if (isTrusted) "TRUSTED" else "UNKNOWN"
+        deviceType = "SMARTPHONE",
+        platformInfo = "ANDROID",
+        createdTime = System.currentTimeMillis(),
+        lastActiveTime = System.currentTimeMillis(),
+        trustStatus = if (isTrusted) DbTrustStatus.TRUSTED else DbTrustStatus.UNKNOWN,
+        nickname = "Alpha"
     )
 
     // ── Messages ──────────────────────────────────────────────────────────────
@@ -67,37 +80,36 @@ object TestDataFactory {
     fun fakeMessage(
         id: String = "msg-test-01",
         senderId: String = "user-test-01",
-        receiverId: String = "user-test-02",
+        recipientId: String = "user-test-02",
         content: String = "Test message content",
-        type: String = "TEXT",
-        status: String = "PENDING",
-        ttlMs: Long = 86_400_000L
+        type: DbMessageType = DbMessageType.TEXT,
+        status: DbDeliveryStatus = DbDeliveryStatus.PENDING,
+        priority: DbMessagePriority = DbMessagePriority.MEDIUM
     ) = MessageEntity(
         entityId = id,
         conversationId = "conv-test-01",
         senderId = senderId,
-        receiverId = receiverId,
+        recipientId = recipientId,
         content = content,
-        type = type,
-        status = status,
         timestamp = System.currentTimeMillis(),
-        ttlMs = ttlMs,
-        retryCount = 0,
-        checksum = "abc123checksum"
+        deliveryStatus = status,
+        type = type,
+        priority = priority,
+        expiryTime = System.currentTimeMillis() + 86_400_000L,
+        retryCount = 0
     )
 
     // ── Conversations ─────────────────────────────────────────────────────────
 
     fun fakeConversation(
         id: String = "conv-test-01",
-        participantId: String = "user-test-02",
-        lastMessage: String = "Test message content"
+        title: String = "Test Conversation"
     ) = ConversationEntity(
         entityId = id,
-        participantId = participantId,
-        lastMessage = lastMessage,
-        lastMessageTime = System.currentTimeMillis(),
-        unreadCount = 0
+        title = title,
+        lastMessageId = "msg-test-01",
+        unreadCount = 0,
+        updatedAt = System.currentTimeMillis()
     )
 
     // ── Locations ─────────────────────────────────────────────────────────────
@@ -109,54 +121,56 @@ object TestDataFactory {
         longitude: Double = 90.4125
     ) = LocationEntity(
         entityId = id,
-        deviceId = deviceId,
+        userId = "user-test-01",
         latitude = latitude,
         longitude = longitude,
         altitude = 10.0,
         accuracy = 5.0f,
         timestamp = System.currentTimeMillis(),
-        provider = "GPS"
+        provider = "GPS",
+        deviceId = deviceId
     )
 
     // ── Network Nodes ─────────────────────────────────────────────────────────
 
     fun fakeNetworkNode(
         id: String = "node-test-01",
-        nodeId: String = "MESH-NODE-001",
-        rssi: Int = -65,
-        isActive: Boolean = true
+        deviceId: String = "device-test-01",
+        rssi: Int = -65
     ) = NetworkNodeEntity(
         entityId = id,
-        nodeId = nodeId,
-        displayName = "Field Node 01",
-        transportType = "BLUETOOTH",
+        deviceId = deviceId,
+        nodeType = DbNodeType.PHONE_NODE,
+        status = DbNodeStatus.ONLINE,
         rssi = rssi,
-        isActive = isActive,
-        lastSeen = System.currentTimeMillis(),
+        signalQuality = 80.0f,
+        connectionType = "BLE",
         batteryLevel = 80,
-        firmwareVersion = "1.0.0",
-        capabilities = listOf("BLE", "LORA")
+        latitude = 23.8103,
+        longitude = 90.4125,
+        lastSeen = System.currentTimeMillis(),
+        hopCount = 1,
+        relayCapability = true,
+        networkDistance = 1
     )
 
     // ── Emergency Events ──────────────────────────────────────────────────────
 
     fun fakeEmergencyEvent(
         id: String = "sos-test-01",
-        senderId: String = "user-test-01",
-        type: String = "SOS",
-        priority: Int = 100
+        senderId: String = "user-test-01"
     ) = EmergencyEventEntity(
         entityId = id,
         senderId = senderId,
-        type = type,
-        priority = priority,
         latitude = 23.8103,
         longitude = 90.4125,
         message = "Emergency SOS triggered",
-        status = "ACTIVE",
-        category = "RESCUE",
-        ttlMs = 3_600_000L,
-        timestamp = System.currentTimeMillis()
+        timestamp = System.currentTimeMillis(),
+        isResolved = false,
+        emergencyType = DbEmergencyType.SOS,
+        priority = DbMessagePriority.CRITICAL,
+        status = DbEmergencyStatus.CREATED,
+        ttl = System.currentTimeMillis() + 3_600_000L
     )
 
     // ── Resources ─────────────────────────────────────────────────────────────
@@ -164,22 +178,21 @@ object TestDataFactory {
     fun fakeResource(
         id: String = "res-test-01",
         name: String = "Water Supply",
-        category: String = "WATER",
         quantity: Int = 50
     ) = ResourceEntity(
         entityId = id,
         ownerId = "user-test-01",
         name = name,
-        category = category,
+        type = "WATER",
         quantity = quantity,
-        unit = "liters",
-        status = "AVAILABLE",
         latitude = 23.8103,
         longitude = 90.4125,
-        createdAt = System.currentTimeMillis(),
-        updatedAt = System.currentTimeMillis(),
-        isPrivate = false,
-        ttlMs = 86_400_000L
+        description = "50 liters of fresh water",
+        availabilityStatus = DbResourceStatus.AVAILABLE,
+        createdTime = System.currentTimeMillis(),
+        updatedTime = System.currentTimeMillis(),
+        privacyLevel = DbResourcePrivacy.PUBLIC,
+        ttl = System.currentTimeMillis() + 86_400_000L
     )
 
     // ── Voice Messages ────────────────────────────────────────────────────────

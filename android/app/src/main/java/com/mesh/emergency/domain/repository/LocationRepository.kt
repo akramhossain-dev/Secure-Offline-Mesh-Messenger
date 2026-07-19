@@ -16,6 +16,9 @@ interface LocationRepository {
     /** Streams saved coordinates log lists. */
     fun getSavedLocations(userId: String): Flow<Result<List<LocationData>>>
 
+    /** Streams all saved coordinates logs in the system. */
+    fun getAllLocations(): Flow<Result<List<LocationData>>>
+
     /** Persists a coordinates point entry in local database. */
     suspend fun saveLocation(location: LocationData): Result<Unit>
 

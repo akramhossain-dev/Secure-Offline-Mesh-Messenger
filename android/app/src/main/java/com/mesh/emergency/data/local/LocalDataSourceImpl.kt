@@ -100,6 +100,9 @@ class LocalDataSourceImpl @Inject constructor(
     override fun getLocationsForUser(userId: String): Flow<List<LocationEntity>> =
         locationDao.getLocationsForUser(userId)
 
+    override fun getAllLocations(): Flow<List<LocationEntity>> =
+        locationDao.getAllLocations()
+
     override suspend fun insertLocation(location: LocationEntity) =
         locationDao.insertLocation(location)
 

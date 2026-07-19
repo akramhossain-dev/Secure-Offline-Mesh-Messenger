@@ -39,9 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
 import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
@@ -88,7 +90,7 @@ fun SettingsScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text("Settings", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
@@ -105,19 +107,24 @@ fun SettingsScreen(
 
                 // ── Appearance ────────────────────────────────────────────────
                 item {
-                    SettingsSectionHeader("Appearance")
+                    SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
                 }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column {
-                            Text("Theme Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                            Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                             Spacer(Modifier.height(spacing.sm))
                             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                                 ThemeMode.entries.forEach { mode ->
+                                    val label = when (mode) {
+                                        ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                                        ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                                        ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
+                                    }
                                     FilterChip(
                                         selected = uiState.themeMode == mode,
                                         onClick = { viewModel.onEvent(SettingsUiEvent.ChangeTheme(mode)) },
-                                        label = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                                        label = { Text(label) }
                                     )
                                 }
                             }
@@ -126,14 +133,18 @@ fun SettingsScreen(
                 }
 
                 // ── Language ──────────────────────────────────────────────────
-                item { SettingsSectionHeader("Language") }
+                item { SettingsSectionHeader(stringResource(R.string.settings_section_language)) }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column {
-                            Text("Display Language", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                            Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                             Spacer(Modifier.height(spacing.sm))
                             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
-                                listOf("en" to "English", "bn" to "বাংলা").forEach { (code, label) ->
+                                listOf(
+                                    "system" to stringResource(R.string.settings_language_system),
+                                    "en" to stringResource(R.string.settings_language_english),
+                                    "bn" to stringResource(R.string.settings_language_bangla)
+                                ).forEach { (code, label) ->
                                     FilterChip(
                                         selected = uiState.languageCode == code,
                                         onClick = { viewModel.onEvent(SettingsUiEvent.ChangeLanguage(code)) },
@@ -146,7 +157,7 @@ fun SettingsScreen(
                 }
 
                 // ── Privacy & Security ────────────────────────────────────────
-                item { SettingsSectionHeader("Privacy & Security") }
+                item { SettingsSectionHeader(stringResource(R.string.settings_section_privacy)) }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(spacing.md)) {
@@ -161,7 +172,7 @@ fun SettingsScreen(
                             Spacer(Modifier.height(4.dp))
                             
                             MeshOutlinedButton(
-                                text = "Delete All Messages",
+                                text = stringResource(R.string.settings_delete_messages),
                                 onClick = {
                                     triggerAction(
                                         "Delete All Messages?",
@@ -173,7 +184,7 @@ fun SettingsScreen(
                             )
 
                             MeshOutlinedButton(
-                                text = "Remove Paired Devices",
+                                text = stringResource(R.string.settings_remove_devices),
                                 onClick = {
                                     triggerAction(
                                         "Remove Paired Devices?",
@@ -185,7 +196,7 @@ fun SettingsScreen(
                             )
 
                             MeshOutlinedButton(
-                                text = "Rotate Cryptographic Keys",
+                                text = stringResource(R.string.settings_rotate_keys),
                                 onClick = {
                                     triggerAction(
                                         "Rotate Cryptographic Keys?",
@@ -197,7 +208,7 @@ fun SettingsScreen(
                             )
 
                             MeshOutlinedButton(
-                                text = "Wipe All Application Data",
+                                text = stringResource(R.string.settings_wipe_data),
                                 onClick = {
                                     triggerAction(
                                         "Wipe All Local Data?",
@@ -211,15 +222,15 @@ fun SettingsScreen(
                     }
                 }
 
-                // ── Debug ─────────────────────────────────────────────────────
-                item { SettingsSectionHeader("Developer") }
+                // ── Developer ─────────────────────────────────────────────────────
+                item { SettingsSectionHeader(stringResource(R.string.settings_developer)) }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text("Debug Mode", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
-                                    Text("Show verbose logs", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(stringResource(R.string.settings_debug_mode), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text(stringResource(R.string.settings_debug_mode_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Switch(
                                     checked = uiState.debugModeEnabled,
@@ -228,7 +239,7 @@ fun SettingsScreen(
                             }
                             Spacer(Modifier.height(spacing.md))
                             MeshOutlinedButton(
-                                text = "Clear Diagnostic Logs",
+                                text = stringResource(R.string.settings_clear_logs),
                                 onClick = { viewModel.onEvent(SettingsUiEvent.ClearLogs) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -237,12 +248,12 @@ fun SettingsScreen(
                 }
 
                 // ── About ─────────────────────────────────────────────────────
-                item { SettingsSectionHeader("About") }
+                item { SettingsSectionHeader(stringResource(R.string.settings_section_about)) }
                 item {
                     GlassPanel(modifier = Modifier.fillMaxWidth(), variant = GlassPanelVariant.DEFAULT) {
                         Column {
-                            SettingsInfoRow("App Version", uiState.appVersion)
-                            SettingsInfoRow("Build", "Debug")
+                            SettingsInfoRow(stringResource(R.string.settings_about_version), uiState.appVersion)
+                            SettingsInfoRow(stringResource(R.string.settings_about_build), "Debug")
                             SettingsInfoRow("Architecture", "Clean Architecture + MVI")
                             SettingsInfoRow("Storage Mode", "Offline — Room Database")
                         }

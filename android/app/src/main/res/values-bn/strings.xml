@@ -74,6 +74,24 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_bangla">বাংলা</string>
 
+    <!-- Actions & Developer Settings -->
+    <string name="settings_delete_messages">সব বার্তা মুছুন</string>
+    <string name="settings_remove_devices">সংযুক্ত ডিভাইসগুলো সরান</string>
+    <string name="settings_rotate_keys">ক্রিপ্টোগ্রাফিক কি পরিবর্তন করুন</string>
+    <string name="settings_wipe_data">অ্যাপ্লিকেশনের সমস্ত ডেটা মুছুন</string>
+    <string name="settings_developer">ডেভেলপার সেটিংস</string>
+    <string name="settings_debug_mode">ডিবাগ মোড</string>
+    <string name="settings_debug_mode_desc">ভার্বোস লগ প্রদর্শন করুন</string>
+    <string name="settings_clear_logs">ডায়াগনস্টিক লগ মুছুন</string>
+
+    <!-- Home Screen -->
+    <string name="home_mesh_connected">মেশ সংযুক্ত</string>
+    <string name="home_offline_mode">অফলাইন মোড</string>
+    <string name="home_sos_broadcasting">জরুরি SOS সমস্ত মেশ নোডে সম্প্রচার করা হচ্ছে</string>
+    <string name="home_sos_button_desc">সংকেত সম্প্রচার করতে চেপে ধরে রাখুন</string>
+    <string name="home_recent_activity">সাম্প্রতিক কার্যক্রম</string>
+    <string name="home_no_activity">কোনো সাম্প্রতিক কার্যক্রম নেই</string>
+
     <string name="settings_about_version">সংস্করণ</string>
     <string name="settings_about_build">বিল্ড</string>
     <string name="settings_about_licenses">ওপেন সোর্স লাইসেন্স</string>

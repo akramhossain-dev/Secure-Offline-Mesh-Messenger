@@ -5,6 +5,14 @@
 
 package com.mesh.emergency
 
+import com.mesh.emergency.data.local.entity.DbDeliveryStatus
+import com.mesh.emergency.data.local.entity.DbMessageType
+import com.mesh.emergency.data.local.entity.DbMessagePriority
+import com.mesh.emergency.data.local.entity.DbEmergencyType
+import com.mesh.emergency.data.local.entity.DbEmergencyStatus
+import com.mesh.emergency.data.local.entity.DbResourceStatus
+import com.mesh.emergency.data.local.entity.DbNodeStatus
+import com.mesh.emergency.data.local.entity.DbTrustStatus
 import com.mesh.emergency.test.TestDataFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -20,25 +28,24 @@ class TestDataFactoryTest {
     fun fakeUser_hasExpectedDefaults() {
         val user = TestDataFactory.fakeUser()
         assertEquals("user-test-01", user.entityId)
-        assertEquals("Test Operator", user.displayName)
-        assertNotNull(user.publicKey)
+        assertEquals("Test Operator", user.username)
+        assertEquals("Operator", user.nickname)
     }
 
     @Test
     fun fakeDevice_hasExpectedDefaults() {
         val device = TestDataFactory.fakeDevice()
-        assertEquals("AA:BB:CC:DD:EE:FF", device.macAddress)
-        assertTrue(device.isTrusted)
-        assertEquals("TRUSTED", device.trustState)
+        assertEquals("device-test-01", device.entityId)
+        assertEquals(DbTrustStatus.TRUSTED, device.trustStatus)
     }
 
     @Test
     fun fakeMessage_hasExpectedDefaults() {
         val msg = TestDataFactory.fakeMessage()
         assertEquals("msg-test-01", msg.entityId)
-        assertEquals("TEXT", msg.type)
-        assertEquals("PENDING", msg.status)
-        assertTrue(msg.ttlMs > 0)
+        assertEquals(DbMessageType.TEXT, msg.type)
+        assertEquals(DbDeliveryStatus.PENDING, msg.deliveryStatus)
+        assertTrue(msg.expiryTime > 0)
     }
 
     @Test
@@ -52,24 +59,23 @@ class TestDataFactoryTest {
     @Test
     fun fakeNetworkNode_hasExpectedDefaults() {
         val node = TestDataFactory.fakeNetworkNode()
-        assertEquals("MESH-NODE-001", node.nodeId)
-        assertTrue(node.isActive)
-        assertTrue(node.capabilities.isNotEmpty())
+        assertEquals("device-test-01", node.deviceId)
+        assertEquals(DbNodeStatus.ONLINE, node.status)
     }
 
     @Test
     fun fakeEmergencyEvent_hasHighPriority() {
         val event = TestDataFactory.fakeEmergencyEvent()
-        assertEquals("SOS", event.type)
-        assertEquals(100, event.priority)
-        assertEquals("ACTIVE", event.status)
+        assertEquals(DbEmergencyType.SOS, event.emergencyType)
+        assertEquals(DbMessagePriority.CRITICAL, event.priority)
+        assertEquals(DbEmergencyStatus.CREATED, event.status)
     }
 
     @Test
     fun fakeResource_hasExpectedDefaults() {
         val res = TestDataFactory.fakeResource()
         assertEquals("Water Supply", res.name)
-        assertEquals("AVAILABLE", res.status)
+        assertEquals(DbResourceStatus.AVAILABLE, res.availabilityStatus)
         assertEquals(50, res.quantity)
     }
 
@@ -100,11 +106,11 @@ class TestDataFactoryTest {
         val msg = TestDataFactory.fakeMessage(
             id = "custom-msg-id",
             content = "Custom emergency text",
-            status = "DELIVERED"
+            status = DbDeliveryStatus.DELIVERED
         )
         assertEquals("custom-msg-id", msg.entityId)
         assertEquals("Custom emergency text", msg.content)
-        assertEquals("DELIVERED", msg.status)
+        assertEquals(DbDeliveryStatus.DELIVERED, msg.deliveryStatus)
     }
 
     @Test

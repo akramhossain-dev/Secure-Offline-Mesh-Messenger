@@ -151,6 +151,9 @@ fun AppShell(
             ) { paddingValues ->
                 AppNavGraph(
                     navController = navController,
+                    onOpenDrawer = {
+                        coroutineScope.launch { drawerState.open() }
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }

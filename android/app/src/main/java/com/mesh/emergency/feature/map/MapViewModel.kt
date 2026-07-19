@@ -8,18 +8,23 @@ package com.mesh.emergency.feature.map
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.identity.DeviceFingerprintProvider
 import com.mesh.emergency.core.map.MapLayerModel
 import com.mesh.emergency.core.map.MapRepository
 import com.mesh.emergency.core.map.MapState
+import com.mesh.emergency.core.utils.LocationData
+import com.mesh.emergency.core.utils.LocationProvider
 import com.mesh.emergency.data.map.MapProviderImpl
+import com.mesh.emergency.domain.repository.LocationRepository
 import com.mesh.emergency.domain.repository.NodeDomainModel
 import com.mesh.emergency.domain.repository.NodeRepository
+import com.mesh.emergency.feature.emergency.domain.EmergencyEvent
+import com.mesh.emergency.feature.emergency.domain.EmergencyRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,13 +33,22 @@ import javax.inject.Inject
 /**
  * ViewModel for the offline map screen.
  *
- * Combines map layer state, node positions, and user location for rendering.
+ * Integrates:
+ * - GPS live coordinates tracking
+ * - History path tracking
+ * - Shared peer locations
+ * - Distress emergency SOS signals
+ * - Mesh hardware nodes routing visualization
  */
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val mapRepository: MapRepository,
     private val mapProvider: MapProviderImpl,
-    private val nodeRepository: NodeRepository
+    private val nodeRepository: NodeRepository,
+    private val locationProvider: LocationProvider,
+    private val locationRepository: LocationRepository,
+    private val emergencyRepository: EmergencyRepository,
+    private val deviceFingerprintProvider: DeviceFingerprintProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())
@@ -46,6 +60,9 @@ class MapViewModel @Inject constructor(
     init {
         observeLayers()
         observeNodes()
+        observeLiveLocation()
+        observeDatabaseLocations()
+        observeEmergencyAlerts()
         mapProvider.markMapReady()
     }
 
@@ -78,6 +95,47 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    private fun observeLiveLocation() {
+        viewModelScope.launch {
+            locationProvider.getCurrentLocation().collect { result ->
+                if (result is Result.Success) {
+                    val locationData = result.data
+                    _uiState.update { it.copy(currentLocation = locationData) }
+                    
+                    // Periodically auto-save location history
+                    locationRepository.saveLocation(locationData)
+                }
+            }
+        }
+    }
+
+    private fun observeDatabaseLocations() {
+        viewModelScope.launch {
+            val myFingerprint = deviceFingerprintProvider.getDeviceFingerprint()
+            locationRepository.getAllLocations().collect { result ->
+                if (result is Result.Success) {
+                    // Filter locations saved by this user's device versus locations shared by others
+                    val saved = result.data.filter { it.deviceId == myFingerprint || it.provider == "me" }
+                    val shared = result.data.filter { it.deviceId != myFingerprint && it.provider != "me" }
+                    _uiState.update {
+                        it.copy(
+                            savedLocations = saved,
+                            sharedLocations = shared
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeEmergencyAlerts() {
+        viewModelScope.launch {
+            emergencyRepository.getEmergencyEvents().collect { events ->
+                _uiState.update { it.copy(emergencyEvents = events) }
+            }
+        }
+    }
+
     fun onLayerToggled(layerId: String, isVisible: Boolean) {
         mapProvider.setLayerVisible(layerId, isVisible)
         _uiState.update { state ->
@@ -103,12 +161,16 @@ class MapViewModel @Inject constructor(
 }
 
 /**
- * UI state for the offline map screen.
+ * Enhanced UI state for the offline map screen.
  */
 data class MapUiState(
     val isLoading: Boolean = false,
     val layers: List<MapLayerModel> = emptyList(),
     val visibleNodes: List<NodeDomainModel> = emptyList(),
+    val savedLocations: List<LocationData> = emptyList(),
+    val sharedLocations: List<LocationData> = emptyList(),
+    val emergencyEvents: List<EmergencyEvent> = emptyList(),
+    val currentLocation: LocationData? = null,
     val zoomLevel: Int = 10,
     val errorMessage: String? = null
 )

@@ -23,6 +23,10 @@ interface LocationDao {
     @Query("SELECT * FROM locations WHERE userId = :userId ORDER BY timestamp DESC")
     fun getLocationsForUser(userId: String): Flow<List<LocationEntity>>
 
+    /** Streams all location logs traces. */
+    @Query("SELECT * FROM locations ORDER BY timestamp DESC")
+    fun getAllLocations(): Flow<List<LocationEntity>>
+
     /** Insert or replace location coordinates logs. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLocation(location: LocationEntity)
