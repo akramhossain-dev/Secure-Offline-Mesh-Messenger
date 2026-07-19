@@ -15,10 +15,12 @@ import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.domain.repository.ResourceDomainModel
 import com.mesh.emergency.domain.repository.ResourceRepository
 import com.mesh.emergency.core.identity.DeviceFingerprintProvider
+import com.mesh.emergency.core.utils.LocationProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,7 +35,8 @@ import javax.inject.Inject
 class ResourceViewModel @Inject constructor(
     private val resourceManager: ResourceManager,
     private val resourceRepository: ResourceRepository,
-    private val deviceFingerprintProvider: DeviceFingerprintProvider
+    private val deviceFingerprintProvider: DeviceFingerprintProvider,
+    private val locationProvider: LocationProvider
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ResourceUiState())
@@ -112,12 +115,21 @@ class ResourceViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(showCreateDialog = false) }
+            
+            val locationResult = try {
+                locationProvider.getCurrentLocation().first()
+            } catch (e: Exception) {
+                null
+            }
+            val lat = (locationResult as? Result.Success)?.data?.latitude ?: 0.0
+            val lon = (locationResult as? Result.Success)?.data?.longitude ?: 0.0
+
             val result = resourceManager.createOffer(
                 name = name,
                 type = category.key,
                 quantity = quantity,
-                latitude = 0.0,
-                longitude = 0.0,
+                latitude = lat,
+                longitude = lon,
                 description = description,
                 privacy = DbResourcePrivacy.PUBLIC.name
             )

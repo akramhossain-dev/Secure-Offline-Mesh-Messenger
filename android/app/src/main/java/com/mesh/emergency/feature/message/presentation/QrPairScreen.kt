@@ -56,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,7 +105,7 @@ fun QrPairScreen(
     var hasCameraPermission by remember {
         mutableStateOf(context.hasPermission(Manifest.permission.CAMERA))
     }
-    var alreadyRequested by remember { mutableStateOf(false) }
+    var alreadyRequested by rememberSaveable { mutableStateOf(false) }
     var showRationaleDialog by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
 
@@ -244,8 +245,7 @@ fun QrPairScreen(
                                     isProcessing = true
                                     viewModel.processHandshakePayload(payload)
                                 }
-                            },
-                            onSimulateScan = { viewModel.simulateScan() }
+                            }
                         )
                     }
                 }
@@ -355,8 +355,7 @@ private fun CameraPermissionPermanentlyDenied(onOpenSettings: () -> Unit) {
 @Composable
 private fun QrScannerContent(
     isProcessing: Boolean,
-    onQrCodeDetected: (String) -> Unit,
-    onSimulateScan: () -> Unit
+    onQrCodeDetected: (String) -> Unit
 ) {
     // ── 1. Camera Viewfinder Overlay ────────────────────────────────────
     Box(
@@ -419,18 +418,6 @@ private fun QrScannerContent(
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // ── 3. Emulator Simulation Shortcut ─────────────────────────────────────
-    OutlinedButton(
-        onClick = onSimulateScan,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Icon(Icons.Default.CameraAlt, contentDescription = null)
-        Spacer(Modifier.width(8.dp))
-        Text(stringResource(R.string.qr_pair_simulate))
     }
 }
 

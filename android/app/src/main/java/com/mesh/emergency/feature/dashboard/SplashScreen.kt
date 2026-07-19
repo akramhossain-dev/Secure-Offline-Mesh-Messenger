@@ -45,15 +45,16 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 @Composable
 fun SplashScreen(
     onNavigateToHome: () -> Unit,
+    onNavigateToOnboarding: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    // Collect one-time navigation effects
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 SplashUiEffect.NavigateToHome -> onNavigateToHome()
+                SplashUiEffect.NavigateToOnboarding -> onNavigateToOnboarding()
             }
         }
     }

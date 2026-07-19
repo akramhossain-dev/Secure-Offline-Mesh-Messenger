@@ -10,8 +10,13 @@ import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
+import com.mesh.emergency.data.local.LocalDataSource
+import com.mesh.emergency.data.local.entity.DbTrustStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -44,18 +49,39 @@ sealed interface DeviceUiEffect : BaseUiEffect {
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 @HiltViewModel
-class DeviceViewModel @Inject constructor() :
-    BaseViewModel<DeviceUiState, DeviceUiEvent, DeviceUiEffect>(DeviceUiState()) {
+class DeviceViewModel @Inject constructor(
+    private val localDataSource: LocalDataSource
+) : BaseViewModel<DeviceUiState, DeviceUiEvent, DeviceUiEffect>(DeviceUiState()) {
 
-    init { loadDemoDevices() }
+    init {
+        observeDevices()
+    }
 
-    private fun loadDemoDevices() {
-        val demo = listOf(
-            DeviceDisplayModel("d1", "Node Alpha", "AA:BB:CC:DD:EE:FF", true, "2 min ago", "BLUETOOTH", -62),
-            DeviceDisplayModel("d2", "Node Beta",  "11:22:33:44:55:66", true, "15 min ago","BLUETOOTH", -78),
-            DeviceDisplayModel("d3", "Field Unit 03", "DE:AD:BE:EF:00:01", false, "1 hr ago","LoRa", -90),
-        )
-        updateState { copy(pairedDevices = demo) }
+    private fun observeDevices() {
+        viewModelScope.launch {
+            localDataSource.getDevices().collect { devices ->
+                updateState {
+                    copy(
+                        pairedDevices = devices.map { entity ->
+                            val timeLabel = try {
+                                SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(entity.lastSeen))
+                            } catch (e: Exception) {
+                                "unknown"
+                            }
+                            DeviceDisplayModel(
+                                id = entity.entityId,
+                                name = entity.nickname ?: entity.name,
+                                macAddress = entity.entityId,
+                                isTrusted = entity.trustStatus == DbTrustStatus.TRUSTED,
+                                lastSeenLabel = "Seen at: $timeLabel",
+                                transport = entity.deviceType,
+                                rssi = entity.rssi
+                            )
+                        }
+                    )
+                }
+            }
+        }
     }
 
     override fun onEvent(event: DeviceUiEvent) {
@@ -69,8 +95,13 @@ class DeviceViewModel @Inject constructor() :
                 }
             }
             is DeviceUiEvent.UnpairDevice -> {
-                updateState { copy(pairedDevices = pairedDevices.filter { it.id != event.deviceId }) }
-                sendEffect(DeviceUiEffect.ShowToast("Device removed"))
+                viewModelScope.launch {
+                    val device = localDataSource.getDeviceById(event.deviceId)
+                    if (device != null) {
+                        localDataSource.deleteDevice(device)
+                        sendEffect(DeviceUiEffect.ShowToast("Device removed"))
+                    }
+                }
             }
         }
     }

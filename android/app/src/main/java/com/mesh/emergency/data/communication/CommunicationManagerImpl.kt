@@ -30,9 +30,15 @@ import javax.inject.Singleton
  * 3. Mock loopback fallback
  */
 @Singleton
-class CommunicationManagerImpl @Inject constructor() : CommunicationManager {
+class CommunicationManagerImpl @Inject constructor(
+    private val bluetoothTransport: com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+) : CommunicationManager {
 
     private val transports = mutableMapOf<TransportType, Transport>()
+
+    init {
+        registerTransport(bluetoothTransport)
+    }
 
     private val _activeTransport = MutableStateFlow<Transport?>(null)
     override val activeTransport: StateFlow<Transport?> = _activeTransport.asStateFlow()

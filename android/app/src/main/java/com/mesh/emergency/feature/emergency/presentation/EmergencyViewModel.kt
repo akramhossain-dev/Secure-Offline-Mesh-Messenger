@@ -10,6 +10,7 @@ import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
+import com.mesh.emergency.core.utils.LocationProvider
 import com.mesh.emergency.data.local.entity.DbEmergencyStatus
 import com.mesh.emergency.data.local.entity.DbEmergencyType
 import com.mesh.emergency.data.local.entity.DbMessagePriority
@@ -17,6 +18,7 @@ import com.mesh.emergency.feature.emergency.domain.EmergencyEvent
 import com.mesh.emergency.feature.emergency.domain.EmergencyRepository
 import com.mesh.emergency.feature.emergency.domain.SosState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -52,7 +54,8 @@ sealed interface EmergencyUiEffect : BaseUiEffect {
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 @HiltViewModel
 class EmergencyViewModel @Inject constructor(
-    private val emergencyRepository: EmergencyRepository
+    private val emergencyRepository: EmergencyRepository,
+    private val locationProvider: LocationProvider
 ) : BaseViewModel<EmergencyUiState, EmergencyUiEvent, EmergencyUiEffect>(EmergencyUiState()) {
 
     init {
@@ -86,6 +89,15 @@ class EmergencyViewModel @Inject constructor(
             EmergencyUiEvent.ConfirmSos -> {
                 viewModelScope.launch {
                     updateState { copy(sosState = SosState.ACTIVE) }
+                    
+                    val locationResult = try {
+                        locationProvider.getCurrentLocation().first()
+                    } catch (e: Exception) {
+                        null
+                    }
+                    val lat = (locationResult as? com.mesh.emergency.core.common.result.Result.Success)?.data?.latitude ?: 0.0
+                    val lon = (locationResult as? com.mesh.emergency.core.common.result.Result.Success)?.data?.longitude ?: 0.0
+
                     val sosEvent = EmergencyEvent(
                         id        = UUID.randomUUID().toString(),
                         type      = DbEmergencyType.SOS,
@@ -93,8 +105,8 @@ class EmergencyViewModel @Inject constructor(
                         status    = DbEmergencyStatus.BROADCASTING,
                         senderId  = "self",
                         message   = "SOS — Emergency Distress Signal",
-                        latitude  = 23.8103,
-                        longitude = 90.4125,
+                        latitude  = lat,
+                        longitude = lon,
                         timestamp = System.currentTimeMillis(),
                         isResolved = false,
                         ttl       = System.currentTimeMillis() + 3_600_000L

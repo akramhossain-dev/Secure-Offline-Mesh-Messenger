@@ -23,6 +23,9 @@ import com.mesh.emergency.core.domain.AppStateRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+
 /**
  * Main entry-point Activity for the Offline Emergency Mesh Communication System.
  * Hosts the responsive [AppShell] to coordinate navigation and adaptive UI layouts.
@@ -42,6 +45,25 @@ class MainActivity : AppCompatActivity() {
         // Install splash screen before super.onCreate()
         installSplashScreen()
         org.maplibre.android.MapLibre.getInstance(this)
+        
+        // Sync application locale synchronously before UI composition begins,
+        // preventing configuration change re-creation cycles on cold starts.
+        runBlocking {
+            try {
+                val languageCode = appStateRepository.appState.first().languageCode
+                val localeList = if (languageCode == "system" || languageCode.isEmpty()) {
+                    LocaleListCompat.getEmptyLocaleList()
+                } else {
+                    LocaleListCompat.forLanguageTags(languageCode)
+                }
+                if (AppCompatDelegate.getApplicationLocales() != localeList) {
+                    AppCompatDelegate.setApplicationLocales(localeList)
+                }
+            } catch (e: Exception) {
+                // Fallback silently if storage is not ready
+            }
+        }
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

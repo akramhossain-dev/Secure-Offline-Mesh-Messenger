@@ -7,12 +7,12 @@ package com.mesh.emergency.core.presentation.base
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -32,8 +32,8 @@ abstract class BaseViewModel<State : BaseUiState, Event : BaseUiEvent, Effect : 
     private val _uiState = MutableStateFlow(initialState)
     val uiState: StateFlow<State> = _uiState.asStateFlow()
 
-    private val _effect = MutableSharedFlow<Effect>()
-    val effect: SharedFlow<Effect> = _effect.asSharedFlow()
+    private val _effect = Channel<Effect>(Channel.BUFFERED)
+    val effect: Flow<Effect> = _effect.receiveAsFlow()
 
     /**
      * Helper to read the current state synchronously.
@@ -58,7 +58,7 @@ abstract class BaseViewModel<State : BaseUiState, Event : BaseUiEvent, Effect : 
      */
     protected fun sendEffect(effect: Effect) {
         viewModelScope.launch {
-            _effect.emit(effect)
+            _effect.send(effect)
         }
     }
 }

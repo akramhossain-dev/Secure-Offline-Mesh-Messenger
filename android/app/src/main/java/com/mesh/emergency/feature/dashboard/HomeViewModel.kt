@@ -59,7 +59,6 @@ class HomeViewModel @Inject constructor(
 
     init {
         observeAppState()
-        loadDemoActivity()
     }
 
     private fun observeAppState() {
@@ -77,15 +76,6 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun loadDemoActivity() {
-        val demo = listOf(
-            ActivityItem("1", "Mesh Node Alpha joined",  "BLUETOOTH – RSSI -62 dBm", System.currentTimeMillis() - 60_000,  ActivityType.NODE_JOINED),
-            ActivityItem("2", "Pending message queued",  "To: Node Beta • 1 message", System.currentTimeMillis() - 180_000, ActivityType.MESSAGE),
-            ActivityItem("3", "System initialized",      "Encryption keys ready",      System.currentTimeMillis() - 300_000, ActivityType.SYSTEM),
-        )
-        updateState { copy(recentActivity = demo) }
     }
 
     override fun onEvent(event: HomeUiEvent) {

@@ -11,8 +11,10 @@ import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
+import com.mesh.emergency.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,13 +32,15 @@ sealed interface SplashUiEvent : BaseUiEvent {
 
 // ── Effects ───────────────────────────────────────────────────────────────────
 sealed interface SplashUiEffect : BaseUiEffect {
-    data object NavigateToHome : SplashUiEffect
+    data object NavigateToHome       : SplashUiEffect
+    data object NavigateToOnboarding : SplashUiEffect
 }
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
 @HiltViewModel
 class SplashViewModel @Inject constructor(
-    private val appStateRepository: AppStateRepository
+    private val appStateRepository: AppStateRepository,
+    private val userRepository: UserRepository
 ) : BaseViewModel<SplashUiState, SplashUiEvent, SplashUiEffect>(SplashUiState()) {
 
     init {
@@ -45,16 +49,31 @@ class SplashViewModel @Inject constructor(
 
     private fun initialize() {
         viewModelScope.launch {
-            // Simulate initialization — load persisted theme / language etc.
-            delay(1200L)
+            // Apply delay to allow system layout initialization
+            delay(1600L)
             updateState { copy(isLoading = false) }
-            sendEffect(SplashUiEffect.NavigateToHome)
+
+            // Check if profile exists in local DB
+            val hasProfile = try {
+                val result = userRepository.getCurrentUser().first()
+                result is com.mesh.emergency.core.common.result.Result.Success
+            } catch (e: Exception) {
+                false
+            }
+
+            if (hasProfile) {
+                sendEffect(SplashUiEffect.NavigateToHome)
+            } else {
+                sendEffect(SplashUiEffect.NavigateToOnboarding)
+            }
         }
     }
 
     override fun onEvent(event: SplashUiEvent) {
         when (event) {
-            SplashUiEvent.InitializationComplete -> sendEffect(SplashUiEffect.NavigateToHome)
+            SplashUiEvent.InitializationComplete -> {
+                // Check completed in initialize()
+            }
         }
     }
 }

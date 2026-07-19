@@ -23,6 +23,15 @@ interface ConversationDao {
     @Query("SELECT * FROM conversations ORDER BY updatedAt DESC")
     fun getConversations(): Flow<List<ConversationEntity>>
 
+    /** Stream of active conversation listings with their last message content projected. */
+    @Query("""
+        SELECT c.entityId, c.title, c.unreadCount, c.updatedAt, m.content as lastMessageContent 
+        FROM conversations c 
+        LEFT JOIN messages m ON c.lastMessageId = m.entityId 
+        ORDER BY c.updatedAt DESC
+    """)
+    fun getConversationsWithLastMessage(): Flow<List<ConversationWithLastMessage>>
+
     /** Queries conversation record by identifier. */
     @Query("SELECT * FROM conversations WHERE entityId = :id LIMIT 1")
     suspend fun getConversationById(id: String): ConversationEntity?
@@ -35,3 +44,14 @@ interface ConversationDao {
     @Delete
     suspend fun deleteConversation(conversation: ConversationEntity)
 }
+
+/**
+ * Projected data class mapping conversation summary along with its last message content.
+ */
+data class ConversationWithLastMessage(
+    val entityId: String,
+    val title: String,
+    val unreadCount: Int,
+    val updatedAt: Long,
+    val lastMessageContent: String?
+)

@@ -8,28 +8,12 @@ package com.mesh.emergency.di
 import com.mesh.emergency.core.communication.CommunicationManager
 import com.mesh.emergency.core.communication.Transport
 import com.mesh.emergency.data.communication.CommunicationManagerImpl
-import com.mesh.emergency.data.communication.MockTransport
 import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
-import com.mesh.emergency.data.communication.lora.MockLoRaTransport
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import javax.inject.Qualifier
 import javax.inject.Singleton
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class BluetoothTransportQualifier
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class LoRaTransportQualifier
-
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class MockTransportQualifier
 
 /**
  * Hilt module distributing transceivers and configuring the communication coordinator.
@@ -43,21 +27,8 @@ abstract class CommunicationModule {
     @Singleton
     abstract fun bindCommunicationManager(impl: CommunicationManagerImpl): CommunicationManager
 
-    companion object {
-
-        @Provides
-        @Singleton
-        @BluetoothTransportQualifier
-        fun provideBluetoothTransport(impl: BluetoothTransportImpl): Transport = impl
-
-        @Provides
-        @Singleton
-        @LoRaTransportQualifier
-        fun provideLoRaTransport(mockLora: MockLoRaTransport): Transport = mockLora
-
-        @Provides
-        @Singleton
-        @MockTransportQualifier
-        fun provideMockTransport(mock: MockTransport): Transport = mock
-    }
+    /** Binds [BluetoothTransportImpl] as the primary [Transport] interface contract. */
+    @Binds
+    @Singleton
+    abstract fun bindTransport(impl: BluetoothTransportImpl): Transport
 }

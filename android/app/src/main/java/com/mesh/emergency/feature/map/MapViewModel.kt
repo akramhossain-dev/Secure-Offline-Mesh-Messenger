@@ -663,22 +663,7 @@ data class SearchResult(
     val longitude: Double
 )
 
-private val defaultPlaces = listOf(
-    SearchResult("Dhaka", "City", 23.8103, 90.4125),
-    SearchResult("Uttara", "Area", 23.8759, 90.3795),
-    SearchResult("Gulshan", "Area", 23.7925, 90.4078),
-    SearchResult("Banani", "Area", 23.7937, 90.4067),
-    SearchResult("Mirpur", "Area", 23.8069, 90.3687),
-    SearchResult("Dhanmondi", "Area", 23.7461, 90.3742),
-    SearchResult("Lalbagh Fort", "Landmark", 23.7189, 90.3882),
-    SearchResult("National Museum", "Landmark", 23.7375, 90.3927),
-    SearchResult("Ahsan Manzil", "Landmark", 23.7086, 90.4060),
-    SearchResult("Parliament House", "Landmark", 23.7625, 90.3786),
-    SearchResult("Pragati Sarani", "Road", 23.7890, 90.4223),
-    SearchResult("Mirpur Road", "Road", 23.7650, 90.3800),
-    SearchResult("Kazi Nazrul Islam Avenue", "Road", 23.7510, 90.3940),
-    SearchResult("Airport Road", "Road", 23.8400, 90.4000)
-)
+private val defaultPlaces = emptyList<SearchResult>()
 
 data class MapUiState(
     val isLoading: Boolean = false,
@@ -691,8 +676,8 @@ data class MapUiState(
     val currentLocation: LocationData? = null,
     val zoomLevel: Int = 14,
     val errorMessage: String? = null,
-    val mapCenterLat: Double = 23.8103,
-    val mapCenterLon: Double = 90.4125,
+    val mapCenterLat: Double = 0.0,
+    val mapCenterLon: Double = 0.0,
     val isAutoCentering: Boolean = true,
     val downloadProgress: Float? = null,
     val downloadStatus: String? = null,

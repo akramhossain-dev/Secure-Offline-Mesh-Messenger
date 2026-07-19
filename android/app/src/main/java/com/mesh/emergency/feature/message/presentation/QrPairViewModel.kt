@@ -80,24 +80,6 @@ class QrPairViewModel @Inject constructor(
             }
         }
     }
-
-    /**
-     * Generates a simulated JSON handshake string and processes it.
-     */
-    fun simulateScan() {
-        val mockUserId = UUID.randomUUID().toString()
-        val mockDeviceId = UUID.randomUUID().toString()
-        val mockData = QRHandshakeData(
-            version = 1,
-            deviceId = mockDeviceId,
-            userId = mockUserId,
-            deviceType = "SMARTPHONE",
-            publicKeyRef = "04" + UUID.randomUUID().toString().replace("-", ""),
-            timestamp = System.currentTimeMillis()
-        )
-        val payload = QRHandshakeManager.generatePayload(mockData)
-        processHandshakePayload(payload)
-    }
 }
 
 sealed interface QrPairUiEffect {

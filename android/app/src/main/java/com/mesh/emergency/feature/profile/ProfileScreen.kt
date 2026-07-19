@@ -43,6 +43,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import com.mesh.emergency.core.discovery.qr.QRHandshakeData
+import com.mesh.emergency.core.discovery.qr.QRHandshakeManager
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,6 +86,9 @@ fun ProfileScreen(
             when (effect) {
                 is ProfileUiEffect.ShowToast -> {
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                }
+                ProfileUiEffect.SaveSuccess -> {
+                    onBack()
                 }
             }
         }
@@ -181,9 +187,20 @@ fun ProfileScreen(
 
                     // ── 3. Profile Identity Handshake QR Card ───────────────────
                     item {
-                        val handshakePayload = uiState.userModel?.let {
-                            "mesh-handshake:${it.id}:${it.publicKey ?: ""}"
-                        } ?: ""
+                        val handshakePayload = remember(uiState.userModel) {
+                            uiState.userModel?.let {
+                                QRHandshakeManager.generatePayload(
+                                    QRHandshakeData(
+                                        version = 1,
+                                        deviceId = it.id,
+                                        userId = it.id,
+                                        deviceType = "SMARTPHONE",
+                                        publicKeyRef = it.publicKey,
+                                        timestamp = System.currentTimeMillis()
+                                    )
+                                )
+                            } ?: ""
+                        }
 
                         GlassPanel(
                             modifier = Modifier.fillMaxWidth(),

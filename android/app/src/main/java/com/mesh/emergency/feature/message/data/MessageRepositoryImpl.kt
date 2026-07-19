@@ -6,6 +6,7 @@
 package com.mesh.emergency.feature.message.data
 
 import com.mesh.emergency.data.local.dao.ConversationDao
+import com.mesh.emergency.data.local.dao.ConversationWithLastMessage
 import com.mesh.emergency.data.local.dao.MessageDao
 import com.mesh.emergency.data.local.entity.ConversationEntity
 import com.mesh.emergency.feature.message.domain.ConversationSummary
@@ -30,12 +31,12 @@ class MessageRepositoryImpl @Inject constructor(
 ) : MessageRepository {
 
     override fun getConversations(): Flow<List<ConversationSummary>> =
-        conversationDao.getConversations().map { conversations ->
+        conversationDao.getConversationsWithLastMessage().map { conversations ->
             conversations.map { entity ->
                 ConversationSummary(
                     id           = entity.entityId,
                     title        = entity.title,
-                    lastMessagePreview = "Loading…",
+                    lastMessagePreview = entity.lastMessageContent ?: "",
                     unreadCount  = entity.unreadCount,
                     updatedAt    = entity.updatedAt
                 )

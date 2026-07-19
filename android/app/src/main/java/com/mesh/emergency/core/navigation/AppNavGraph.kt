@@ -58,13 +58,26 @@ fun AppNavGraph(
                         popUpTo(NavigationDestination.Splash.route) { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onNavigateToOnboarding = {
+                    navController.navigate(NavigationDestination.Onboarding.route) {
+                        popUpTo(NavigationDestination.Splash.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
         // ── Onboarding ────────────────────────────────────────────────────────
         composable(route = NavigationDestination.Onboarding.route) {
-            PlaceholderScreen(title = "Onboarding")
+            com.mesh.emergency.feature.profile.OnboardingScreen(
+                onNavigateToHome = {
+                    navController.navigate(NavigationDestination.Home.route) {
+                        popUpTo(NavigationDestination.Onboarding.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+            )
         }
 
         // ── Home Dashboard ────────────────────────────────────────────────────

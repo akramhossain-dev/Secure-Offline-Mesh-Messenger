@@ -83,7 +83,10 @@ class ProfileViewModel @Inject constructor(
             val result = userRepository.updateProfile(currentInput, null)
             _uiState.update { it.copy(isSaving = false) }
             when (result) {
-                is Result.Success -> _effect.emit(ProfileUiEffect.ShowToast("Profile updated successfully"))
+                is Result.Success -> {
+                    _effect.emit(ProfileUiEffect.ShowToast("Profile updated successfully"))
+                    _effect.emit(ProfileUiEffect.SaveSuccess)
+                }
                 is Result.Error   -> _effect.emit(ProfileUiEffect.ShowToast("Update failed: ${result.exception.message}"))
                 else -> Unit
             }
@@ -101,4 +104,5 @@ data class ProfileUiState(
 
 sealed interface ProfileUiEffect {
     data class ShowToast(val message: String) : ProfileUiEffect
+    data object SaveSuccess : ProfileUiEffect
 }

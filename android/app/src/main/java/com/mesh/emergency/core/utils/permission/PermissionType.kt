@@ -39,7 +39,8 @@ enum class PermissionType {
                 } else {
                     listOf(
                         Manifest.permission.BLUETOOTH,
-                        Manifest.permission.BLUETOOTH_ADMIN
+                        Manifest.permission.BLUETOOTH_ADMIN,
+                        Manifest.permission.ACCESS_FINE_LOCATION
                     )
                 }
             }
