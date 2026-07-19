@@ -23,6 +23,10 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE conversationId = :convId ORDER BY timestamp ASC")
     fun getMessagesForConversation(convId: String): Flow<List<MessageEntity>>
 
+    /** Streams all pending or queued messages. */
+    @Query("SELECT * FROM messages WHERE deliveryStatus = 'PENDING' OR deliveryStatus = 'QUEUED' ORDER BY timestamp ASC")
+    fun getPendingMessages(): Flow<List<MessageEntity>>
+
     /** Queries a message log by primary ID. */
     @Query("SELECT * FROM messages WHERE entityId = :id LIMIT 1")
     suspend fun getMessageById(id: String): MessageEntity?

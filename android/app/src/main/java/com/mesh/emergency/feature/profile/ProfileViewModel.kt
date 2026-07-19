@@ -7,10 +7,15 @@ package com.mesh.emergency.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.domain.repository.UserDomainModel
 import com.mesh.emergency.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,8 +33,15 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    @SuppressLint("HardwareIds")
+    val localBleAddress: String = try {
+        val bm = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+        bm?.adapter?.address ?: ""
+    } catch (e: Exception) { "" }
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -99,7 +111,8 @@ data class ProfileUiState(
     val isSaving: Boolean = false,
     val usernameInput: String = "",
     val userModel: UserDomainModel? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val localBleAddress: String = ""
 )
 
 sealed interface ProfileUiEffect {

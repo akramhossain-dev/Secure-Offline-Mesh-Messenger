@@ -12,7 +12,9 @@ data class QRHandshakeData(
     val version: Int = 1,
     val deviceId: String,
     val userId: String,
+    val username: String = "",   // Human-readable display name for the contact
     val deviceType: String,
     val publicKeyRef: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val bleAddress: String = ""  // Bluetooth MAC address for direct GATT connection
 )

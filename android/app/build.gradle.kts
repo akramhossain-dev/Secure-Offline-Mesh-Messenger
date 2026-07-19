@@ -65,10 +65,10 @@ android {
             isShrinkResources = false
 
             buildConfigField("boolean", "ENABLE_LOGGING",       "true")
-            buildConfigField("boolean", "FEATURE_BLE",          "false")
-            buildConfigField("boolean", "FEATURE_LORA",         "false")
-            buildConfigField("boolean", "FEATURE_ENCRYPTION",   "false")
-            buildConfigField("boolean", "FEATURE_MAPS",         "false")
+            buildConfigField("boolean", "FEATURE_BLE",          "true")
+            buildConfigField("boolean", "FEATURE_LORA",         "true")
+            buildConfigField("boolean", "FEATURE_ENCRYPTION",   "true")
+            buildConfigField("boolean", "FEATURE_MAPS",         "true")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -203,6 +203,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.mlkit.barcode)
+    implementation("com.google.zxing:core:3.5.3")
 
     // ── Offline Map Engine (MapLibre) ─────────────────────────────────────────
     implementation("org.maplibre.gl:android-sdk:11.5.0")

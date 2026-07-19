@@ -73,6 +73,10 @@ object MockFactory {
         override suspend fun deleteConversation(conversation: ConversationEntity) = Unit
 
         override fun getMessagesForConversation(convId: String): Flow<List<MessageEntity>> = flowOf(messages)
+        override fun getPendingMessages(): Flow<List<MessageEntity>> = flowOf(messages.filter {
+            it.deliveryStatus == com.mesh.emergency.data.local.entity.DbDeliveryStatus.PENDING ||
+                    it.deliveryStatus == com.mesh.emergency.data.local.entity.DbDeliveryStatus.QUEUED
+        })
         override suspend fun getMessageById(id: String): MessageEntity? = null
         override suspend fun insertMessage(message: MessageEntity) = Unit
         override suspend fun deleteMessage(message: MessageEntity) = Unit

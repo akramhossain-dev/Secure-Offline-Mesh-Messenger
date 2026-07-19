@@ -25,5 +25,6 @@ data class UserEntity(
     val lastSeen: Long,
     // Contact-specific properties (for peer relationships)
     val trustedStatus: Boolean = false,
-    val nickname: String? = null
+    val nickname: String? = null,
+    val publicKey: String? = null
 ) : BaseEntity

@@ -15,6 +15,8 @@ import com.mesh.emergency.data.local.entity.DbDeliveryStatus
 import com.mesh.emergency.data.local.entity.DbMessagePriority
 import com.mesh.emergency.data.local.entity.DbMessageType
 import com.mesh.emergency.data.local.entity.MessageEntity
+import com.mesh.emergency.core.security.KeyManager
+import com.mesh.emergency.core.security.CryptographyEngine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -42,6 +44,12 @@ class StoreForwardTest {
     @Mock
     private lateinit var mockLocalDataSource: LocalDataSource
 
+    @Mock
+    private lateinit var mockKeyManager: KeyManager
+
+    @Mock
+    private lateinit var mockCryptographyEngine: CryptographyEngine
+
     private lateinit var forwardingEngine: ForwardingEngineImpl
 
     @Before
@@ -50,7 +58,9 @@ class StoreForwardTest {
         forwardingEngine = ForwardingEngineImpl(
             mockQueueManager,
             mockCommunicationManager,
-            mockLocalDataSource
+            mockLocalDataSource,
+            mockKeyManager,
+            mockCryptographyEngine
         )
     }
 

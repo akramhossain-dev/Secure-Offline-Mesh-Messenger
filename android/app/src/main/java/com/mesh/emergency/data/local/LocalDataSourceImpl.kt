@@ -76,6 +76,9 @@ class LocalDataSourceImpl @Inject constructor(
     override fun getMessagesForConversation(convId: String): Flow<List<MessageEntity>> =
         messageDao.getMessagesForConversation(convId)
 
+    override fun getPendingMessages(): Flow<List<MessageEntity>> =
+        messageDao.getPendingMessages()
+
     override suspend fun getMessageById(id: String): MessageEntity? =
         messageDao.getMessageById(id)
 

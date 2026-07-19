@@ -23,7 +23,8 @@ data class DeviceEntity(
     val createdTime: Long = System.currentTimeMillis(),
     val lastActiveTime: Long = System.currentTimeMillis(),
     val trustStatus: DbTrustStatus = DbTrustStatus.UNKNOWN,
-    val nickname: String? = null
+    val nickname: String? = null,
+    val bleAddress: String = ""  // Bluetooth MAC address for direct GATT connection
 ) : BaseEntity
 
 /**

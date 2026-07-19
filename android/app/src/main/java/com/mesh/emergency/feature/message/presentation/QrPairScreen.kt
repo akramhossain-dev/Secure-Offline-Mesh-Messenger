@@ -431,54 +431,68 @@ fun CameraPreview(
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val executor = remember { Executors.newSingleThreadExecutor() }
 
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    val barcodeScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+                .build()
+        )
+    }
+
+    val hasDetected = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
+
+    val stableOnQrCodeDetected = remember(onQrCodeDetected) {
+        { payload: String ->
+            if (hasDetected.compareAndSet(false, true)) {
+                onQrCodeDetected(payload)
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             executor.shutdown()
+            barcodeScanner.close()
+        }
+    }
+
+    LaunchedEffect(lifecycleOwner) {
+        val cameraProvider = cameraProviderFuture.get()
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
+        }
+
+        val imageAnalysis = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+            .also { analysis ->
+                analysis.setAnalyzer(executor) { imageProxy ->
+                    processImageProxy(barcodeScanner, imageProxy, stableOnQrCodeDetected)
+                }
+            }
+
+        try {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                imageAnalysis
+            )
+        } catch (exc: Exception) {
+            Timber.e(exc, "Use case binding failed")
         }
     }
 
     AndroidView(
-        factory = { ctx ->
-            PreviewView(ctx).apply {
-                scaleType = PreviewView.ScaleType.FILL_CENTER
-            }
-        },
-        modifier = Modifier.fillMaxSize(),
-        update = { previewView ->
-            cameraProviderFuture.addListener({
-                val cameraProvider = cameraProviderFuture.get()
-                val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-
-                val barcodeScanner = BarcodeScanning.getClient(
-                    BarcodeScannerOptions.Builder()
-                        .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
-                        .build()
-                )
-
-                val imageAnalysis = ImageAnalysis.Builder()
-                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
-                    .also { analysis ->
-                        analysis.setAnalyzer(executor) { imageProxy ->
-                            processImageProxy(barcodeScanner, imageProxy, onQrCodeDetected)
-                        }
-                    }
-
-                try {
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        imageAnalysis
-                    )
-                } catch (exc: Exception) {
-                    Timber.e(exc, "Use case binding failed")
-                }
-            }, ContextCompat.getMainExecutor(context))
-        }
+        factory = { previewView },
+        modifier = Modifier.fillMaxSize()
     )
 }
 

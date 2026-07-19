@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f50932d8ede21830566d502a169621d6",
+    "identityHash": "da9cf93d37e8ff8e8b75379830afcdc8",
     "entities": [
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entityId` TEXT NOT NULL, `username` TEXT NOT NULL, `profileImageRef` TEXT, `languagePreference` TEXT NOT NULL, `createdTime` INTEGER NOT NULL, `updatedTime` INTEGER NOT NULL, `status` TEXT NOT NULL, `isCurrentUser` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `trustedStatus` INTEGER NOT NULL, `nickname` TEXT, PRIMARY KEY(`entityId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entityId` TEXT NOT NULL, `username` TEXT NOT NULL, `profileImageRef` TEXT, `languagePreference` TEXT NOT NULL, `createdTime` INTEGER NOT NULL, `updatedTime` INTEGER NOT NULL, `status` TEXT NOT NULL, `isCurrentUser` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `trustedStatus` INTEGER NOT NULL, `nickname` TEXT, `publicKey` TEXT, PRIMARY KEY(`entityId`))",
         "fields": [
           {
             "fieldPath": "entityId",
@@ -71,6 +71,11 @@
             "fieldPath": "nickname",
             "columnName": "nickname",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "publicKey",
+            "columnName": "publicKey",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -82,7 +87,7 @@
       },
       {
         "tableName": "devices",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entityId` TEXT NOT NULL, `name` TEXT NOT NULL, `rssi` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `deviceType` TEXT NOT NULL, `platformInfo` TEXT NOT NULL, `createdTime` INTEGER NOT NULL, `lastActiveTime` INTEGER NOT NULL, `trustStatus` TEXT NOT NULL, `nickname` TEXT, PRIMARY KEY(`entityId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`entityId` TEXT NOT NULL, `name` TEXT NOT NULL, `rssi` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `deviceType` TEXT NOT NULL, `platformInfo` TEXT NOT NULL, `createdTime` INTEGER NOT NULL, `lastActiveTime` INTEGER NOT NULL, `trustStatus` TEXT NOT NULL, `nickname` TEXT, `bleAddress` TEXT NOT NULL, PRIMARY KEY(`entityId`))",
         "fields": [
           {
             "fieldPath": "entityId",
@@ -142,6 +147,12 @@
             "fieldPath": "nickname",
             "columnName": "nickname",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bleAddress",
+            "columnName": "bleAddress",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -856,7 +867,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f50932d8ede21830566d502a169621d6')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'da9cf93d37e8ff8e8b75379830afcdc8')"
     ]
   }
 }

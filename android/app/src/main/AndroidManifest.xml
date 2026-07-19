@@ -65,6 +65,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Disable WorkManager default initializer for Hilt Worker Injection -->
+        <provider
+            android:name="androidx.work.impl.WorkManagerInitializer"
+            android:authorities="${applicationId}.workmanager-init"
+            android:exported="false"
+            tools:node="remove" />
+
     </application>
 
 </manifest>

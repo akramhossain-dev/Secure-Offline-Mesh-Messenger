@@ -8,6 +8,8 @@ package com.mesh.emergency.feature.profile
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -194,9 +196,11 @@ fun ProfileScreen(
                                         version = 1,
                                         deviceId = it.id,
                                         userId = it.id,
+                                        username = it.username,    // real display name
                                         deviceType = "SMARTPHONE",
                                         publicKeyRef = it.publicKey,
-                                        timestamp = System.currentTimeMillis()
+                                        timestamp = System.currentTimeMillis(),
+                                        bleAddress = viewModel.localBleAddress
                                     )
                                 )
                             } ?: ""
@@ -293,66 +297,43 @@ fun QrCodeImage(
     payload: String,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier) {
-        val sizePx = size.minDimension
-        val cells = 21 // Version 1 QR specifications
-        val cellSize = sizePx / cells
-
-        // 1. Solid background fill
-        drawRect(color = Color.White)
-
-        // 2. Local finder drawing function (7x7 border with 3x3 inner square)
-        fun drawFinderPattern(col: Int, row: Int) {
-            val px = col * cellSize
-            val py = row * cellSize
-            // Outer square
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(px, py),
-                size = Size(cellSize * 7, cellSize * 7)
-            )
-            // White spacing spacer
-            drawRect(
-                color = Color.White,
-                topLeft = Offset(px + cellSize, py + cellSize),
-                size = Size(cellSize * 5, cellSize * 5)
-            )
-            // Inner core square
-            drawRect(
-                color = Color.Black,
-                topLeft = Offset(px + cellSize * 2, py + cellSize * 2),
-                size = Size(cellSize * 3, cellSize * 3)
-            )
+    val bitMatrix = remember(payload) {
+        try {
+            if (payload.isNotEmpty()) {
+                QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, 512, 512)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
         }
+    }
 
-        drawFinderPattern(0, 0)          // Top-Left
-        drawFinderPattern(cells - 7, 0)  // Top-Right
-        drawFinderPattern(0, cells - 7)  // Bottom-Left
+    Canvas(modifier = modifier) {
+        if (bitMatrix != null) {
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val cellSizeX = size.width / width
+            val cellSizeY = size.height / height
 
-        // 3. Deterministic hashing to render data cells
-        val hash = payload.hashCode()
-        for (r in 0 until cells) {
-            for (c in 0 until cells) {
-                // Avoid drawing over the finder patterns
-                val isTopLeftFinder = r < 8 && c < 8
-                val isTopRightFinder = r < 8 && c >= cells - 8
-                val isBottomLeftFinder = r >= cells - 8 && c < 8
+            // Draw solid white background
+            drawRect(color = Color.White)
 
-                if (isTopLeftFinder || isTopRightFinder || isBottomLeftFinder) {
-                    continue
-                }
-
-                // Map mathematical coordinates to binary hash values
-                val cellHash = (r * 53 + c * 83 + hash).hashCode()
-                val isBlack = cellHash % 2 == 0
-                if (isBlack) {
-                    drawRect(
-                        color = Color.Black,
-                        topLeft = Offset(c * cellSize, r * cellSize),
-                        size = Size(cellSize, cellSize)
-                    )
+            // Draw black modules
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    if (bitMatrix.get(x, y)) {
+                        drawRect(
+                            color = Color.Black,
+                            topLeft = Offset(x * cellSizeX, y * cellSizeY),
+                            size = Size(cellSizeX, cellSizeY)
+                        )
+                    }
                 }
             }
+        } else {
+            // Draw loading or fallback indicator
+            drawRect(color = Color.LightGray)
         }
     }
 }

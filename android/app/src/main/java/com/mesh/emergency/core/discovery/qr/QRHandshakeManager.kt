@@ -18,9 +18,11 @@ object QRHandshakeManager {
         json.put("v", data.version)
         json.put("did", data.deviceId)
         json.put("uid", data.userId)
+        json.put("un", data.username)          // human-readable display name
         json.put("dt", data.deviceType)
         json.put("pub", data.publicKeyRef)
         json.put("ts", data.timestamp)
+        json.put("ble", data.bleAddress)
         return json.toString()
     }
 
@@ -31,9 +33,11 @@ object QRHandshakeManager {
             version = json.getInt("v"),
             deviceId = json.getString("did"),
             userId = json.getString("uid"),
+            username = json.optString("un", ""),   // backwards-compatible
             deviceType = json.getString("dt"),
             publicKeyRef = json.getString("pub"),
-            timestamp = json.getLong("ts")
+            timestamp = json.getLong("ts"),
+            bleAddress = json.optString("ble", "")
         )
     }
 }

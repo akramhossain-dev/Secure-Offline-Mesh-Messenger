@@ -43,6 +43,7 @@ interface LocalDataSource {
 
     // ── Message Operations ────────────────────────────────────────────────────
     fun getMessagesForConversation(convId: String): Flow<List<MessageEntity>>
+    fun getPendingMessages(): Flow<List<MessageEntity>>
     suspend fun getMessageById(id: String): MessageEntity?
     suspend fun insertMessage(message: MessageEntity)
     suspend fun deleteMessage(message: MessageEntity)

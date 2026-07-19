@@ -18,7 +18,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import com.mesh.emergency.core.domain.AppStateRepository
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -31,14 +33,13 @@ import javax.inject.Singleton
  */
 @Singleton
 class CommunicationManagerImpl @Inject constructor(
-    private val bluetoothTransport: com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+    private val bluetoothTransport: com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl,
+    private val appStateRepository: AppStateRepository
 ) : CommunicationManager {
 
     private val transports = mutableMapOf<TransportType, Transport>()
 
-    init {
-        registerTransport(bluetoothTransport)
-    }
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
 
     private val _activeTransport = MutableStateFlow<Transport?>(null)
     override val activeTransport: StateFlow<Transport?> = _activeTransport.asStateFlow()
@@ -46,10 +47,36 @@ class CommunicationManagerImpl @Inject constructor(
     private val _communicationState = MutableStateFlow(CommunicationState.DISCONNECTED)
     override val communicationState: StateFlow<CommunicationState> = _communicationState.asStateFlow()
 
+    init {
+        registerTransport(bluetoothTransport)
+        scope.launch {
+            while (true) {
+                try {
+                    val status = bluetoothTransport.status.value
+                    if (status == com.mesh.emergency.core.communication.TransportStatus.DISCONNECTED ||
+                        status == com.mesh.emergency.core.communication.TransportStatus.UNAVAILABLE) {
+                        timber.log.Timber.d("CommunicationManager: Attempting to connect Bluetooth transport...")
+                        bluetoothTransport.connect()
+                    }
+                } catch (e: Exception) {
+                    timber.log.Timber.e(e, "CommunicationManager: Failed to connect Bluetooth transport")
+                }
+                kotlinx.coroutines.delay(15000L)
+            }
+        }
+    }
+
     override fun registerTransport(transport: Transport) {
         synchronized(transports) {
             transports[transport.type] = transport
             evaluateActiveTransport()
+        }
+        scope.launch {
+            transport.status.collect {
+                synchronized(transports) {
+                    evaluateActiveTransport()
+                }
+            }
         }
     }
 
@@ -128,5 +155,11 @@ class CommunicationManagerImpl @Inject constructor(
             TransportStatus.UNAVAILABLE  -> CommunicationState.UNAVAILABLE
             null                         -> CommunicationState.UNAVAILABLE
         }
+
+        // Sync connection state to the central AppStateRepository
+        val isOnline = selected?.status?.value == TransportStatus.CONNECTED
+        val transportLabel = selected?.type?.name ?: "NONE"
+        val nodeCount = if (isOnline) 1 else 0
+        appStateRepository.updateConnectionStatus(isOnline, transportLabel, nodeCount)
     }
 }

@@ -23,13 +23,8 @@ class MessageQueueManagerImpl @Inject constructor(
 ) : MessageQueueManager {
 
     override fun getPendingQueue(): Flow<List<MessageEntity>> {
-        // Retrieve all messages marked PENDING or QUEUED
-        return localDataSource.getMessagesForConversation("recipient_id").map { list ->
-            list.filter {
-                it.deliveryStatus == DbDeliveryStatus.PENDING ||
-                        it.deliveryStatus == DbDeliveryStatus.QUEUED
-            }
-        }
+        // Retrieve all messages marked PENDING or QUEUED globally
+        return localDataSource.getPendingMessages()
     }
 
     override suspend fun enqueue(message: MessageEntity) {
