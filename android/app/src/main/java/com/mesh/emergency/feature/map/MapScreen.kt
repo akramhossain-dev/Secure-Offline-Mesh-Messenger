@@ -159,6 +159,46 @@ fun MapScreen(
                             .padding(top = 16.dp, start = 16.dp, end = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "OFFLINE MESSENGER MAP",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                            
+                            val statusText = if (uiState.isPmtilesLoaded) "PMTiles Vector Map (Offline)" else "Cached Raster Tiles (Offline)"
+                            val statusColor = if (uiState.isPmtilesLoaded) MeshThemeTokens.semanticColors.connected else MeshThemeTokens.semanticColors.warning
+                            
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = statusColor.copy(alpha = 0.2f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.5f)),
+                                modifier = Modifier.padding(bottom = 2.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(statusColor)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = statusText,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+
                         OutlinedTextField(
                             value = uiState.searchQuery,
                             onValueChange = { viewModel.onSearchQueryChanged(it) },

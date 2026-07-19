@@ -72,7 +72,7 @@ val LightAuroraColors = AuroraColors(
 // ── Dark Aurora ───────────────────────────────────────────────────────────────────
 val DarkAuroraColors = AuroraColors(
     glassBackground  = Color(0xCC0D0C2B),   // Indigo10 @ 80% opacity
-    glassSurface     = Color(0xFF121212),   // CardBlack — opaque card surface on AMOLED
+    glassSurface     = Color(0x1AFFFFFF),   // White @ 10% opacity for glassmorphism
     glassEmergency   = Color(0x33FF5449),   // Red60 @ 20% opacity
     glassWarning     = Color(0x33DA8E00),   // Amber70 @ 20% opacity
     glassOverlay     = Color(0x1A7674DC),   // Indigo60 @ 10% opacity

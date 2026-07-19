@@ -68,7 +68,7 @@ class VoiceManagerTest {
 
         `when`(mockAudioProvider.startRecording()).thenReturn(Result.Success(Unit))
         `when`(mockAudioProvider.stopRecording()).thenReturn(Result.Success(info))
-        `when`(mockCommunicationManager.sendMessage(any())).thenReturn(
+        `when`(mockCommunicationManager.sendMessage(anyByteArray())).thenReturn(
             Result.Success(DeliveryResult.SENT)
         )
 
@@ -84,7 +84,28 @@ class VoiceManagerTest {
 
         verify(mockAudioProvider).startRecording()
         verify(mockAudioProvider).stopRecording()
-        verify(mockLocalDataSource).insertVoiceMessage(any())
-        verify(mockCommunicationManager).sendMessage(any())
+        verify(mockLocalDataSource).insertVoiceMessage(anyVoiceMessageEntity())
+        verify(mockCommunicationManager).sendMessage(anyByteArray())
     }
+}
+
+private fun anyByteArray(): ByteArray {
+    org.mockito.Mockito.any(ByteArray::class.java)
+    return ByteArray(0)
+}
+
+private fun anyVoiceMessageEntity(): com.mesh.emergency.data.local.entity.VoiceMessageEntity {
+    org.mockito.Mockito.any(com.mesh.emergency.data.local.entity.VoiceMessageEntity::class.java)
+    return com.mesh.emergency.data.local.entity.VoiceMessageEntity(
+        entityId = "",
+        senderId = "",
+        receiverId = "",
+        fileReference = "",
+        duration = 0L,
+        fileSize = 0L,
+        format = "",
+        quality = "",
+        timestamp = 0L,
+        status = ""
+    )
 }

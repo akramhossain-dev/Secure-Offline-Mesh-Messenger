@@ -16,6 +16,8 @@ import com.mesh.emergency.data.worker.BatteryOptimizationWorker
 import com.mesh.emergency.data.worker.LogCleanupWorker
 import com.mesh.emergency.data.worker.ResourceExpiryWorker
 import com.mesh.emergency.data.worker.SyncQueueWorker
+import com.mesh.emergency.core.communication.worker.QueueProcessWorker
+import com.mesh.emergency.core.communication.worker.CleanupWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
@@ -55,6 +57,8 @@ class MeshWorkManager @Inject constructor(
         scheduleLogCleanup()
         scheduleSyncQueue()
         scheduleBatteryOptimization()
+        scheduleQueueProcess()
+        scheduleCleanup()
         Timber.d("MeshWorkManager: All workers scheduled")
     }
 
@@ -121,12 +125,46 @@ class MeshWorkManager @Inject constructor(
         Timber.d("MeshWorkManager: BatteryOptimization worker scheduled (30m)")
     }
 
+    /** Queue routing processor every 15 minutes. */
+    private fun scheduleQueueProcess() {
+        val request = PeriodicWorkRequestBuilder<QueueProcessWorker>(15, TimeUnit.MINUTES)
+            .setConstraints(defaultConstraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 5, TimeUnit.MINUTES)
+            .addTag(TAG_QUEUE_PROCESS)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            WORK_QUEUE_PROCESS,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+        Timber.d("MeshWorkManager: QueueProcess worker scheduled (15m)")
+    }
+
+    /** Message cleanup sweep every 6 hours. */
+    private fun scheduleCleanup() {
+        val request = PeriodicWorkRequestBuilder<CleanupWorker>(6, TimeUnit.HOURS)
+            .setConstraints(defaultConstraints)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
+            .addTag(TAG_CLEANUP)
+            .build()
+
+        workManager.enqueueUniquePeriodicWork(
+            WORK_CLEANUP,
+            ExistingPeriodicWorkPolicy.KEEP,
+            request
+        )
+        Timber.d("MeshWorkManager: Cleanup worker scheduled (6h)")
+    }
+
     /** Cancels all managed workers. */
     fun cancelAllWorkers() {
         workManager.cancelAllWorkByTag(TAG_RESOURCE_EXPIRY)
         workManager.cancelAllWorkByTag(TAG_LOG_CLEANUP)
         workManager.cancelAllWorkByTag(TAG_SYNC_QUEUE)
         workManager.cancelAllWorkByTag(TAG_BATTERY_OPT)
+        workManager.cancelAllWorkByTag(TAG_QUEUE_PROCESS)
+        workManager.cancelAllWorkByTag(TAG_CLEANUP)
         Timber.d("MeshWorkManager: All workers cancelled")
     }
 
@@ -135,10 +173,14 @@ class MeshWorkManager @Inject constructor(
         const val WORK_LOG_CLEANUP     = "mesh_log_cleanup"
         const val WORK_SYNC_QUEUE      = "mesh_sync_queue"
         const val WORK_BATTERY_OPT     = "mesh_battery_opt"
+        const val WORK_QUEUE_PROCESS   = "mesh_queue_process"
+        const val WORK_CLEANUP         = "mesh_cleanup"
 
         const val TAG_RESOURCE_EXPIRY  = "resource_expiry"
         const val TAG_LOG_CLEANUP      = "log_cleanup"
         const val TAG_SYNC_QUEUE       = "sync_queue"
         const val TAG_BATTERY_OPT      = "battery_opt"
+        const val TAG_QUEUE_PROCESS    = "queue_process"
+        const val TAG_CLEANUP          = "cleanup"
     }
 }

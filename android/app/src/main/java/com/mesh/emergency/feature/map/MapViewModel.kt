@@ -89,8 +89,10 @@ class MapViewModel @Inject constructor(
             val styleFile = File(context.filesDir, "style.json")
             val cacheDir = context.cacheDir.absolutePath
             val pmtilesFile = File(context.filesDir, "imported_map.pmtiles")
+            val hasPmtiles = pmtilesFile.exists()
+            _uiState.update { it.copy(isPmtilesLoaded = hasPmtiles) }
             
-            val styleContent = if (pmtilesFile.exists()) {
+            val styleContent = if (hasPmtiles) {
                 // Vector style using local PMTiles source!
                 """
                 {
@@ -252,10 +254,15 @@ class MapViewModel @Inject constructor(
                 if (result is Result.Success) {
                     val saved = result.data.filter { it.deviceId == myFingerprint || it.provider == "me" }
                     val shared = result.data.filter { it.deviceId != myFingerprint && it.provider != "me" }
-                    _uiState.update {
-                        it.copy(
+                    _uiState.update { state ->
+                        val newestSaved = saved.maxByOrNull { it.timestamp }
+                        val centerLat = if (state.currentLocation == null && newestSaved != null) newestSaved.latitude else state.mapCenterLat
+                        val centerLon = if (state.currentLocation == null && newestSaved != null) newestSaved.longitude else state.mapCenterLon
+                        state.copy(
                             savedLocations = saved,
-                            sharedLocations = shared
+                            sharedLocations = shared,
+                            mapCenterLat = centerLat,
+                            mapCenterLon = centerLon
                         )
                     }
                 }
@@ -676,13 +683,14 @@ data class MapUiState(
     val currentLocation: LocationData? = null,
     val zoomLevel: Int = 14,
     val errorMessage: String? = null,
-    val mapCenterLat: Double = 0.0,
-    val mapCenterLon: Double = 0.0,
+    val mapCenterLat: Double = 23.8103,
+    val mapCenterLon: Double = 90.4125,
     val isAutoCentering: Boolean = true,
     val downloadProgress: Float? = null,
     val downloadStatus: String? = null,
     val offlineCacheSize: Int = 0,
     val searchQuery: String = "",
     val searchResults: List<SearchResult> = emptyList(),
-    val isSearching: Boolean = false
+    val isSearching: Boolean = false,
+    val isPmtilesLoaded: Boolean = false
 )

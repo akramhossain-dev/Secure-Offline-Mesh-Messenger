@@ -56,7 +56,7 @@ class ResourceManagerTest {
 
     @Test
     fun testCreateOffer_savesToDBAndTriggersBroadcast() = runTest {
-        `when`(mockCommunicationManager.sendMessage(any())).thenReturn(
+        `when`(mockCommunicationManager.sendMessage(anyByteArray())).thenReturn(
             Result.Success(DeliveryResult.SENT)
         )
 
@@ -75,8 +75,8 @@ class ResourceManagerTest {
         assertEquals("Painkillers", offer.name)
         assertEquals("MEDICAL", offer.type)
 
-        verify(mockLocalDataSource).insertResource(any())
-        verify(mockCommunicationManager).sendMessage(any())
+        verify(mockLocalDataSource).insertResource(anyResourceEntity())
+        verify(mockCommunicationManager).sendMessage(anyByteArray())
     }
 
     @Test
@@ -141,4 +141,23 @@ class ResourceManagerTest {
             expiredEntity.copy(availabilityStatus = DbResourceStatus.EXPIRED)
         )
     }
+}
+
+private fun anyByteArray(): ByteArray {
+    org.mockito.Mockito.any(ByteArray::class.java)
+    return ByteArray(0)
+}
+
+private fun anyResourceEntity(): com.mesh.emergency.data.local.entity.ResourceEntity {
+    org.mockito.Mockito.any(com.mesh.emergency.data.local.entity.ResourceEntity::class.java)
+    return com.mesh.emergency.data.local.entity.ResourceEntity(
+        entityId = "",
+        ownerId = "",
+        name = "",
+        type = "",
+        quantity = 0,
+        latitude = 0.0,
+        longitude = 0.0,
+        description = ""
+    )
 }

@@ -75,6 +75,11 @@ class StoreForwardTest {
         forwardingEngine.processQueue()
 
         verify(mockQueueManager).updateStatus("msg_1", DbDeliveryStatus.EXPIRED)
-        verify(mockCommunicationManager, never()).sendMessage(any())
+        verify(mockCommunicationManager, never()).sendMessage(anyByteArray())
     }
+}
+
+private fun anyByteArray(): ByteArray {
+    org.mockito.Mockito.any(ByteArray::class.java)
+    return ByteArray(0)
 }

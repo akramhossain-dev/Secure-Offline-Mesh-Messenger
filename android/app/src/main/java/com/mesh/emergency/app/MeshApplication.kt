@@ -8,7 +8,9 @@ package com.mesh.emergency.app
 import android.app.Application
 import com.mesh.emergency.BuildConfig
 import com.mesh.emergency.core.common.logging.AppLogger
+import com.mesh.emergency.core.system.MeshWorkManager
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * Application entry point for the Offline Emergency Mesh Communication System.
@@ -24,11 +26,17 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class MeshApplication : Application() {
 
+    @Inject
+    lateinit var meshWorkManager: MeshWorkManager
+
     override fun onCreate() {
         super.onCreate()
         initializeLogging()
         // Initialize global CrashHandler with application context for local crash log persistence
         com.mesh.emergency.core.error.CrashHandler.install(this)
+        
+        // Schedule all periodic background sync, routing, and cleanup workers
+        meshWorkManager.scheduleAllWorkers()
     }
 
     // ─────────────────────────────────────────────────────────────────────────

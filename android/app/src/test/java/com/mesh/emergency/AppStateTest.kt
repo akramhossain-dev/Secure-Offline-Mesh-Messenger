@@ -42,6 +42,7 @@ class AppStateTest {
         MockitoAnnotations.openMocks(this)
         `when`(mockDataStore.data).thenReturn(flowOf(emptyPreferences()))
         repository = AppStateRepositoryImpl(mockDataStore)
+        Thread.sleep(100) // Allow async init block running on Dispatchers.IO to complete
     }
 
     // ── Initial State ──────────────────────────────────────────────────────────

@@ -57,7 +57,7 @@ class EmergencyManagerTest {
 
     @Test
     fun testTriggerSOS_forwardPayloadAndSavesEvents() = runTest {
-        `when`(mockCommunicationManager.sendMessage(any())).thenReturn(
+        `when`(mockCommunicationManager.sendMessage(anyByteArray())).thenReturn(
             Result.Success(DeliveryResult.SENT)
         )
 
@@ -69,8 +69,8 @@ class EmergencyManagerTest {
         assertEquals(23.8103, event.latitude, 0.0001)
         assertEquals(DbEmergencyStatus.BROADCASTING, event.status)
 
-        verify(mockCommunicationManager).sendMessage(any())
-        verify(mockLocalDataSource, times(3)).insertEmergencyEvent(any())
+        verify(mockCommunicationManager).sendMessage(anyByteArray())
+        verify(mockLocalDataSource, times(3)).insertEmergencyEvent(anyEmergencyEventEntity())
     }
 
     @Test
@@ -95,4 +95,22 @@ class EmergencyManagerTest {
             event.copy(status = DbEmergencyStatus.RESOLVED, isResolved = true)
         )
     }
+}
+
+private fun anyByteArray(): ByteArray {
+    org.mockito.Mockito.any(ByteArray::class.java)
+    return ByteArray(0)
+}
+
+private fun anyEmergencyEventEntity(): EmergencyEventEntity {
+    org.mockito.Mockito.any(EmergencyEventEntity::class.java)
+    return EmergencyEventEntity(
+        entityId = "",
+        senderId = "",
+        latitude = 0.0,
+        longitude = 0.0,
+        message = "",
+        timestamp = 0L,
+        isResolved = false
+    )
 }

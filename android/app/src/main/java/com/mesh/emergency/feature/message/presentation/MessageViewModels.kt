@@ -87,8 +87,21 @@ class MessageListViewModel @Inject constructor(
 // ── Chat ViewModel ─────────────────────────────────────────────────────────────
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val messageRepository: MessageRepository
+    private val messageRepository: MessageRepository,
+    private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager
 ) : BaseViewModel<ChatUiState, ChatUiEvent, ChatUiEffect>(ChatUiState()) {
+
+    init {
+        observeConnectionState()
+    }
+
+    private fun observeConnectionState() {
+        viewModelScope.launch {
+            communicationManager.communicationState.collect { state ->
+                updateState { copy(isOnline = state == com.mesh.emergency.core.communication.CommunicationState.CONNECTED) }
+            }
+        }
+    }
 
     override fun onEvent(event: ChatUiEvent) {
         when (event) {

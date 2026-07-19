@@ -51,7 +51,7 @@ class LoggerSystemTest {
 
         // Give a short delay to let coroutine execute async database log insert
         Thread.sleep(100)
-        verify(mockLocalDataSource).insertLog(any())
+        verify(mockLocalDataSource).insertLog(anyLogEntity())
     }
 
     @Test
@@ -67,6 +67,19 @@ class LoggerSystemTest {
         )
 
         Thread.sleep(100)
-        verify(mockLocalDataSource, never()).insertLog(any())
+        verify(mockLocalDataSource, never()).insertLog(anyLogEntity())
     }
+}
+
+private fun anyLogEntity(): com.mesh.emergency.data.local.entity.LogEntity {
+    org.mockito.Mockito.any(com.mesh.emergency.data.local.entity.LogEntity::class.java)
+    return com.mesh.emergency.data.local.entity.LogEntity(
+        entityId = "",
+        level = "",
+        category = "",
+        message = "",
+        timestamp = 0L,
+        deviceId = "",
+        moduleName = ""
+    )
 }

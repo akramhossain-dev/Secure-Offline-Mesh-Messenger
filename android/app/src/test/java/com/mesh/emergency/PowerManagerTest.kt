@@ -68,10 +68,11 @@ class PowerManagerTest {
         powerManager.handleBatteryUpdate(18, false) // Unplugged
         powerManager.handleBatteryUpdate(8, false)  // Critical
 
-        assertEquals(3, events.size)
+        assertEquals(4, events.size)
         assertTrue(events[0] is PowerEvent.ChargingStarted)
         assertTrue(events[1] is PowerEvent.ChargingStopped)
-        assertTrue(events[2] is PowerEvent.PowerCritical)
+        assertTrue(events[2] is PowerEvent.BatteryLow)
+        assertTrue(events[3] is PowerEvent.PowerCritical)
 
         collectJob.cancel()
     }
