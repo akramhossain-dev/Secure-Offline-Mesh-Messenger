@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         // Install splash screen before super.onCreate()
         installSplashScreen()
+        org.maplibre.android.MapLibre.getInstance(this)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 

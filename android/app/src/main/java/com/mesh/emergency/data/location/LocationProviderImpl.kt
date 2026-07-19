@@ -72,23 +72,23 @@ class LocationProviderImpl @Inject constructor(
             }
         }
 
-        val availableProvider = when {
-            lm.isProviderEnabled(LocationManager.GPS_PROVIDER)     -> LocationManager.GPS_PROVIDER
-            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-            else -> null
+        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+        var registeredCount = 0
+
+        for (provider in providers) {
+            if (lm.isProviderEnabled(provider)) {
+                try {
+                    lm.requestLocationUpdates(provider, MIN_TIME_MS, MIN_DISTANCE_M, listener)
+                    registeredCount++
+                    Timber.d("LocationProvider: Registered updates for $provider")
+                } catch (e: Exception) {
+                    Timber.e(e, "LocationProvider: requestLocationUpdates failed for $provider")
+                }
+            }
         }
 
-        if (availableProvider == null) {
+        if (registeredCount == 0) {
             trySend(Result.Error(Exception("No location providers available")))
-            close()
-            return@callbackFlow
-        }
-
-        try {
-            lm.requestLocationUpdates(availableProvider, MIN_TIME_MS, MIN_DISTANCE_M, listener)
-        } catch (e: Exception) {
-            Timber.e(e, "LocationProvider: requestLocationUpdates failed")
-            trySend(Result.Error(e))
             close()
             return@callbackFlow
         }

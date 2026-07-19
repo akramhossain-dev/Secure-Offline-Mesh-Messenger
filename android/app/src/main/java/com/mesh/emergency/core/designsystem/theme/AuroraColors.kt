@@ -69,17 +69,17 @@ val LightAuroraColors = AuroraColors(
     auroraEnd        = Color(0xFF4F4BD4),   // Indigo50
 )
 
-// ── Dark Aurora ───────────────────────────────────────────────────────────────
+// ── Dark Aurora ───────────────────────────────────────────────────────────────────
 val DarkAuroraColors = AuroraColors(
     glassBackground  = Color(0xCC0D0C2B),   // Indigo10 @ 80% opacity
-    glassSurface     = Color(0x1AFFFFFF),   // White @ 10% opacity
+    glassSurface     = Color(0xFF121212),   // CardBlack — opaque card surface on AMOLED
     glassEmergency   = Color(0x33FF5449),   // Red60 @ 20% opacity
     glassWarning     = Color(0x33DA8E00),   // Amber70 @ 20% opacity
     glassOverlay     = Color(0x1A7674DC),   // Indigo60 @ 10% opacity
     glassBorder      = Color(0x33FFFFFF),   // White @ 20% opacity
-    auroraStart      = Color(0xFF282481),   // Indigo30
-    auroraMid        = Color(0xFF00565B),   // Teal30
-    auroraEnd        = Color(0xFF1A1856),   // Indigo20
+    auroraStart      = Color(0xFF0D0C2B),   // Indigo10 — near black with blue tint
+    auroraMid        = Color(0xFF001F21),   // Teal10 — near black with teal tint
+    auroraEnd        = Color(0xFF000000),   // PureBlack — true black
 )
 
 val LocalAuroraColors = androidx.compose.runtime.staticCompositionLocalOf { DarkAuroraColors }

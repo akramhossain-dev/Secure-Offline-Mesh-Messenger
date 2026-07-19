@@ -52,6 +52,8 @@ work-runtime                = "2.10.0"
 # Logging
 # ─────────────────────────────────────────────
 timber                      = "5.0.1"
+camerax                     = "1.4.1"
+mlkit-barcode               = "17.3.0"
 
 # ─────────────────────────────────────────────
 # Code Quality
@@ -146,6 +148,15 @@ hilt-work-compiler          = { group = "androidx.hilt",            name = "hilt
 # Logging
 # ─────────────────────────────────────────────
 timber                      = { group = "com.jakewharton.timber",   name = "timber",                    version.ref = "timber" }
+
+# ─────────────────────────────────────────────
+# Camera & QR Scanning
+# ─────────────────────────────────────────────
+camerax-core                = { group = "androidx.camera",          name = "camera-core",               version.ref = "camerax" }
+camerax-camera2             = { group = "androidx.camera",          name = "camera-camera2",            version.ref = "camerax" }
+camerax-lifecycle           = { group = "androidx.camera",          name = "camera-lifecycle",          version.ref = "camerax" }
+camerax-view                = { group = "androidx.camera",          name = "camera-view",               version.ref = "camerax" }
+mlkit-barcode               = { group = "com.google.mlkit",         name = "barcode-scanning",          version.ref = "mlkit-barcode" }
 
 # ─────────────────────────────────────────────
 # Testing

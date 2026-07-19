@@ -6,11 +6,11 @@
 package com.mesh.emergency.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.BatteryFull
-import androidx.compose.material.icons.filled.BatteryUnknown
+import androidx.compose.material.icons.automirrored.filled.BatteryUnknown
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BluetoothDisabled
 import androidx.compose.material.icons.filled.Check
@@ -23,7 +23,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Message
+import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.NetworkCheck
@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SignalCellular0Bar
 import androidx.compose.material.icons.filled.SignalCellularAlt
@@ -46,15 +46,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 object MeshIcons {
 
     // ── Navigation ────────────────────────────────────────────────────────────
-    val Back: ImageVector    = Icons.Default.ArrowBack
+    val Back: ImageVector    = Icons.AutoMirrored.Default.ArrowBack
     val Menu: ImageVector    = Icons.Default.Menu
     val Close: ImageVector   = Icons.Default.Close
     val Home: ImageVector    = Icons.Default.Home
     val Settings: ImageVector = Icons.Default.Settings
 
     // ── Communication ─────────────────────────────────────────────────────────
-    val Chat: ImageVector    = Icons.Default.Message
-    val Send: ImageVector    = Icons.Default.Send
+    val Chat: ImageVector    = Icons.AutoMirrored.Default.Message
+    val Send: ImageVector    = Icons.AutoMirrored.Default.Send
     val Voice: ImageVector   = Icons.Default.Mic
     val Global: ImageVector  = Icons.Default.Public
     val QrScan: ImageVector  = Icons.Default.QrCode
@@ -87,7 +87,7 @@ object MeshIcons {
     val BatteryFull: ImageVector    = Icons.Default.BatteryFull
     val BatteryCharging: ImageVector = Icons.Default.BatteryChargingFull
     val BatteryLow: ImageVector     = Icons.Default.BatteryAlert
-    val BatteryUnknown: ImageVector = Icons.Default.BatteryUnknown
+    val BatteryUnknown: ImageVector = Icons.AutoMirrored.Default.BatteryUnknown
 
     // ── Location ──────────────────────────────────────────────────────────────
     val Location: ImageVector = Icons.Default.LocationOn

@@ -38,6 +38,9 @@ class LocationLayerTest {
     @Mock
     private lateinit var mockDeviceFingerprintProvider: DeviceFingerprintProvider
 
+    @Mock
+    private lateinit var mockMapRepository: com.mesh.emergency.data.map.MapRepositoryImpl
+
     private lateinit var locationRepository: LocationRepositoryImpl
     private lateinit var mapProvider: MapProviderImpl
 
@@ -46,7 +49,7 @@ class LocationLayerTest {
         MockitoAnnotations.openMocks(this)
         `when`(mockDeviceFingerprintProvider.getDeviceFingerprint()).thenReturn("local_user_id")
         locationRepository = LocationRepositoryImpl(mockLocalDataSource, mockDeviceFingerprintProvider)
-        mapProvider = MapProviderImpl()
+        mapProvider = MapProviderImpl(mockMapRepository)
     }
 
     @Test
@@ -84,8 +87,13 @@ class LocationLayerTest {
     fun testMapProvider_loadsOfflineFiles() {
         assertEquals(MapState.EMPTY, mapProvider.mapState.value)
 
-        val result = mapProvider.loadOfflineMap("/storage/emulated/0/dhaka.mbtiles")
-        assertTrue(result is Result.Success)
-        assertEquals(MapState.LOADED, mapProvider.mapState.value)
+        val tempFile = java.io.File.createTempFile("dhaka", ".mbtiles")
+        try {
+            val result = mapProvider.loadOfflineMap(tempFile.absolutePath)
+            assertTrue(result is Result.Success)
+            assertEquals(MapState.LOADED, mapProvider.mapState.value)
+        } finally {
+            tempFile.delete()
+        }
     }
 }

@@ -34,3 +34,21 @@ sealed class PowerEvent {
     object ChargingStopped : PowerEvent()
     object PowerCritical : PowerEvent()
 }
+
+/**
+ * Returns true if battery is critical.
+ */
+fun PowerManager.isBatteryCritical(): Boolean {
+    return currentMode.value == PowerSavingMode.EMERGENCY
+}
+
+/**
+ * Returns mapped battery level for testing and UI convenience.
+ */
+fun PowerManager.getBatteryLevel(): Int {
+    return when (currentMode.value) {
+        PowerSavingMode.EMERGENCY -> 5
+        PowerSavingMode.SAVING -> 15
+        PowerSavingMode.NORMAL -> 85
+    }
+}

@@ -5,6 +5,7 @@
 
 package com.mesh.emergency
 
+import android.content.Context
 import com.mesh.emergency.core.map.MapBounds
 import com.mesh.emergency.core.map.MapLayerModel
 import com.mesh.emergency.core.map.MapLayerType
@@ -17,6 +18,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito
 
 /**
  * Unit tests for offline map foundation (A32.1).
@@ -34,7 +36,12 @@ class OfflineMapTest {
 
     @Before
     fun setup() {
-        mapRepository = MapRepositoryImpl()
+        val context = Mockito.mock(Context::class.java)
+        val tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "offline_map_test_cache")
+        tempDir.deleteRecursively()
+        tempDir.mkdirs()
+        Mockito.`when`(context.cacheDir).thenReturn(tempDir)
+        mapRepository = MapRepositoryImpl(context)
     }
 
     @Test

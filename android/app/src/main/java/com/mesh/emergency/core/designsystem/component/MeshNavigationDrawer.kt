@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
@@ -35,10 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.core.designsystem.icon.MeshIcons
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
@@ -137,7 +140,7 @@ fun MeshNavigationDrawerSheet(
                                 )
                         )
                         Text(
-                            text = if (appState.isOnline) "Connected to Mesh" else "Offline Mode",
+                            text = if (appState.isOnline) stringResource(R.string.drawer_connected) else stringResource(R.string.drawer_offline),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -159,11 +162,11 @@ fun MeshNavigationDrawerSheet(
             // Categories List
             item {
                 Spacer(modifier = Modifier.height(spacing.sm))
-                CategoryHeader("Messenger")
+                CategoryHeader(stringResource(R.string.drawer_messenger_category))
             }
             item {
                 DrawerNavigationItem(
-                    label = "Conversations",
+                    label = stringResource(R.string.drawer_conversations),
                     route = "chat-list",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Chat,
@@ -172,7 +175,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "Contacts & Nodes",
+                    label = stringResource(R.string.drawer_contacts_nodes),
                     route = "contacts",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.User,
@@ -182,11 +185,11 @@ fun MeshNavigationDrawerSheet(
 
             item {
                 Spacer(modifier = Modifier.height(spacing.sm))
-                CategoryHeader("Safety & Radar")
+                CategoryHeader(stringResource(R.string.drawer_safety_category))
             }
             item {
                 DrawerNavigationItem(
-                    label = "Emergency SOS",
+                    label = stringResource(R.string.drawer_emergency_sos),
                     route = "emergency",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Emergency,
@@ -195,7 +198,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "Offline Map",
+                    label = stringResource(R.string.drawer_offline_map),
                     route = "map",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Map,
@@ -204,7 +207,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "Resources Share",
+                    label = stringResource(R.string.drawer_resources),
                     route = "resources",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Info,
@@ -213,7 +216,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "Network Status",
+                    label = stringResource(R.string.drawer_network_status),
                     route = "network-dashboard",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.NetworkCheck,
@@ -223,11 +226,11 @@ fun MeshNavigationDrawerSheet(
 
             item {
                 Spacer(modifier = Modifier.height(spacing.sm))
-                CategoryHeader("System Configuration")
+                CategoryHeader(stringResource(R.string.drawer_system_category))
             }
             item {
                 DrawerNavigationItem(
-                    label = "My Profile Card",
+                    label = stringResource(R.string.drawer_my_profile),
                     route = "profile",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.User,
@@ -236,7 +239,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "Application Settings",
+                    label = stringResource(R.string.drawer_app_settings),
                     route = "settings",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Settings,
@@ -245,7 +248,7 @@ fun MeshNavigationDrawerSheet(
             }
             item {
                 DrawerNavigationItem(
-                    label = "About Messenger",
+                    label = stringResource(R.string.drawer_about),
                     route = "about",
                     selectedRoute = selectedRoute,
                     icon = MeshIcons.Info,
@@ -260,7 +263,7 @@ fun MeshNavigationDrawerSheet(
                 .fillMaxWidth()
                 .padding(spacing.md)
         ) {
-            Spacer(modifier = Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.outlineVariant))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(modifier = Modifier.height(spacing.md))
 
             // Theme quick toggle row
@@ -270,7 +273,7 @@ fun MeshNavigationDrawerSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Theme Mode",
+                    text = stringResource(R.string.drawer_theme_mode),
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -312,7 +315,7 @@ fun MeshNavigationDrawerSheet(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Language",
+                    text = stringResource(R.string.drawer_language),
                     style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -55,6 +55,7 @@
     <!-- Settings Screen                                                       -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
 
+    <string name="about_title">অ্যাপ সম্পর্কে</string>
     <string name="settings_title">সেটিংস</string>
     <string name="settings_section_appearance">চেহারা</string>
     <string name="settings_section_language">ভাষা</string>
@@ -91,6 +92,102 @@
     <string name="home_sos_button_desc">সংকেত সম্প্রচার করতে চেপে ধরে রাখুন</string>
     <string name="home_recent_activity">সাম্প্রতিক কার্যক্রম</string>
     <string name="home_no_activity">কোনো সাম্প্রতিক কার্যক্রম নেই</string>
+
+    <!-- Map Screen -->
+    <string name="map_title">অফলাইন মানচিত্র</string>
+    <string name="map_subtitle_ready">সিস্টেম প্রস্তুত • সক্রিয় GPS ট্র্যাকিং</string>
+    <string name="map_subtitle_loading">অফলাইন স্তর প্রস্তুত হচ্ছে…</string>
+    <string name="map_subtitle_error">মানচিত্র কাঠামো ব্যর্থতা</string>
+    <string name="map_subtitle_empty">কোনো মানচিত্র টাইল লোড হয়নি</string>
+    <string name="map_gps_searching">GPS স্যাটেলাইট খোঁজা হচ্ছে…</string>
+    <string name="map_gps_active" formatted="false">GPS সক্রিয়: %.4f, %.4f</string>
+    <string name="map_empty_title">GPS সংকেতের জন্য অপেক্ষা করছে</string>
+    <string name="map_empty_desc">GPS লক পেন্ডিং। একবার পাওয়া গেলে আপনার অবস্থান এবং আবিষ্কৃত মেশ নোডগুলি মানচিত্রে প্রদর্শিত হবে।</string>
+    <string name="map_nodes_count">নেটওয়ার্ক নোড (%d)</string>
+    <string name="map_nodes_empty">কোনো রাউটিং নোড পাওয়া যায়নি।</string>
+
+    <!-- QR Pair Screen -->
+    <string name="qr_pair_title">QR কোডের মাধ্যমে পেয়ার করুন</string>
+    <string name="qr_pair_scan_label">ফ্রেমের মধ্যে হ্যান্ডশেক QR কোড রাখুন</string>
+    <string name="qr_pair_info_title">নিরাপদ কী বিনিময়</string>
+    <string name="qr_pair_info_desc">পেয়ার করতে একজন অংশীদারের পরিচয় QR কার্ড স্ক্যান করুন। এটি এন্ড-টু-এন্ড এনক্রিপশনের জন্য ক্রিপ্টোগ্রাফিক পাবলিক কী বিনিময় করে।</string>
+    <string name="qr_pair_simulate">পার্টনার QR সিমুলেট করুন</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">আমার পরিচয় প্রোফাইল</string>
+    <string name="profile_nickname_label">নিকনেম পরিবর্তন করুন</string>
+    <string name="profile_nickname_hint">নিকনেম</string>
+    <string name="profile_qr_title">পরিচয় হ্যান্ডশেক QR</string>
+    <string name="profile_qr_desc">অন্য মেশ নোডগুলি এই QR স্ক্যান করে পাবলিক কী নিরাপদে বিনিময় করতে পারবে।</string>
+    <string name="profile_fingerprint_label">ব্যবহারকারী ফিঙ্গারপ্রিন্ট</string>
+    <string name="profile_key_label">পরিচয় পাবলিক কী (ECDH)</string>
+    <string name="profile_copied_fingerprint">ফিঙ্গারপ্রিন্ট কপি হয়েছে</string>
+    <string name="profile_copied_key">পাবলিক কী কপি হয়েছে</string>
+
+    <!-- Contacts / Devices Screen -->
+    <string name="contacts_title">যোগাযোগ ও ডিভাইস</string>
+    <string name="contacts_scan">নোড স্ক্যান করুন</string>
+    <string name="contacts_paired_count">সংযুক্ত ডিভাইস (%d)</string>
+    <string name="contacts_no_paired">কোনো সংযুক্ত ডিভাইস নেই</string>
+    <string name="contacts_scanning">কাছের নোড খোঁজা হচ্ছে…</string>
+    <string name="contacts_trusted">বিশ্বস্ত</string>
+    <string name="contacts_unknown">অজানা</string>
+
+    <!-- Emergency Screen -->
+    <string name="emergency_title">জরুরি SOS</string>
+    <string name="sos_active_title">SOS সক্রিয়</string>
+    <string name="sos_active_desc">সমস্ত নাগালযোগ্য মেশ নোডে সংকট সংকেত সম্প্রচার হচ্ছে</string>
+    <string name="sos_ready_title">জরুরি SOS জন্য ধরে রাখুন</string>
+    <string name="sos_confirming_title">SOS নিশ্চিত করবেন?</string>
+    <string name="sos_resolved_title">✓ সমাধান হয়েছে</string>
+    <string name="sos_acknowledged_title">✓ স্বীকৃত</string>
+    <string name="sos_active_events_count">সক্রিয় সতর্কতা (%d)</string>
+    <string name="sos_history_count">ইতিহাস (%d)</string>
+    <string name="sos_no_history">কোনো সমাধানকৃত জরুরি ঘটনা নেই</string>
+    <string name="sos_resolve">সমাধান করুন</string>
+    <string name="sos_acknowledge">স্বীকার করুন</string>
+
+    <!-- Navigation Bar Labels -->
+    <string name="nav_home_label">হোম</string>
+    <string name="nav_chats_label">চ্যাট</string>
+    <string name="nav_map_label">মানচিত্র</string>
+    <string name="nav_network_label">নেটওয়ার্ক</string>
+    <string name="nav_settings_label">সেটিংস</string>
+
+    <!-- Drawer Labels -->
+    <string name="drawer_messenger_category">মেসেঞ্জার</string>
+    <string name="drawer_conversations">কথোপকথন</string>
+    <string name="drawer_contacts_nodes">যোগাযোগ ও নোড</string>
+    <string name="drawer_safety_category">নিরাপত্তা ও রাডার</string>
+    <string name="drawer_emergency_sos">জরুরি SOS</string>
+    <string name="drawer_offline_map">অফলাইন মানচিত্র</string>
+    <string name="drawer_resources">রিসোর্স শেয়ার</string>
+    <string name="drawer_network_status">নেটওয়ার্ক অবস্থা</string>
+    <string name="drawer_system_category">সিস্টেম কনফিগারেশন</string>
+    <string name="drawer_my_profile">আমার প্রোফাইল কার্ড</string>
+    <string name="drawer_app_settings">অ্যাপ্লিকেশন সেটিংস</string>
+    <string name="drawer_about">মেসেঞ্জার সম্পর্কে</string>
+    <string name="drawer_theme_mode">থিম মোড</string>
+    <string name="drawer_language">ভাষা</string>
+    <string name="drawer_connected">মেশের সাথে সংযুক্ত</string>
+    <string name="drawer_offline">অফলাইন মোড</string>
+
+    <!-- Camera Permission -->
+    <string name="permission_camera_rationale_title">QR পেয়ারিংয়ের জন্য ক্যামেরা প্রয়োজন</string>
+    <string name="permission_camera_rationale_desc">মেশ পরিচিতিদের সাথে পেয়ার করতে QR কোড স্ক্যান করার জন্য এই অ্যাপটিকে ক্যামেরা অ্যাক্সেস প্রয়োজন।</string>
+    <string name="permission_permanently_denied_title">ক্যামেরা অ্যাক্সেস অস্বীকৃত</string>
+    <string name="permission_permanently_denied_desc">ক্যামেরা অনুমতি স্থায়ীভাবে অস্বীকার করা হয়েছে। QR স্ক্যানার ব্যবহার করতে অ্যাপ সেটিংসে এটি সক্ষম করুন।</string>
+    <string name="permission_open_settings">অ্যাপ সেটিংস খুলুন</string>
+
+    <!-- Settings -->
+    <string name="settings_e2e_title">এন্ড-টু-এন্ড এনক্রিপশন</string>
+    <string name="settings_e2e_subtitle">AES-256-GCM + ECDH কী</string>
+    <string name="settings_about_architecture">আর্কিটেকচার</string>
+    <string name="settings_about_architecture_value">ক্লিন আর্কিটেকচার + MVI</string>
+    <string name="settings_about_storage">স্টোরেজ মোড</string>
+    <string name="settings_about_storage_value">অফলাইন — Room ডেটাবেস</string>
+    <string name="settings_confirm_proceed">এগিয়ে যান</string>
+    <string name="settings_confirm_cancel">বাতিল</string>
 
     <string name="settings_about_version">সংস্করণ</string>
     <string name="settings_about_build">বিল্ড</string>

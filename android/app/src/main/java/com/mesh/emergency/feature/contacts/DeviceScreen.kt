@@ -39,9 +39,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
 import com.mesh.emergency.core.designsystem.component.MeshButton
@@ -77,10 +79,10 @@ fun DeviceScreen(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
-                    title = { Text("Devices", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    title = { Text(stringResource(R.string.contacts_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                     actions = {
                         androidx.compose.material3.IconButton(onClick = { viewModel.onEvent(DeviceUiEvent.StartScan) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Scan")
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.contacts_scan))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -114,7 +116,7 @@ fun DeviceScreen(
                                     strokeWidth = 2.dp
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Scanning for nearby nodes…", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.contacts_scanning), style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -123,7 +125,7 @@ fun DeviceScreen(
                 // ── Section header ────────────────────────────────────────────
                 item {
                     Text(
-                        "Paired Devices (${uiState.pairedDevices.size})",
+                        stringResource(R.string.contacts_paired_count, uiState.pairedDevices.size),
                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -138,9 +140,9 @@ fun DeviceScreen(
                     item {
                         GlassPanel(modifier = Modifier.fillMaxWidth()) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                Text("No paired devices", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.contacts_no_paired), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(8.dp))
-                                MeshButton(text = "Pair via QR", onClick = onNavigateToQrPair)
+                                MeshButton(text = stringResource(R.string.qr_pair_title), onClick = onNavigateToQrPair)
                             }
                         }
                     }
@@ -184,7 +186,7 @@ private fun DeviceRow(device: DeviceDisplayModel, onUnpair: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = if (device.isTrusted) "TRUSTED" else "UNKNOWN",
+                    text = if (device.isTrusted) stringResource(R.string.contacts_trusted) else stringResource(R.string.contacts_unknown),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = if (device.isTrusted) semantic.connected else semantic.warning
                 )

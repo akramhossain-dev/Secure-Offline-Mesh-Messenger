@@ -8,26 +8,10 @@ package com.mesh.emergency.feature.map
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -35,64 +19,48 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.R
 import com.mesh.emergency.core.common.extensions.hasPermission
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.MeshEmptyState
 import com.mesh.emergency.core.designsystem.component.PermissionRequiredState
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
-import com.mesh.emergency.core.designsystem.theme.ThemeMode
 import com.mesh.emergency.core.map.MapLayerModel
 import com.mesh.emergency.core.map.MapState
 import com.mesh.emergency.core.utils.LocationData
 import com.mesh.emergency.domain.repository.NodeDomainModel
+import com.mesh.emergency.domain.repository.ResourceDomainModel
 import com.mesh.emergency.feature.emergency.domain.EmergencyEvent
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.io.File
 
 /**
- * Redesigned Offline Map Screen.
- * Implements runtime permission flows and coordinates plotting relative to the active GPS fix.
+ * Redesigned full-screen Offline Map Screen powered by MapLibre SDK.
+ * Features:
+ * - Google Maps-inspired search and location autocomplete.
+ * - Local MBTiles and PMTiles offline importer.
+ * - Emergency markers long-press creation dialog.
+ * - MapLibre native lifecycle MapView integrations.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +71,6 @@ fun MapScreen(
     val uiState by viewModel.uiState.collectAsState()
     val mapState by viewModel.mapState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val spacing = MeshThemeTokens.spacing
     val context = LocalContext.current
 
     // Permission handling state
@@ -116,6 +83,20 @@ fun MapScreen(
     ) { permissions ->
         hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
     }
+
+    // Document Picker for MBTiles/PMTiles import
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importOfflineMap(uri)
+        }
+    }
+
+    // Long press marker creation dialog state
+    var showCreateMarkerDialog by remember { mutableStateOf(false) }
+    var clickedLatitude by remember { mutableStateOf(0.0) }
+    var clickedLongitude by remember { mutableStateOf(0.0) }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -142,159 +123,350 @@ fun MapScreen(
             Scaffold(
                 containerColor = Color.Transparent,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Column {
-                                Text(
-                                    "Offline Map Dashboard",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    when (mapState) {
-                                        MapState.LOADED  -> "System Ready • Active GPS tracking"
-                                        MapState.LOADING -> "Initializing offline layers…"
-                                        MapState.ERROR   -> "Map framework failure"
-                                        MapState.EMPTY   -> "No map tiles loaded"
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = when (mapState) {
-                                        MapState.LOADED  -> MeshThemeTokens.semanticColors.connected
-                                        MapState.ERROR   -> MeshThemeTokens.semanticColors.emergency
-                                        else             -> MeshThemeTokens.semanticColors.offline
-                                    }
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-                    )
-                },
-                floatingActionButton = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FloatingActionButton(
-                            onClick = { viewModel.onZoomIn() },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Zoom in", modifier = Modifier.size(20.dp))
-                        }
-                        FloatingActionButton(
-                            onClick = { viewModel.onZoomOut() },
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(Icons.Default.Remove, contentDescription = "Zoom out", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                }
+                modifier = Modifier.fillMaxSize()
             ) { paddingValues ->
-                LazyColumn(
-                    contentPadding = PaddingValues(
-                        start = spacing.lg, end = spacing.lg,
-                        top = paddingValues.calculateTopPadding() + spacing.xs,
-                        bottom = paddingValues.calculateBottomPadding() + spacing.lg
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(spacing.md),
-                    modifier = Modifier.fillMaxSize()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
                 ) {
+                    // ── 1. MapLibre Native MapView Wrapper ────────────────────
+                    MapLibreMapView(
+                        mapCenterLat = uiState.mapCenterLat,
+                        mapCenterLon = uiState.mapCenterLon,
+                        zoomLevel = uiState.zoomLevel,
+                        isAutoCentering = uiState.isAutoCentering,
+                        visibleNodes = uiState.visibleNodes,
+                        emergencyEvents = uiState.emergencyEvents,
+                        resources = uiState.resources,
+                        savedLocations = uiState.savedLocations,
+                        sharedLocations = uiState.sharedLocations,
+                        currentLocation = uiState.currentLocation,
+                        layers = uiState.layers,
+                        onMapMoved = { lat, lon -> viewModel.onMapMoved(lat, lon) },
+                        onMapLongClick = { lat, lon ->
+                            clickedLatitude = lat
+                            clickedLongitude = lon
+                            showCreateMarkerDialog = true
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
 
-                    // ── 1. Layer Filters ───────────────────────────────────────
-                    item {
+                    // ── 2. Floating Google Maps inspired Search capsule ───────
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChanged(it) },
+                            placeholder = { Text("Search offline places...", color = Color.White.copy(alpha = 0.6f)) },
+                            leadingIcon = {
+                                IconButton(onClick = onBack) {
+                                    Icon(
+                                        Icons.AutoMirrored.Default.ArrowBack,
+                                        contentDescription = "Back",
+                                        tint = Color.White
+                                    )
+                                }
+                            },
+                            trailingIcon = {
+                                Row {
+                                    if (uiState.searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.White)
+                                        }
+                                    }
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Color.White,
+                                        modifier = Modifier.padding(end = 12.dp, top = 12.dp)
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(28.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.Black.copy(alpha = 0.75f),
+                                unfocusedContainerColor = Color.Black.copy(alpha = 0.65f),
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Autocomplete Search Results dropdown list
+                        if (uiState.isSearching && uiState.searchResults.isNotEmpty()) {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 240.dp)
+                            ) {
+                                LazyColumn(
+                                    contentPadding = PaddingValues(8.dp)
+                                ) {
+                                    items(uiState.searchResults) { result ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    viewModel.onMapMoved(result.latitude, result.longitude)
+                                                    viewModel.onSearchQueryChanged("")
+                                                }
+                                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Column {
+                                                Text(result.name, color = Color.White, fontWeight = FontWeight.Bold)
+                                                Text(result.type, color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelSmall)
+                                            }
+                                            Text(
+                                                String.format("%.4f, %.4f", result.latitude, result.longitude),
+                                                color = MaterialTheme.colorScheme.primary,
+                                                style = MaterialTheme.typography.labelSmall
+                                            )
+                                        }
+                                        HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Layer Filters Toggle chips
                         LayerToggleRow(
                             layers = uiState.layers,
                             onToggle = { id, vis -> viewModel.onLayerToggled(id, vis) }
                         )
-                    }
 
-                    // ── 2. Canvas & Empty State ────────────────────────────────
-                    if (uiState.currentLocation == null && uiState.visibleNodes.isEmpty() && uiState.emergencyEvents.isEmpty()) {
-                        item {
+                        // Translucent status banner feedback
+                        uiState.downloadStatus?.let { status ->
                             GlassPanel(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(360.dp),
-                                contentPadding = 24.dp
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 10.dp
                             ) {
-                                MeshEmptyState(
-                                    title = "No Map Data Coordinates",
-                                    description = "GPS lock pending. Coordinates from discovered LoRa mesh nodes or active SOS alerts will plot automatically relative to your position.",
-                                    icon = Icons.Default.MyLocation,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    } else {
-                        item {
-                            OfflineMapCanvas(
-                                currentLocation = uiState.currentLocation,
-                                savedLocations = uiState.savedLocations,
-                                sharedLocations = uiState.sharedLocations,
-                                emergencyEvents = uiState.emergencyEvents,
-                                nodes = uiState.visibleNodes,
-                                zoomLevel = uiState.zoomLevel,
-                                layers = uiState.layers,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(360.dp)
-                            )
-                        }
-                    }
-
-                    // ── 3. Legend Section ──────────────────────────────────────
-                    item {
-                        MapLegendCard()
-                    }
-
-                    // ── 4. Nodes Lists ─────────────────────────────────────────
-                    item {
-                        Text(
-                            "Network Node Telemetries (${uiState.visibleNodes.size})",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    if (uiState.visibleNodes.isEmpty()) {
-                        item {
-                            GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                                Text(
-                                    "No routing nodes with coordinates located. Once a partner node shares telemetry, it will render above.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        }
-                    }
-
-                    items(uiState.visibleNodes, key = { it.id }) { node ->
-                        NodePinRow(node = node)
-                    }
-
-                    // ── 5. Location Tracking Status ────────────────────────────
-                    item {
-                        GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = MeshThemeTokens.semanticColors.warning,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                val gpsFix = if (uiState.currentLocation != null) {
-                                    "GPS Fix Active: %.4f, %.4f".format(uiState.currentLocation!!.latitude, uiState.currentLocation!!.longitude)
-                                } else {
-                                    "Searching for GPS satellites..."
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(
+                                        text = status,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White
+                                    )
+                                    uiState.downloadProgress?.let { progress ->
+                                        Spacer(Modifier.height(6.dp))
+                                        LinearProgressIndicator(
+                                            progress = { progress },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            trackColor = Color.White.copy(alpha = 0.2f)
+                                        )
+                                    }
                                 }
-                                Text(
-                                    text = gpsFix,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
                         }
+                    }
+
+                    // ── 3. Bottom Controls Panel overlay ──────────────────────
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.Bottom
+                            ) {
+                                // Bottom Left Action Panel
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Local import database file trigger
+                                    Button(
+                                        onClick = { importLauncher.launch(arrayOf("*/*")) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.tertiary,
+                                            contentColor = Color.White
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Import Map", style = MaterialTheme.typography.labelSmall)
+                                    }
+
+                                    // Share coordinates trigger
+                                    Button(
+                                        onClick = { viewModel.shareCurrentLocation() },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.secondary,
+                                            contentColor = Color.White
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Share Location", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+
+                                // Bottom Right: Camera zoom and orientation FAB column
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    // Zoom In FAB
+                                    FloatingActionButton(
+                                        onClick = { viewModel.onZoomIn() },
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = Color.White,
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = "Zoom In")
+                                    }
+                                    // Zoom Out FAB
+                                    FloatingActionButton(
+                                        onClick = { viewModel.onZoomOut() },
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = Color.White,
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Icon(Icons.Default.Remove, contentDescription = "Zoom Out")
+                                    }
+                                    // Re-center / Follow My Location
+                                    FloatingActionButton(
+                                        onClick = { viewModel.onMyLocationClicked() },
+                                        containerColor = if (uiState.isAutoCentering) MeshThemeTokens.semanticColors.connected else Color.Black.copy(alpha = 0.65f),
+                                        contentColor = if (uiState.isAutoCentering) Color.Black else Color.White,
+                                        modifier = Modifier.size(40.dp)
+                                    ) {
+                                        Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+                                    }
+                                }
+                            }
+
+                            // Storage display & download/management bottom card
+                            GlassPanel(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = 12.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Offline Storage Map System",
+                                            fontWeight = FontWeight.Bold,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = "Cached tiles: ${uiState.offlineCacheSize} (${String.format("%.2f", uiState.offlineCacheSize * 0.015)} MB)",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color.White.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        IconButton(
+                                            onClick = { viewModel.downloadMapArea() },
+                                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                                        ) {
+                                            Icon(Icons.Default.Download, contentDescription = "Download Region", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                        }
+                                        IconButton(
+                                            onClick = { viewModel.deleteOfflineMap() },
+                                            colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Red.copy(alpha = 0.2f))
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Clear Cache", tint = Color.Red)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── 4. Long Press marker creation dialog ──────────────────
+                    if (showCreateMarkerDialog) {
+                        var markerName by remember { mutableStateOf("") }
+                        var markerDesc by remember { mutableStateOf("") }
+                        var markerType by remember { mutableStateOf("Food") }
+                        val categories = listOf("SOS", "Rescue Point", "Food", "Water", "Shelter", "Medical")
+                        
+                        AlertDialog(
+                            onDismissRequest = { showCreateMarkerDialog = false },
+                            title = { Text("Add Emergency/Supply Marker") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Coordinates: ${String.format("%.4f, %.4f", clickedLatitude, clickedLongitude)}", style = MaterialTheme.typography.labelMedium)
+                                    
+                                    OutlinedTextField(
+                                        value = markerName,
+                                        onValueChange = { markerName = it },
+                                        label = { Text("Name / Title") },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    
+                                    OutlinedTextField(
+                                        value = markerDesc,
+                                        onValueChange = { markerDesc = it },
+                                        label = { Text("Description") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    
+                                    Text("Category:", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
+                                    
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        items(categories) { cat ->
+                                            FilterChip(
+                                                selected = markerType == cat,
+                                                onClick = { markerType = cat },
+                                                label = { Text(cat, style = MaterialTheme.typography.labelSmall) }
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        if (markerName.isNotBlank()) {
+                                            viewModel.createEmergencyMarker(
+                                                name = markerName,
+                                                type = markerType,
+                                                description = markerDesc,
+                                                lat = clickedLatitude,
+                                                lon = clickedLongitude
+                                            )
+                                            showCreateMarkerDialog = false
+                                        }
+                                    }
+                                ) {
+                                    Text("Save Marker")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showCreateMarkerDialog = false }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -318,198 +490,17 @@ private fun LayerToggleRow(
                 label = { Text(layer.name, style = MaterialTheme.typography.labelSmall) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = Color.Black.copy(alpha = 0.5f),
+                    labelColor = Color.White.copy(alpha = 0.8f)
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = layer.isVisible,
+                    borderColor = Color.White.copy(alpha = 0.2f),
+                    selectedBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
-        }
-    }
-}
-
-@Composable
-private fun OfflineMapCanvas(
-    currentLocation: LocationData?,
-    savedLocations: List<LocationData>,
-    sharedLocations: List<LocationData>,
-    emergencyEvents: List<EmergencyEvent>,
-    nodes: List<NodeDomainModel>,
-    zoomLevel: Int,
-    layers: List<MapLayerModel>,
-    modifier: Modifier = Modifier
-) {
-    val semanticColors = MeshThemeTokens.semanticColors
-    
-    // Evaluate layer visibilities
-    val showBase = layers.any { it.id == "base" && it.isVisible }
-    val showRoads = layers.any { it.id == "roads" && it.isVisible }
-    val showNodes = layers.any { it.id == "nodes" && it.isVisible }
-    val showEmergency = layers.any { it.id == "emergency" && it.isVisible }
-    val showElevation = layers.any { it.id == "elevation" && it.isVisible }
-
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-
-    Canvas(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color(0xFF0F172A)) // Sleek dark blueprint background
-            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(16.dp))
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    scale = (scale * zoom).coerceIn(0.5f, 4f)
-                    offset = offset + pan
-                }
-            }
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationX = offset.x
-                translationY = offset.y
-            }
-    ) {
-        // Center position defaults to Dhaka coordinates if GPS lock has not occurred yet
-        val centerLat = currentLocation?.latitude ?: 23.8103
-        val centerLon = currentLocation?.longitude ?: 90.4125
-
-        // Degree coordinates-to-pixels scale mapping: zoom makes coordinates expand
-        val baseScale = (size.minDimension / 2f) * (zoomLevel.toFloat() / 10f) * 12000f
-
-        // Draw blueprint grid lines
-        if (showBase) {
-            drawGrid(Color.White.copy(alpha = 0.05f))
-        }
-
-        // Draw simulated highway lines
-        if (showRoads) {
-            drawRoads(Color(0xFF38BDF8).copy(alpha = 0.25f))
-        }
-
-        // Draw local elevation/contour circles
-        if (showElevation) {
-            drawContourCircles(Color(0xFFE2E8F0).copy(alpha = 0.1f))
-        }
-
-        // ── 1. Draw saved local path history (Blue trail dots) ─────────────
-        savedLocations.forEach { loc ->
-            val dx = (loc.longitude - centerLon).toFloat()
-            val dy = (centerLat - loc.latitude).toFloat()
-            val px = size.width / 2f + dx * baseScale
-            val py = size.height / 2f + dy * baseScale
-            
-            drawCircle(
-                color = Color(0xFF3B82F6).copy(alpha = 0.4f),
-                radius = 3.dp.toPx(),
-                center = Offset(px, py)
-            )
-        }
-
-        // ── 2. Draw shared locations of contacts (Green dots) ──────────────
-        sharedLocations.forEach { loc ->
-            val dx = (loc.longitude - centerLon).toFloat()
-            val dy = (centerLat - loc.latitude).toFloat()
-            val px = size.width / 2f + dx * baseScale
-            val py = size.height / 2f + dy * baseScale
-
-            drawCircle(color = Color(0xFF10B981), radius = 6.dp.toPx(), center = Offset(px, py))
-            drawCircle(color = Color(0xFF10B981).copy(alpha = 0.25f), radius = 10.dp.toPx(), center = Offset(px, py))
-        }
-
-        // ── 3. Draw active LoRa mesh router nodes (Purple range rings) ──────
-        if (showNodes) {
-            nodes.forEach { node ->
-                val dx = (node.longitude - centerLon).toFloat()
-                val dy = (centerLat - node.latitude).toFloat()
-                val px = size.width / 2f + dx * baseScale
-                val py = size.height / 2f + dy * baseScale
-
-                drawCircle(color = Color(0xFFA855F7), radius = 7.dp.toPx(), center = Offset(px, py))
-                // Signal radius overlay
-                drawCircle(
-                    color = Color(0xFFA855F7).copy(alpha = 0.1f),
-                    radius = 24.dp.toPx(),
-                    center = Offset(px, py)
-                )
-            }
-        }
-
-        // ── 4. Draw active distress SOS alerts (Blinking red warning circles)
-        if (showEmergency) {
-            emergencyEvents.forEach { event ->
-                if (!event.isResolved) {
-                    val dx = (event.longitude - centerLon).toFloat()
-                    val dy = (centerLat - event.latitude).toFloat()
-                    val px = size.width / 2f + dx * baseScale
-                    val py = size.height / 2f + dy * baseScale
-
-                    drawCircle(color = Color(0xFFEF4444), radius = 8.dp.toPx(), center = Offset(px, py))
-                    drawCircle(
-                        color = Color(0xFFEF4444).copy(alpha = 0.25f),
-                        radius = 18.dp.toPx(),
-                        center = Offset(px, py)
-                    )
-                }
-            }
-        }
-
-        // ── 5. Draw local user position marker (Yellow compass beacon) ──────
-        if (currentLocation != null) {
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            drawCircle(color = Color(0xFFFACC15), radius = 8.dp.toPx(), center = Offset(cx, cy))
-            drawCircle(color = Color.White, radius = 3.dp.toPx(), center = Offset(cx, cy))
-            drawCircle(
-                color = Color(0xFFFACC15).copy(alpha = 0.2f),
-                radius = 16.dp.toPx(),
-                center = Offset(cx, cy)
-            )
-        }
-    }
-}
-
-private fun DrawScope.drawGrid(color: Color) {
-    val step = 40.dp.toPx()
-    var x = 0f
-    while (x <= size.width) {
-        drawLine(color = color, start = Offset(x, 0f), end = Offset(x, size.height), strokeWidth = 1f)
-        x += step
-    }
-    var y = 0f
-    while (y <= size.height) {
-        drawLine(color = color, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1f)
-        y += step
-    }
-}
-
-private fun DrawScope.drawRoads(color: Color) {
-    val dashEffect = PathEffect.dashPathEffect(floatArrayOf(30f, 15f))
-    // Diagonal highway corridors
-    drawLine(color = color, start = Offset(0f, 0f), end = Offset(size.width, size.height), strokeWidth = 2f, pathEffect = dashEffect)
-    drawLine(color = color, start = Offset(0f, size.height), end = Offset(size.width, 0f), strokeWidth = 2f, pathEffect = dashEffect)
-}
-
-private fun DrawScope.drawContourCircles(color: Color) {
-    drawCircle(color = color, radius = size.minDimension * 0.1f, center = Offset(size.width * 0.2f, size.height * 0.3f))
-    drawCircle(color = color, radius = size.minDimension * 0.15f, center = Offset(size.width * 0.8f, size.height * 0.7f))
-}
-
-@Composable
-private fun MapLegendCard() {
-    GlassPanel(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                text = "Map Legend",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                LegendItem(color = Color(0xFFFACC15), label = "Me (Live)")
-                LegendItem(color = Color(0xFF3B82F6), label = "My History")
-                LegendItem(color = Color(0xFF10B981), label = "Contacts")
-                LegendItem(color = Color(0xFFA855F7), label = "Mesh Nodes")
-                LegendItem(color = Color(0xFFEF4444), label = "Active SOS")
-            }
         }
     }
 }
@@ -518,56 +509,180 @@ private fun MapLegendCard() {
 private fun LegendItem(color: Color, label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(8.dp)
+                .size(10.dp)
                 .clip(CircleShape)
                 .background(color)
         )
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color.White.copy(alpha = 0.8f)
         )
     }
 }
 
+/**
+ * Native MapLibre view wrapper that is lifecycle aware.
+ * Projects nodes, SOS alerts, and supply resources onto the map coordinates using native MapLibre Annotations.
+ */
 @Composable
-private fun NodePinRow(node: NodeDomainModel) {
-    GlassPanel(modifier = Modifier.fillMaxWidth(), contentPadding = 10.dp) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFA855F7))
-                )
-                Spacer(Modifier.width(8.dp))
-                Column {
-                    Text(
-                        node.deviceId.take(12),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        "Lat: %.4f  Lon: %.4f".format(node.latitude, node.longitude),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+private fun MapLibreMapView(
+    mapCenterLat: Double,
+    mapCenterLon: Double,
+    zoomLevel: Int,
+    isAutoCentering: Boolean,
+    visibleNodes: List<NodeDomainModel>,
+    emergencyEvents: List<EmergencyEvent>,
+    resources: List<ResourceDomainModel>,
+    savedLocations: List<LocationData>,
+    sharedLocations: List<LocationData>,
+    currentLocation: LocationData?,
+    layers: List<MapLayerModel>,
+    onMapMoved: (Double, Double) -> Unit,
+    onMapLongClick: (Double, Double) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    
+    val mapView = remember {
+        org.maplibre.android.maps.MapView(context)
+    }
+
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, mapView) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            when (event) {
+                androidx.lifecycle.Lifecycle.Event.ON_START -> mapView.onStart()
+                androidx.lifecycle.Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                androidx.lifecycle.Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                androidx.lifecycle.Lifecycle.Event.ON_STOP -> mapView.onStop()
+                androidx.lifecycle.Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
+
+    var mapboxMapState by remember { mutableStateOf<org.maplibre.android.maps.MapLibreMap?>(null) }
+
+    AndroidView(
+        factory = { mapView },
+        modifier = modifier
+    ) { view ->
+        if (mapboxMapState == null) {
+            view.getMapAsync { mapboxMap ->
+                mapboxMapState = mapboxMap
+                
+                val styleFile = File(context.filesDir, "style.json")
+                if (styleFile.exists()) {
+                    mapboxMap.setStyle(org.maplibre.android.maps.Style.Builder().fromUri("file://${styleFile.absolutePath}"))
+                }
+                
+                mapboxMap.addOnCameraMoveListener {
+                    val cameraPos = mapboxMap.cameraPosition
+                    val target = cameraPos?.target
+                    if (target != null) {
+                        onMapMoved(target.latitude, target.longitude)
+                    }
+                }
+
+                mapboxMap.addOnMapLongClickListener { latLng ->
+                    onMapLongClick(latLng.latitude, latLng.longitude)
+                    true
+                }
+            }
+        }
+    }
+
+    // Dynamic Camera Tracking Updates
+    LaunchedEffect(mapCenterLat, mapCenterLon, zoomLevel, isAutoCentering) {
+        val map = mapboxMapState ?: return@LaunchedEffect
+        val currentCamera = map.cameraPosition ?: return@LaunchedEffect
+        val target = currentCamera.target ?: return@LaunchedEffect
+        val distance = Math.abs(target.latitude - mapCenterLat) + Math.abs(target.longitude - mapCenterLon)
+        val currentZoom = currentCamera.zoom.toDouble()
+        val isDifferentZoom = Math.abs(currentZoom - zoomLevel.toDouble()) > 0.1
+        
+        if (distance > 0.0001 || isDifferentZoom) {
+            map.animateCamera(
+                org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
+                    org.maplibre.android.geometry.LatLng(mapCenterLat, mapCenterLon),
+                    zoomLevel.toDouble()
+                ),
+                800
+            )
+        }
+    }
+
+    // Dynamic Markers rendering
+    LaunchedEffect(mapboxMapState, visibleNodes, emergencyEvents, resources, savedLocations, sharedLocations, currentLocation, layers) {
+        val map = mapboxMapState ?: return@LaunchedEffect
+        map.clear()
+        
+        // 1. Me location
+        if (currentLocation != null) {
+            map.addMarker(
+                org.maplibre.android.annotations.MarkerOptions()
+                    .position(org.maplibre.android.geometry.LatLng(currentLocation.latitude, currentLocation.longitude))
+                    .title("Me (Current)")
+            )
+        }
+
+        // 2. Emergency Events
+        val showEmergency = layers.any { it.id == "emergency" && it.isVisible }
+        if (showEmergency) {
+            emergencyEvents.forEach { event ->
+                if (!event.isResolved) {
+                    map.addMarker(
+                        org.maplibre.android.annotations.MarkerOptions()
+                            .position(org.maplibre.android.geometry.LatLng(event.latitude, event.longitude))
+                            .title(event.type.name)
+                            .snippet(event.message)
                     )
                 }
             }
-            Text(
-                node.status,
-                style = MaterialTheme.typography.labelSmall,
-                color = MeshThemeTokens.semanticColors.info
+        }
+
+        // 3. Resources
+        resources.forEach { res ->
+            map.addMarker(
+                org.maplibre.android.annotations.MarkerOptions()
+                    .position(org.maplibre.android.geometry.LatLng(res.latitude, res.longitude))
+                    .title(res.type)
+                    .snippet("${res.name}: ${res.description}")
             )
+        }
+
+        // 4. Mesh Nodes
+        val showNodes = layers.any { it.id == "nodes" && it.isVisible }
+        if (showNodes) {
+            visibleNodes.forEach { node ->
+                map.addMarker(
+                    org.maplibre.android.annotations.MarkerOptions()
+                        .position(org.maplibre.android.geometry.LatLng(node.latitude, node.longitude))
+                        .title("Mesh Node: ${node.id}")
+                        .snippet("Battery: ${node.batteryLevel}% • RSSI: ${node.rssi} dBM")
+                )
+            }
+        }
+
+        // 5. Saved history locations
+        val showRoads = layers.any { it.id == "roads" && it.isVisible }
+        if (showRoads) {
+            savedLocations.forEach { loc ->
+                map.addMarker(
+                    org.maplibre.android.annotations.MarkerOptions()
+                        .position(org.maplibre.android.geometry.LatLng(loc.latitude, loc.longitude))
+                        .title("History Path")
+                )
+            }
         }
     }
 }

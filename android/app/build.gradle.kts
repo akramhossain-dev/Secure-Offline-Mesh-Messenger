@@ -197,6 +197,16 @@ dependencies {
     // ── Logging ───────────────────────────────────────────────────────────────
     implementation(libs.timber)
 
+    // ── Camera & QR Scanner ───────────────────────────────────────────────────
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+    implementation(libs.mlkit.barcode)
+
+    // ── Offline Map Engine (MapLibre) ─────────────────────────────────────────
+    implementation("org.maplibre.gl:android-sdk:11.5.0")
+
     // ── Testing ───────────────────────────────────────────────────────────────
     testImplementation(libs.bundles.testing.unit)
     testImplementation("org.mockito:mockito-core:5.8.0")

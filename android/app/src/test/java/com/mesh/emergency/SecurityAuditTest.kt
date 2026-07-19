@@ -78,7 +78,7 @@ class SecurityAuditTest {
         val encrypted = (cryptographyEngine.encrypt(plainText, secretKey) as com.mesh.emergency.core.common.result.Result.Success).data
         
         // Mutate ciphertext to violate integrity tag
-        encrypted.cipherText[0] = encrypted.cipherText[0] xor 1
+        encrypted.cipherText[0] = (encrypted.cipherText[0].toInt() xor 1).toByte()
 
         val decryptResult = cryptographyEngine.decrypt(encrypted.cipherText, secretKey, encrypted.iv)
         assertTrue(decryptResult is com.mesh.emergency.core.common.result.Result.Error)

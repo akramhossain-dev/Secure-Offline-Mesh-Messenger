@@ -17,6 +17,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import kotlinx.coroutines.flow.flowOf
+import org.mockito.Mock
+import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
+
 /**
  * Unit tests for AppState and AppStateRepositoryImpl.
  * Validates state transitions, default values, and all update methods.
@@ -24,11 +32,16 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppStateTest {
 
+    @Mock
+    private lateinit var mockDataStore: DataStore<Preferences>
+
     private lateinit var repository: AppStateRepositoryImpl
 
     @Before
     fun setUp() {
-        repository = AppStateRepositoryImpl()
+        MockitoAnnotations.openMocks(this)
+        `when`(mockDataStore.data).thenReturn(flowOf(emptyPreferences()))
+        repository = AppStateRepositoryImpl(mockDataStore)
     }
 
     // ── Initial State ──────────────────────────────────────────────────────────

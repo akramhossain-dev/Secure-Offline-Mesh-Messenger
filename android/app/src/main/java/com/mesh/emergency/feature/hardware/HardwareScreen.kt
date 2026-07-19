@@ -31,7 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.BluetoothConnected
 import androidx.compose.material.icons.filled.BluetoothDisabled
-import androidx.compose.material.icons.filled.BluetoothSearching
+import androidx.compose.material.icons.automirrored.filled.BluetoothSearching
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SignalCellularAlt
@@ -182,7 +182,7 @@ fun HardwareScreen(
                 if (uiState.discoveredDevices.isNotEmpty()) {
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.BluetoothSearching, null, tint = semanticColors.info, modifier = Modifier.size(16.dp))
+                            Icon(Icons.AutoMirrored.Default.BluetoothSearching, null, tint = semanticColors.info, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "Nearby Mesh Nodes (${uiState.discoveredDevices.size})",
@@ -273,7 +273,7 @@ private fun DiscoveryControlPanel(
 
             Icon(
                 imageVector = when (discoveryState) {
-                    BleDiscoveryState.SCANNING          -> Icons.Default.BluetoothSearching
+                    BleDiscoveryState.SCANNING          -> Icons.AutoMirrored.Default.BluetoothSearching
                     BleDiscoveryState.BLE_UNAVAILABLE   -> Icons.Default.BluetoothDisabled
                     else                                -> Icons.Default.Bluetooth
                 },

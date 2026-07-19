@@ -18,6 +18,9 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
 
+    <!-- Camera Permission (QR Code scanning for device pairing) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <!-- Location Permissions (Emergency SOS, location share) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -27,6 +30,9 @@
 
     <!-- Notification Permission (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Internet Permission (Online fallback for map tiles retrieval) -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- ──────────────────────────────────────────────────────────────────── -->
     <!-- Feature declarations for BLE hardware                                -->

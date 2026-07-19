@@ -21,8 +21,8 @@ import kotlinx.coroutines.test.runTest
  * Unit tests for BatteryAwareScheduler (A33.2).
  *
  * Tests:
- * - Scanning allowed in PERFORMANCE mode
- * - Scanning blocked in ULTRA_SAVE mode
+ * - Scanning allowed in NORMAL mode
+ * - Scanning blocked in SAVING and EMERGENCY modes
  * - Correct BLE interval per mode
  * - Heavy operation gating
  */
@@ -35,60 +35,53 @@ class BatteryBehaviorTest {
     }
 
     @Test
-    fun `PERFORMANCE mode allows scanning and heavy operations`() {
-        val scheduler = makeScheduler(PowerSavingMode.PERFORMANCE)
+    fun `NORMAL mode allows scanning and heavy operations`() {
+        val scheduler = makeScheduler(PowerSavingMode.NORMAL)
         assertTrue(scheduler.isScanningAllowed)
         assertTrue(scheduler.isHeavyOperationAllowed)
     }
 
     @Test
-    fun `BALANCED mode allows scanning and heavy operations`() {
-        val scheduler = makeScheduler(PowerSavingMode.BALANCED)
-        assertTrue(scheduler.isScanningAllowed)
-        assertTrue(scheduler.isHeavyOperationAllowed)
-    }
-
-    @Test
-    fun `AGGRESSIVE_SAVE mode blocks scanning but allows heavy ops`() {
-        val scheduler = makeScheduler(PowerSavingMode.AGGRESSIVE_SAVE)
+    fun `SAVING mode blocks scanning but allows heavy ops`() {
+        val scheduler = makeScheduler(PowerSavingMode.SAVING)
         assertFalse(scheduler.isScanningAllowed)
         assertTrue(scheduler.isHeavyOperationAllowed)
     }
 
     @Test
-    fun `ULTRA_SAVE mode blocks scanning and heavy operations`() {
-        val scheduler = makeScheduler(PowerSavingMode.ULTRA_SAVE)
+    fun `EMERGENCY mode blocks scanning and heavy operations`() {
+        val scheduler = makeScheduler(PowerSavingMode.EMERGENCY)
         assertFalse(scheduler.isScanningAllowed)
         assertFalse(scheduler.isHeavyOperationAllowed)
     }
 
     @Test
-    fun `BLE interval is shortest in PERFORMANCE mode`() {
-        val scheduler = makeScheduler(PowerSavingMode.PERFORMANCE)
-        assertEquals(BatteryAwareScheduler.BLE_INTERVAL_PERFORMANCE, scheduler.bleScanIntervalMs)
+    fun `BLE interval is balanced in NORMAL mode`() {
+        val scheduler = makeScheduler(PowerSavingMode.NORMAL)
+        assertEquals(BatteryAwareScheduler.BLE_INTERVAL_BALANCED, scheduler.bleScanIntervalMs)
     }
 
     @Test
-    fun `BLE interval is max in ULTRA_SAVE mode`() {
-        val scheduler = makeScheduler(PowerSavingMode.ULTRA_SAVE)
+    fun `BLE interval is max in EMERGENCY mode`() {
+        val scheduler = makeScheduler(PowerSavingMode.EMERGENCY)
         assertEquals(Long.MAX_VALUE, scheduler.bleScanIntervalMs)
     }
 
     @Test
-    fun `DB batch size is largest in PERFORMANCE mode`() {
-        val scheduler = makeScheduler(PowerSavingMode.PERFORMANCE)
-        assertEquals(BatteryAwareScheduler.DB_BATCH_LARGE, scheduler.dbBatchSize)
+    fun `DB batch size is medium in NORMAL mode`() {
+        val scheduler = makeScheduler(PowerSavingMode.NORMAL)
+        assertEquals(BatteryAwareScheduler.DB_BATCH_MEDIUM, scheduler.dbBatchSize)
     }
 
     @Test
-    fun `DB batch size is smallest in ULTRA_SAVE mode`() {
-        val scheduler = makeScheduler(PowerSavingMode.ULTRA_SAVE)
+    fun `DB batch size is smallest in EMERGENCY mode`() {
+        val scheduler = makeScheduler(PowerSavingMode.EMERGENCY)
         assertEquals(BatteryAwareScheduler.DB_BATCH_MINIMAL, scheduler.dbBatchSize)
     }
 
     @Test
     fun `runIfAllowed returns error when heavy ops blocked`() = runTest {
-        val scheduler = makeScheduler(PowerSavingMode.ULTRA_SAVE)
+        val scheduler = makeScheduler(PowerSavingMode.EMERGENCY)
         var blockCalled = false
         val result = scheduler.runIfAllowed<Unit> {
             blockCalled = true
@@ -99,8 +92,8 @@ class BatteryBehaviorTest {
     }
 
     @Test
-    fun `runIfAllowed executes block in PERFORMANCE mode`() = runTest {
-        val scheduler = makeScheduler(PowerSavingMode.PERFORMANCE)
+    fun `runIfAllowed executes block in NORMAL mode`() = runTest {
+        val scheduler = makeScheduler(PowerSavingMode.NORMAL)
         var blockCalled = false
         val result = scheduler.runIfAllowed<Unit> {
             blockCalled = true

@@ -162,7 +162,7 @@ fun AppNavGraph(
             route = NavigationDestination.SosActive.route,
             deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/sos" })
         ) {
-            EmergencyScreen()
+            EmergencyScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Offline Map ─────────────────────────────────────────────────────────────────
@@ -190,7 +190,7 @@ fun AppNavGraph(
             route = NavigationDestination.Profile.route,
             deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/profile" })
         ) {
-            ProfileScreen()
+            ProfileScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Settings ──────────────────────────────────────────────────────────
@@ -203,7 +203,7 @@ fun AppNavGraph(
 
         // ── About ─────────────────────────────────────────────────────────────
         composable(route = NavigationDestination.About.route) {
-            AboutScreen()
+            AboutScreen(onBack = { navController.popBackStack() })
         }
     }
 }

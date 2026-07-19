@@ -24,6 +24,9 @@ interface MapRepository {
     /** Persists a map tile for a given layer and coordinates. */
     suspend fun saveMapTile(tile: MapTileModel): Result<Unit>
 
+    /** Retrieves a map tile from cache or online source. */
+    suspend fun getMapTile(layerId: String, zoom: Int, x: Int, y: Int): Result<MapTileModel>
+
     /** Removes all cached tiles for a specific layer. */
     suspend fun clearLayer(layerId: String): Result<Unit>
 

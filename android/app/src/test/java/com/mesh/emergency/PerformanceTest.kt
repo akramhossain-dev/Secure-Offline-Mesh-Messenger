@@ -23,11 +23,19 @@ import org.junit.Test
  * - Slow query threshold
  * - measureBlock timing utility
  */
+import android.content.Context
+import org.mockito.Mockito
+
 class PerformanceTest {
 
     @Test
     fun `lru tile cache evicts eldest entry at max capacity`() = runTest {
-        val repo = MapRepositoryImpl()
+        val context = Mockito.mock(Context::class.java)
+        val tempDir = java.io.File(System.getProperty("java.io.tmpdir"), "perf_map_test_cache")
+        tempDir.deleteRecursively()
+        tempDir.mkdirs()
+        Mockito.`when`(context.cacheDir).thenReturn(tempDir)
+        val repo = MapRepositoryImpl(context)
 
         // Fill to max (100 tiles)
         repeat(100) { i ->

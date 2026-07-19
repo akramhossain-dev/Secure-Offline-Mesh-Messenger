@@ -24,12 +24,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -48,9 +50,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.designsystem.component.AlertPriorityLevel
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
@@ -80,6 +84,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmergencyScreen(
+    onBack: () -> Unit = {},
     viewModel: EmergencyViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -128,8 +133,16 @@ fun EmergencyScreen(
                                 Spacer(Modifier.width(8.dp))
                             }
                             Text(
-                                text = "Emergency",
+                                text = stringResource(R.string.emergency_title),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Default.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back)
                             )
                         }
                     },
@@ -202,7 +215,7 @@ fun EmergencyScreen(
                     item {
                         SectionHeader(
                             icon = { Icon(Icons.Default.Warning, null, tint = semanticColors.emergency, modifier = Modifier.size(16.dp)) },
-                            title = "Active Alerts (${uiState.activeEvents.size})"
+                            title = stringResource(R.string.sos_active_events_count, uiState.activeEvents.size)
                         )
                     }
                     items(uiState.activeEvents, key = { it.id }) { event ->
@@ -218,7 +231,7 @@ fun EmergencyScreen(
                 item {
                     SectionHeader(
                         icon = { Icon(Icons.Default.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp)) },
-                        title = "History (${uiState.historyEvents.size})"
+                        title = stringResource(R.string.sos_history_count, uiState.historyEvents.size)
                     )
                 }
 
@@ -226,7 +239,7 @@ fun EmergencyScreen(
                     item {
                         GlassPanel(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                "No resolved emergency events",
+                                stringResource(R.string.sos_no_history),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -371,12 +384,12 @@ private fun EmergencyEventCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
                 MeshOutlinedButton(
-                    text = "Acknowledge",
+                    text = stringResource(R.string.sos_acknowledge),
                     onClick = onAcknowledge,
                     modifier = Modifier.weight(1f)
                 )
                 MeshButton(
-                    text = "Resolve",
+                    text = stringResource(R.string.sos_resolve),
                     onClick = onResolve,
                     modifier = Modifier.weight(1f)
                 )

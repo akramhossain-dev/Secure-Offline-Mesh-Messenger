@@ -57,10 +57,14 @@
     <string name="action_scan_qr">Scan QR Code</string>
     <string name="action_grant_permission">Grant Permission</string>
 
+
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Settings Screen                                                       -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- About screen -->
+    <string name="about_title">About Application</string>
 
+    <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_language">Language</string>
@@ -99,6 +103,102 @@
     <string name="home_sos_button_desc">Press and hold to broadcast distress signal</string>
     <string name="home_recent_activity">Recent Activity</string>
     <string name="home_no_activity">No recent activity</string>
+
+    <!-- Map Screen -->
+    <string name="map_title">Offline Map</string>
+    <string name="map_subtitle_ready">System Ready • Active GPS tracking</string>
+    <string name="map_subtitle_loading">Initializing offline layers…</string>
+    <string name="map_subtitle_error">Map framework failure</string>
+    <string name="map_subtitle_empty">No map tiles loaded</string>
+    <string name="map_gps_searching">Searching for GPS satellites…</string>
+    <string name="map_gps_active" formatted="false">GPS Fix Active: %.4f, %.4f</string>
+    <string name="map_empty_title">Waiting for GPS Signal</string>
+    <string name="map_empty_desc">GPS lock pending. Once acquired, your position and discovered mesh nodes will appear on the map.</string>
+    <string name="map_nodes_count">Network Nodes (%d)</string>
+    <string name="map_nodes_empty">No routing nodes with coordinates located.</string>
+
+    <!-- QR Pair Screen -->
+    <string name="qr_pair_title">Pair via QR Code</string>
+    <string name="qr_pair_scan_label">Align handshake QR code within frame</string>
+    <string name="qr_pair_info_title">Secure Key Exchange</string>
+    <string name="qr_pair_info_desc">Scan a partner\'s Identity QR card to pair. This exchanges cryptographic public keys for End-to-End Encryption (E2EE) on upcoming mesh messaging channels.</string>
+    <string name="qr_pair_simulate">Simulate Scanned Partner QR</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_title">My Identity Profile</string>
+    <string name="profile_nickname_label">Customize Nickname</string>
+    <string name="profile_nickname_hint">Nickname</string>
+    <string name="profile_qr_title">Identity Handshake QR</string>
+    <string name="profile_qr_desc">Let other mesh nodes scan this QR to securely exchange public keys and pair.</string>
+    <string name="profile_fingerprint_label">User Fingerprint</string>
+    <string name="profile_key_label">Identity Public Key (ECDH)</string>
+    <string name="profile_copied_fingerprint">Fingerprint copied</string>
+    <string name="profile_copied_key">Public Key copied</string>
+
+    <!-- Contacts / Devices Screen -->
+    <string name="contacts_title">Contacts &amp; Devices</string>
+    <string name="contacts_scan">Scan for Nodes</string>
+    <string name="contacts_paired_count">Paired Devices (%d)</string>
+    <string name="contacts_no_paired">No paired devices</string>
+    <string name="contacts_scanning">Scanning for nearby nodes…</string>
+    <string name="contacts_trusted">TRUSTED</string>
+    <string name="contacts_unknown">UNKNOWN</string>
+
+    <!-- Emergency Screen -->
+    <string name="emergency_title">Emergency SOS</string>
+    <string name="sos_active_title">SOS ACTIVE</string>
+    <string name="sos_active_desc">Distress signal broadcasting to all reachable mesh nodes</string>
+    <string name="sos_ready_title">Hold for Emergency SOS</string>
+    <string name="sos_confirming_title">Confirm SOS?</string>
+    <string name="sos_resolved_title">✓ Resolved</string>
+    <string name="sos_acknowledged_title">✓ Acknowledged</string>
+    <string name="sos_active_events_count">Active Alerts (%d)</string>
+    <string name="sos_history_count">History (%d)</string>
+    <string name="sos_no_history">No resolved emergency events</string>
+    <string name="sos_resolve">Resolve</string>
+    <string name="sos_acknowledge">Acknowledge</string>
+
+    <!-- Navigation Bar Labels -->
+    <string name="nav_home_label">Home</string>
+    <string name="nav_chats_label">Chats</string>
+    <string name="nav_map_label">Map</string>
+    <string name="nav_network_label">Network</string>
+    <string name="nav_settings_label">Settings</string>
+
+    <!-- Drawer Labels -->
+    <string name="drawer_messenger_category">Messenger</string>
+    <string name="drawer_conversations">Conversations</string>
+    <string name="drawer_contacts_nodes">Contacts &amp; Nodes</string>
+    <string name="drawer_safety_category">Safety &amp; Radar</string>
+    <string name="drawer_emergency_sos">Emergency SOS</string>
+    <string name="drawer_offline_map">Offline Map</string>
+    <string name="drawer_resources">Resources Share</string>
+    <string name="drawer_network_status">Network Status</string>
+    <string name="drawer_system_category">System Configuration</string>
+    <string name="drawer_my_profile">My Profile Card</string>
+    <string name="drawer_app_settings">Application Settings</string>
+    <string name="drawer_about">About Messenger</string>
+    <string name="drawer_theme_mode">Theme Mode</string>
+    <string name="drawer_language">Language</string>
+    <string name="drawer_connected">Connected to Mesh</string>
+    <string name="drawer_offline">Offline Mode</string>
+
+    <!-- Camera Permission -->
+    <string name="permission_camera_rationale_title">Camera Required for QR Pairing</string>
+    <string name="permission_camera_rationale_desc">This app needs camera access to scan QR codes when pairing with mesh contacts for End-to-End Encrypted communication.</string>
+    <string name="permission_permanently_denied_title">Camera Access Denied</string>
+    <string name="permission_permanently_denied_desc">Camera permission was permanently denied. Please enable it in App Settings to use the QR scanner.</string>
+    <string name="permission_open_settings">Open App Settings</string>
+
+    <!-- Settings — missing hardcoded strings -->
+    <string name="settings_e2e_title">End-to-End Encryption</string>
+    <string name="settings_e2e_subtitle">AES-256-GCM + ECDH keys</string>
+    <string name="settings_about_architecture">Architecture</string>
+    <string name="settings_about_architecture_value">Clean Architecture + MVI</string>
+    <string name="settings_about_storage">Storage Mode</string>
+    <string name="settings_about_storage_value">Offline — Room Database</string>
+    <string name="settings_confirm_proceed">Proceed</string>
+    <string name="settings_confirm_cancel">Cancel</string>
 
     <!-- About -->
     <string name="settings_about_version">Version</string>

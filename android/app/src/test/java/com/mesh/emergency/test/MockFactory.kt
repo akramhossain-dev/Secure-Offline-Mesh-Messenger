@@ -133,7 +133,13 @@ object MockFactory {
         isCharging: Boolean = false,
         isCritical: Boolean = false
     ): PowerManager = object : PowerManager {
-        private val _currentMode = MutableStateFlow(PowerSavingMode.NORMAL)
+        private val _currentMode = MutableStateFlow(
+            when {
+                isCritical || batteryLevel <= 10 -> PowerSavingMode.EMERGENCY
+                batteryLevel <= 20 -> PowerSavingMode.SAVING
+                else -> PowerSavingMode.NORMAL
+            }
+        )
         override val currentMode: StateFlow<PowerSavingMode> = _currentMode.asStateFlow()
         
         private val _powerEvents = MutableSharedFlow<PowerEvent>()

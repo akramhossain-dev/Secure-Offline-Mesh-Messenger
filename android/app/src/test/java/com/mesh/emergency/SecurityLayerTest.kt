@@ -27,7 +27,7 @@ class SecurityLayerTest {
     @Before
     fun setUp() {
         cryptoEngine = CryptographyEngineImpl()
-        keyStorage = KeyStorageImpl()
+        keyStorage = KeyStorageImpl(null)
         keyManager = KeyManagerImpl(keyStorage)
     }
 
@@ -49,10 +49,10 @@ class SecurityLayerTest {
 
     @Test
     fun testDeriveSharedSecret_createsMatchingSecrets() {
-        val storageAlice = KeyStorageImpl()
+        val storageAlice = KeyStorageImpl(null)
         val managerAlice = KeyManagerImpl(storageAlice)
 
-        val storageBob = KeyStorageImpl()
+        val storageBob = KeyStorageImpl(null)
         val managerBob = KeyManagerImpl(storageBob)
 
         val pubAlice = managerAlice.getIdentityPublicKey()

@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Save
@@ -50,11 +51,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.mesh.emergency.R
 import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
 import com.mesh.emergency.core.designsystem.component.GlassPanel
 import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
@@ -67,6 +70,7 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    onBack: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -89,7 +93,15 @@ fun ProfileScreen(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = { Text("My Profile Identity", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    title = { Text(stringResource(R.string.profile_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Default.ArrowBack,
+                                contentDescription = stringResource(R.string.action_back)
+                            )
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
@@ -133,7 +145,7 @@ fun ProfileScreen(
                         GlassPanel(modifier = Modifier.fillMaxWidth()) {
                             Column {
                                 Text(
-                                    "Customize Nickname",
+                                    stringResource(R.string.profile_nickname_label),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -145,7 +157,7 @@ fun ProfileScreen(
                                     OutlinedTextField(
                                         value = uiState.usernameInput,
                                         onValueChange = { viewModel.onUsernameChanged(it) },
-                                        label = { Text("Nickname") },
+                                        label = { Text(stringResource(R.string.profile_nickname_hint)) },
                                         singleLine = true,
                                         modifier = Modifier.weight(1f)
                                     )
@@ -158,7 +170,7 @@ fun ProfileScreen(
                                     ) {
                                         Icon(
                                             Icons.Default.Save,
-                                            contentDescription = "Save Nickname",
+                                            contentDescription = stringResource(R.string.action_save),
                                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                     }
@@ -182,12 +194,12 @@ fun ProfileScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
-                                    "Identity Handshake QR",
+                                    stringResource(R.string.profile_qr_title),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    "Let other mesh nodes scan this QR code to securely exchange public keys and pair.",
+                                    stringResource(R.string.profile_qr_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -205,11 +217,13 @@ fun ProfileScreen(
                         }
                     }
 
-                    // ── 4. Cryptographic Key Details ────────────────────────────
+                    // ── 4. Cryptographic Key Details ──────────────────────────────
                     item {
                         val fingerprint = uiState.userModel?.id ?: ""
                         val key = uiState.userModel?.publicKey ?: ""
-                        
+                        val fingerprintCopied = stringResource(R.string.profile_copied_fingerprint)
+                        val keyCopied = stringResource(R.string.profile_copied_key)
+
                         GlassPanel(modifier = Modifier.fillMaxWidth()) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Row(
@@ -218,12 +232,12 @@ fun ProfileScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("User Fingerprint", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(stringResource(R.string.profile_fingerprint_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(fingerprint.take(24) + "...", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                                     }
                                     IconButton(onClick = {
                                         clipboardManager.setText(AnnotatedString(fingerprint))
-                                        Toast.makeText(context, "Fingerprint copied", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, fingerprintCopied, Toast.LENGTH_SHORT).show()
                                     }) {
                                         Icon(Icons.Default.ContentCopy, contentDescription = "Copy Fingerprint", modifier = Modifier.size(18.dp))
                                     }
@@ -234,12 +248,12 @@ fun ProfileScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Identity Public Key (ECDH)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(stringResource(R.string.profile_key_label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(key.take(24) + "...", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
                                     }
                                     IconButton(onClick = {
                                         clipboardManager.setText(AnnotatedString(key))
-                                        Toast.makeText(context, "Public Key copied", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, keyCopied, Toast.LENGTH_SHORT).show()
                                     }) {
                                         Icon(Icons.Default.ContentCopy, contentDescription = "Copy Public Key", modifier = Modifier.size(18.dp))
                                     }

@@ -82,6 +82,12 @@ val Neutral90  = Color(0xFFE4E1EC)
 val Neutral95  = Color(0xFFF2EFFE)
 val Neutral99  = Color(0xFFFFFBFF)
 
+// ── Pure Dark Theme Surfaces ──────────────────────────────────────────────────
+// Required for the "Pure Black" dark mode (AMOLED-friendly)
+val PureBlack     = Color(0xFF000000)  // True black — background
+val CardBlack     = Color(0xFF121212)  // Cards / surfaces
+val ElevatedBlack = Color(0xFF1E1E1E)  // Elevated surfaces / surface variant
+
 // ── Neutral Variant ───────────────────────────────────────────────────────────
 val NeutralVar10  = Color(0xFF1B1B23)
 val NeutralVar20  = Color(0xFF303039)
@@ -154,11 +160,11 @@ val md_theme_dark_error                 = Red80
 val md_theme_dark_errorContainer        = Red30
 val md_theme_dark_onError               = Red20
 val md_theme_dark_onErrorContainer      = Red90
-val md_theme_dark_background            = Neutral10
+val md_theme_dark_background            = PureBlack      // #000000 — AMOLED pure black
 val md_theme_dark_onBackground          = Neutral90
-val md_theme_dark_surface               = Neutral10
+val md_theme_dark_surface               = CardBlack      // #121212 — card surfaces
 val md_theme_dark_onSurface             = Neutral90
-val md_theme_dark_surfaceVariant        = NeutralVar30
+val md_theme_dark_surfaceVariant        = ElevatedBlack  // #1E1E1E — elevated surfaces
 val md_theme_dark_onSurfaceVariant      = NeutralVar80
 val md_theme_dark_outline               = NeutralVar60
 val md_theme_dark_inverseOnSurface      = Neutral10

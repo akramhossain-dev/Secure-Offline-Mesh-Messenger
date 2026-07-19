@@ -15,6 +15,8 @@ import com.mesh.emergency.data.localization.LanguageManagerImpl
 import com.mesh.emergency.test.MockFactory
 import com.mesh.emergency.test.ScenarioSimulator
 import com.mesh.emergency.test.TestDataFactory
+import com.mesh.emergency.core.power.isBatteryCritical
+import com.mesh.emergency.core.power.getBatteryLevel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
