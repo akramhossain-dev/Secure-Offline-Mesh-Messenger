@@ -11,6 +11,7 @@ import com.mesh.emergency.data.local.entity.DeviceEntity
 import com.mesh.emergency.data.local.entity.EmergencyEventEntity
 import com.mesh.emergency.data.local.entity.LocationEntity
 import com.mesh.emergency.data.local.entity.MessageEntity
+import com.mesh.emergency.data.local.entity.GlobalMessageEntity
 import com.mesh.emergency.data.local.entity.NetworkNodeEntity
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.data.local.entity.UserEntity
@@ -88,4 +89,12 @@ interface LocalDataSource {
     
     // ── Bulk Database Operations (A34.8) ──────────────────────────────────────
     suspend fun clearDatabase()
+
+    // ── Global Chat Operations ────────────────────────────────────────────────
+    fun getGlobalMessages(): kotlinx.coroutines.flow.Flow<List<GlobalMessageEntity>>
+    suspend fun insertGlobalMessage(message: GlobalMessageEntity)
+    suspend fun getGlobalMessageById(id: String): GlobalMessageEntity?
+    suspend fun updateGlobalMessageStatus(id: String, status: String)
+    suspend fun failStuckGlobalMessages()
+    suspend fun deleteGlobalMessage(id: String)
 }

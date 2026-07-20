@@ -26,12 +26,21 @@ import com.mesh.emergency.core.model.BaseEntity
 )
 data class MessageEntity(
     @PrimaryKey override val entityId: String,
+    val messageId: String = entityId,
     val conversationId: String,
     val senderId: String,
+    val senderName: String = "",
     val recipientId: String,
     val content: String,
     val timestamp: Long,
+    val createdAt: Long = timestamp,
+    val updatedAt: Long = timestamp,
+    val edited: Boolean = false,
+    val deleted: Boolean = false,
     val deliveryStatus: DbDeliveryStatus,
+    val readStatus: String = "UNREAD", // "UNREAD" | "READ"
+    val syncState: String = "SYNCED", // "PENDING" | "SYNCED"
+    val editHistory: List<String> = emptyList(),
     val type: DbMessageType,
     val priority: DbMessagePriority,
     val expiryTime: Long,

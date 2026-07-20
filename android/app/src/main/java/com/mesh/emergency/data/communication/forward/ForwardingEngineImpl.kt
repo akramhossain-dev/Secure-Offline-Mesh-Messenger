@@ -70,38 +70,20 @@ class ForwardingEngineImpl @Inject constructor(
 
             queueManager.updateStatus(message.entityId, DbDeliveryStatus.SENDING)
 
-            // Retrieve recipient public key for encryption
-            val recipientId = message.recipientId
-            val recipientUser = localDataSource.getUserById(recipientId)
-            val plainBytes = message.content.toByteArray(Charsets.UTF_8)
-            val encryptedBytes = if (recipientUser?.publicKey != null) {
-                val peerPubKeyBytes = recipientUser.publicKey.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-                val sharedSecret = keyManager.deriveSharedSecret(peerPubKeyBytes)
-                val encryptResult = encryptPayload(plainBytes, sharedSecret, cryptographyEngine)
-                if (encryptResult is Result.Success) encryptResult.data else plainBytes
-            } else {
-                plainBytes
-            }
+            val msgJson = org.json.JSONObject().apply {
+                put("type", "chat")
+                put("id",   message.entityId)
+                put("from", message.senderId)
+                put("to",   message.recipientId)
+                put("text", message.content)
+                put("ts",   message.timestamp)
+            }.toString()
+            val payload = "MSG:$msgJson".toByteArray(Charsets.UTF_8)
 
-            val header = PacketHeader(
-                version = 1,
-                packetId = message.entityId,
-                senderId = message.senderId,
-                receiverId = message.recipientId,
-                messageType = message.type,
-                priority = message.priority,
-                ttl = message.expiryTime,
-                hopCount = 0,
-                timestamp = message.timestamp
-            )
-            val checksum = PacketSerializer.calculateChecksum(header, encryptedBytes)
-            val packet = Packet(header, encryptedBytes, null, checksum)
-            val serializedJson = PacketSerializer.serializeToJson(packet)
-
-            val result = communicationManager.sendMessage(serializedJson.toByteArray(Charsets.UTF_8))
+            val result = communicationManager.sendMessage(payload)
             when (result) {
                 is Result.Success -> {
-                    queueManager.updateStatus(message.entityId, DbDeliveryStatus.DELIVERED)
+                    queueManager.updateStatus(message.entityId, DbDeliveryStatus.SENT)
                 }
                 is Result.Error -> {
                     queueManager.incrementRetry(message.entityId)

@@ -91,4 +91,25 @@ class Converters {
     @TypeConverter
     fun toNodeStatus(value: String): DbNodeStatus =
         DbNodeStatus.valueOf(value)
+
+    @TypeConverter
+    fun fromStringList(list: List<String>?): String {
+        if (list == null) return "[]"
+        return org.json.JSONArray(list).toString()
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String> {
+        if (value.isNullOrEmpty()) return emptyList()
+        val list = mutableListOf<String>()
+        try {
+            val jsonArray = org.json.JSONArray(value)
+            for (i in 0 until jsonArray.length()) {
+                list.add(jsonArray.getString(i))
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+        return list
+    }
 }

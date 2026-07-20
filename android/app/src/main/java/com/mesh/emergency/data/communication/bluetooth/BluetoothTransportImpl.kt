@@ -65,7 +65,9 @@ import javax.inject.Singleton
 class BluetoothTransportImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val permissionManager: PermissionManager,
-    private val localDataSource: com.mesh.emergency.data.local.LocalDataSource
+    private val localDataSource: com.mesh.emergency.data.local.LocalDataSource,
+    private val messageNotifier: com.mesh.emergency.core.notification.MessageNotifier,
+    private val notificationManager: com.mesh.emergency.core.notification.NotificationManager
 ) : Transport {
 
     override val type: TransportType = TransportType.BLUETOOTH
@@ -91,6 +93,19 @@ class BluetoothTransportImpl @Inject constructor(
     private var gattServer: BluetoothGattServer? = null
     private var txServerCharacteristic: BluetoothGattCharacteristic? = null
     private val connectedDevices = mutableSetOf<BluetoothDevice>()
+
+    private val seenPacketIds = java.util.Collections.synchronizedSet(object : java.util.LinkedHashSet<String>() {
+        override fun add(element: String): Boolean {
+            if (size > 1000) {
+                val iterator = iterator()
+                if (iterator.hasNext()) {
+                    iterator.next()
+                    iterator.remove()
+                }
+            }
+            return super.add(element)
+        }
+    })
 
     /**
      * Pending reverse-handshake payload waiting for the next BLE connection event.
@@ -820,6 +835,13 @@ class BluetoothTransportImpl @Inject constructor(
                 Timber.d("BLE_FLOW: Data characteristic received (server RX, length=${value.size}) — ${str.take(120)}")
 
                 when {
+                    // ── Global Chat broadcast packet ────────────────────────────
+                    str.startsWith("GCHAT:") -> {
+                        scope.launch {
+                            handleInboundGlobalMessage(str.removePrefix("GCHAT:"), senderDeviceAddress = device?.address)
+                        }
+                    }
+
                     // ── Chat message packet ──────────────────────────────────
                     str.startsWith("MSG:") -> {
                         scope.launch {
@@ -1036,7 +1058,14 @@ class BluetoothTransportImpl @Inject constructor(
                     Timber.d("BLE_FLOW: Data characteristic received (client TX notification, length=${data.size}) — ${str.take(80)}")
 
                     when {
-                        // ── Chat message packet ──────────────────────────────
+                        // ── Global Chat broadcast packet ───────────────────────────
+                        str.startsWith("GCHAT:") -> {
+                            scope.launch {
+                                handleInboundGlobalMessage(str.removePrefix("GCHAT:"), senderDeviceAddress = gatt?.device?.address)
+                            }
+                        }
+
+                        // ── Chat message packet ────────────────────────────────────────
                         str.startsWith("MSG:") -> {
                             scope.launch {
                                 handleInboundMessage(str.removePrefix("MSG:"), gatt?.device?.address)
@@ -1122,58 +1151,473 @@ class BluetoothTransportImpl @Inject constructor(
         }
     }
 
-    // ── Inbound MSG: message handler ─────────────────────────────────────────
+    // ── Inbound GCHAT: global message handler ──────────────────────────────
 
     /**
-     * Parses a lightweight `MSG:{json}` chat packet received over BLE and persists
-     * the [MessageEntity] and [ConversationEntity] to Room so the UI updates via Flow.
+     * Parses a `GCHAT:{json}` broadcast message received over BLE and persists it to Room
+     * if this messageId has not been seen before (deduplication via DAO IGNORE conflict).
      *
-     * Packet format: `{"id":"uuid","from":"senderId","to":"receiverId","text":"...","ts":1234567890}`
+     * Packet format: `{"id":"uuid","from":"senderId","name":"Alice","text":"Hello","ts":1234567890}`
      */
+    private suspend fun handleInboundGlobalMessage(jsonStr: String, senderDeviceAddress: String?) {
+        try {
+            Timber.d("GCHAT_FLOW: Inbound global message received — ${jsonStr.take(120)}")
+            val json       = org.json.JSONObject(jsonStr)
+            val type       = json.optString("type", "chat")
+            val msgId      = json.getString("id")
+            val senderId   = json.getString("from")
+            val senderName = json.optString("name", "Unknown")
+            val timestamp  = json.optLong("ts", System.currentTimeMillis())
+
+            // Check if we have already processed this packet to prevent infinite forwarding loops
+            val actionKey = "gchat:${msgId}:${type}:${timestamp}"
+            if (!seenPacketIds.add(actionKey)) {
+                return
+            }
+
+            val existing = localDataSource.getGlobalMessageById(msgId)
+
+            when (type) {
+                "chat" -> {
+                    if (existing == null) {
+                        val text = json.getString("text")
+                        val entity = com.mesh.emergency.data.local.entity.GlobalMessageEntity(
+                            messageId      = msgId,
+                            senderId       = senderId,
+                            senderName     = senderName,
+                            content        = text,
+                            timestamp      = timestamp,
+                            createdAt      = timestamp,
+                            updatedAt      = timestamp,
+                            edited         = false,
+                            deleted        = false,
+                            deliveryStatus = "DELIVERED",
+                            readStatus     = "READ",
+                            syncState      = "SYNCED",
+                            editHistory    = emptyList()
+                        )
+                        localDataSource.insertGlobalMessage(entity)
+                        
+                        // Notify UI
+                        messageNotifier.notifyGlobalMessage(msgId, senderId, senderName, text)
+                        
+                        // Play sound / notification
+                        triggerInboundNotification(msgId, senderName, text, isGlobal = true)
+
+                        // Mesh forwarding: re-broadcast
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    } else if (timestamp > existing.updatedAt) {
+                        val updated = existing.copy(
+                            content = json.getString("text"),
+                            updatedAt = timestamp
+                        )
+                        localDataSource.insertGlobalMessage(updated)
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    }
+                }
+                "edit" -> {
+                    val text = json.getString("text")
+                    if (existing == null) {
+                        val entity = com.mesh.emergency.data.local.entity.GlobalMessageEntity(
+                            messageId      = msgId,
+                            senderId       = senderId,
+                            senderName     = senderName,
+                            content        = text,
+                            timestamp      = timestamp,
+                            createdAt      = timestamp,
+                            updatedAt      = timestamp,
+                            edited         = true,
+                            deleted        = false,
+                            deliveryStatus = "DELIVERED",
+                            readStatus     = "READ",
+                            syncState      = "SYNCED",
+                            editHistory    = emptyList()
+                        )
+                        localDataSource.insertGlobalMessage(entity)
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    } else if (timestamp > existing.updatedAt) {
+                        val history = existing.editHistory.toMutableList()
+                        if (!history.contains(existing.content)) {
+                            history.add(existing.content)
+                        }
+                        val updated = existing.copy(
+                            content = text,
+                            edited = true,
+                            updatedAt = timestamp,
+                            editHistory = history
+                        )
+                        localDataSource.insertGlobalMessage(updated)
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    }
+                }
+                "delete" -> {
+                    if (existing == null) {
+                        val entity = com.mesh.emergency.data.local.entity.GlobalMessageEntity(
+                            messageId      = msgId,
+                            senderId       = senderId,
+                            senderName     = senderName,
+                            content        = "",
+                            timestamp      = timestamp,
+                            createdAt      = timestamp,
+                            updatedAt      = timestamp,
+                            edited         = false,
+                            deleted        = true,
+                            deliveryStatus = "DELIVERED",
+                            readStatus     = "READ",
+                            syncState      = "SYNCED",
+                            editHistory    = emptyList()
+                        )
+                        localDataSource.insertGlobalMessage(entity)
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    } else if (timestamp > existing.updatedAt) {
+                        val updated = existing.copy(
+                            deleted = true,
+                            updatedAt = timestamp
+                        )
+                        localDataSource.insertGlobalMessage(updated)
+                        reBroadcastPacket("GCHAT:$jsonStr")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "GCHAT_FLOW: Failed to parse inbound GCHAT: packet — $jsonStr")
+        }
+    }
+
+    suspend fun sendGlobalMessage(
+        messageId: String,
+        senderId: String,
+        senderName: String,
+        text: String
+    ): Boolean {
+        val json = org.json.JSONObject().apply {
+            put("type", "chat")
+            put("id",   messageId)
+            put("from", senderId)
+            put("name", senderName)
+            put("text", text)
+            put("ts",   System.currentTimeMillis())
+        }
+        val payload = "GCHAT:$json".toByteArray(Charsets.UTF_8)
+        Timber.d("GCHAT_FLOW: Sending global message — id=$messageId name='$senderName' text='${text.take(40)}'")
+        return sendPayloadDirect(payload)
+    }
+
+    suspend fun sendGlobalMessageEdit(
+        messageId: String,
+        senderId: String,
+        senderName: String,
+        text: String
+    ): Boolean {
+        val json = org.json.JSONObject().apply {
+            put("type", "edit")
+            put("id",   messageId)
+            put("from", senderId)
+            put("name", senderName)
+            put("text", text)
+            put("ts",   System.currentTimeMillis())
+        }
+        val payload = "GCHAT:$json".toByteArray(Charsets.UTF_8)
+        return sendPayloadDirect(payload)
+    }
+
+    suspend fun sendGlobalMessageDelete(
+        messageId: String,
+        senderId: String,
+        senderName: String
+    ): Boolean {
+        val json = org.json.JSONObject().apply {
+            put("type", "delete")
+            put("id",   messageId)
+            put("from", senderId)
+            put("name", senderName)
+            put("ts",   System.currentTimeMillis())
+        }
+        val payload = "GCHAT:$json".toByteArray(Charsets.UTF_8)
+        return sendPayloadDirect(payload)
+    }
+
     private suspend fun handleInboundMessage(jsonStr: String, senderBleAddress: String?) {
         try {
             Timber.d("MSG_FLOW: Inbound message received — ${jsonStr.take(120)}")
-            val json      = org.json.JSONObject(jsonStr)
-            val msgId     = json.getString("id")
-            val senderId  = json.getString("from")
+            val json       = org.json.JSONObject(jsonStr)
+            val type       = json.optString("type", "chat")
+            val msgId      = json.getString("id")
+            val senderId   = json.getString("from")
             val receiverId = json.optString("to", "")
-            val text      = json.getString("text")
-            val timestamp = json.optLong("ts", System.currentTimeMillis())
+            val timestamp  = json.optLong("ts", System.currentTimeMillis())
 
-            // Look up sender display name for conversation title
-            val senderUser  = localDataSource.getUserById(senderId)
-            val senderName  = senderUser?.nickname?.takeIf { it.isNotBlank() }
-                ?: senderUser?.username?.takeIf { it.isNotBlank() }
-                ?: "Contact-${senderId.take(6)}"
+            val currentUser = localDataSource.getCurrentUser().firstOrNull()
+            val localUserId = currentUser?.entityId ?: "self"
 
-            val messageEntity = com.mesh.emergency.data.local.entity.MessageEntity(
-                entityId       = msgId,
-                conversationId = senderId,   // conversation keyed by peer's userId
-                senderId       = senderId,
-                recipientId    = receiverId,
-                content        = text,
-                timestamp      = timestamp,
-                deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED,
-                type           = com.mesh.emergency.data.local.entity.DbMessageType.TEXT,
-                priority       = com.mesh.emergency.data.local.entity.DbMessagePriority.MEDIUM,
-                expiryTime     = timestamp + 86_400_000L,
-                retryCount     = 0
-            )
+            if (receiverId == localUserId) {
+                val actionKey = "msg:${msgId}:${type}:${timestamp}"
+                if (!seenPacketIds.add(actionKey)) {
+                    return
+                }
 
-            val conversationEntity = com.mesh.emergency.data.local.entity.ConversationEntity(
-                entityId      = senderId,
-                title         = senderName,
-                lastMessageId = msgId,
-                unreadCount   = 0,
-                updatedAt     = timestamp
-            )
+                val senderUser = localDataSource.getUserById(senderId)
+                val senderName = senderUser?.nickname?.takeIf { it.isNotBlank() }
+                    ?: senderUser?.username?.takeIf { it.isNotBlank() }
+                    ?: "Contact-${senderId.take(6)}"
 
-            localDataSource.insertMessage(messageEntity)
-            localDataSource.insertConversation(conversationEntity)
-            Timber.d("MSG_FLOW: Message saved — id=$msgId from='$senderName' text='${text.take(40)}'")
+                val existing = localDataSource.getMessageById(msgId)
+
+                when (type) {
+                    "chat" -> {
+                        if (existing == null) {
+                            val text = json.getString("text")
+                            val messageEntity = com.mesh.emergency.data.local.entity.MessageEntity(
+                                entityId       = msgId,
+                                messageId      = msgId,
+                                conversationId = senderId,
+                                senderId       = senderId,
+                                senderName     = senderName,
+                                recipientId    = receiverId,
+                                content        = text,
+                                timestamp      = timestamp,
+                                createdAt      = timestamp,
+                                updatedAt      = timestamp,
+                                edited         = false,
+                                deleted        = false,
+                                deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED,
+                                readStatus     = "UNREAD",
+                                syncState      = "SYNCED",
+                                editHistory    = emptyList(),
+                                type           = com.mesh.emergency.data.local.entity.DbMessageType.TEXT,
+                                priority       = com.mesh.emergency.data.local.entity.DbMessagePriority.MEDIUM,
+                                expiryTime     = timestamp + 86_400_000L,
+                                retryCount     = 0
+                            )
+                            val conversationEntity = com.mesh.emergency.data.local.entity.ConversationEntity(
+                                entityId      = senderId,
+                                title         = senderName,
+                                lastMessageId = msgId,
+                                unreadCount   = 1,
+                                updatedAt     = timestamp
+                            )
+                            localDataSource.insertMessage(messageEntity)
+                            localDataSource.insertConversation(conversationEntity)
+
+                            messageNotifier.notifyPrivateMessage(msgId, senderId, senderName, text)
+                            triggerInboundNotification(msgId, senderName, text, isGlobal = false, sourceId = senderId)
+
+                            // Acknowledge delivery immediately
+                            sendDeliveryReceipt(msgId, localUserId, senderId)
+                        }
+                    }
+                    "edit" -> {
+                        val text = json.getString("text")
+                        if (existing != null && timestamp > existing.updatedAt) {
+                            val history = existing.editHistory.toMutableList()
+                            if (!history.contains(existing.content)) {
+                                history.add(existing.content)
+                            }
+                            val updated = existing.copy(
+                                content = text,
+                                edited = true,
+                                updatedAt = timestamp,
+                                editHistory = history
+                            )
+                            localDataSource.insertMessage(updated)
+                        }
+                    }
+                    "delete" -> {
+                        if (existing != null && timestamp > existing.updatedAt) {
+                            val updated = existing.copy(
+                                deleted = true,
+                                updatedAt = timestamp
+                            )
+                            localDataSource.insertMessage(updated)
+                        }
+                    }
+                    "delivery_receipt" -> {
+                        if (existing != null && existing.deliveryStatus != com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED) {
+                            val updated = existing.copy(
+                                deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED
+                            )
+                            localDataSource.insertMessage(updated)
+                        }
+                    }
+                    "read_receipt" -> {
+                        if (existing != null) {
+                            val updated = existing.copy(
+                                deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED,
+                                readStatus = "READ"
+                            )
+                            localDataSource.insertMessage(updated)
+                        }
+                    }
+                }
+            } else {
+                // Forward packet to peers (Mesh Routing)
+                val actionKey = "msg:${msgId}:${type}:${timestamp}"
+                if (seenPacketIds.add(actionKey)) {
+                    Timber.d("MSG_FLOW: Message not for us. Forwarding to mesh — id=$msgId to=$receiverId")
+                    reBroadcastPacket("MSG:$jsonStr")
+                }
+            }
         } catch (e: Exception) {
             Timber.e(e, "MSG_FLOW: Failed to parse inbound MSG: packet — $jsonStr")
         }
+    }
+
+    private fun reBroadcastPacket(payloadStr: String) {
+        val payload = payloadStr.toByteArray(Charsets.UTF_8)
+        sendViaConnectedClients(payload)
+        sendViaGattClient(payload)
+    }
+
+    private fun triggerInboundNotification(
+        messageId: String,
+        senderName: String,
+        text: String,
+        isGlobal: Boolean,
+        sourceId: String = "global"
+    ) {
+        scope.launch {
+            if (com.mesh.emergency.app.MeshApplication.AppLifecycleTracker.isAppInForeground) {
+                playReceiveSound()
+            } else {
+                val alert = com.mesh.emergency.core.notification.AlertModel(
+                    id = messageId,
+                    type = com.mesh.emergency.core.notification.AlertType.MESSAGE_ALERT,
+                    title = senderName,
+                    description = if (isGlobal) "[Global] $text" else text,
+                    priority = com.mesh.emergency.core.notification.AlertPriority.NORMAL,
+                    timestamp = System.currentTimeMillis(),
+                    source = sourceId,
+                    status = "ACTIVE"
+                )
+                notificationManager.showNotification(alert)
+            }
+        }
+    }
+
+    private fun playReceiveSound() {
+        try {
+            val uri = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+            val ringtone = android.media.RingtoneManager.getRingtone(context, uri)
+            ringtone.play()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to play receive sound")
+        }
+    }
+
+    fun sendDeliveryReceipt(messageId: String, senderId: String, recipientId: String) {
+        val json = org.json.JSONObject().apply {
+            put("type", "delivery_receipt")
+            put("id", messageId)
+            put("from", senderId)
+            put("to", recipientId)
+            put("ts", System.currentTimeMillis())
+        }
+        reBroadcastPacket("MSG:$json")
+    }
+
+    fun sendReadReceipt(messageId: String, senderId: String, recipientId: String) {
+        val json = org.json.JSONObject().apply {
+            put("type", "read_receipt")
+            put("id", messageId)
+            put("from", senderId)
+            put("to", recipientId)
+            put("ts", System.currentTimeMillis())
+        }
+        reBroadcastPacket("MSG:$json")
+    }
+
+    fun sendPrivateMessageEdit(messageId: String, senderId: String, recipientId: String, text: String) {
+        val json = org.json.JSONObject().apply {
+            put("type", "edit")
+            put("id", messageId)
+            put("from", senderId)
+            put("to", recipientId)
+            put("text", text)
+            put("ts", System.currentTimeMillis())
+        }
+        reBroadcastPacket("MSG:$json")
+    }
+
+    fun sendPrivateMessageDelete(messageId: String, senderId: String, recipientId: String) {
+        val json = org.json.JSONObject().apply {
+            put("type", "delete")
+            put("id", messageId)
+            put("from", senderId)
+            put("to", recipientId)
+            put("ts", System.currentTimeMillis())
+        }
+        reBroadcastPacket("MSG:$json")
+    }
+
+    suspend fun onPeerConnected(remoteUserId: String) {
+        Timber.d("SYNC_FLOW: Peer connected remoteUserId=$remoteUserId. Draining queue and syncing history...")
+        
+        // 1. Drain pending queue
+        drainQueue()
+
+        // 2. Synchronize recent global history (up to 50 items)
+        val recentGlobal = localDataSource.getGlobalMessages().firstOrNull()?.take(50) ?: emptyList()
+        for (msg in recentGlobal) {
+            val json = org.json.JSONObject().apply {
+                put("type", "chat")
+                put("id", msg.messageId)
+                put("from", msg.senderId)
+                put("name", msg.senderName)
+                put("text", msg.content)
+                put("ts", msg.updatedAt)
+            }.toString()
+            val payload = "GCHAT:$json".toByteArray(Charsets.UTF_8)
+            sendPayloadDirect(payload)
+        }
+    }
+
+    suspend fun drainQueue() {
+        try {
+            // Drain private messages
+            val pendingPrivate = localDataSource.getPendingMessages().firstOrNull() ?: emptyList()
+            for (msg in pendingPrivate) {
+                val json = org.json.JSONObject().apply {
+                    put("type", "chat")
+                    put("id", msg.entityId)
+                    put("from", msg.senderId)
+                    put("to", msg.recipientId)
+                    put("text", msg.content)
+                    put("ts", msg.timestamp)
+                }.toString()
+                val payload = "MSG:$json".toByteArray(Charsets.UTF_8)
+                val success = sendPayloadDirect(payload)
+                if (success) {
+                    val updated = msg.copy(
+                        deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.SENT,
+                        syncState = "SYNCED"
+                    )
+                    localDataSource.insertMessage(updated)
+                }
+            }
+
+            // Drain global messages
+            val allGlobal = localDataSource.getGlobalMessages().firstOrNull() ?: emptyList()
+            val pendingGlobal = allGlobal.filter { it.deliveryStatus == "QUEUED" || it.deliveryStatus == "SENDING" }
+            for (msg in pendingGlobal) {
+                val sent = sendGlobalMessage(
+                    messageId = msg.messageId,
+                    senderId = msg.senderId,
+                    senderName = msg.senderName,
+                    text = msg.content
+                )
+                if (sent) {
+                    localDataSource.updateGlobalMessageStatus(msg.messageId, "SENT")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "SYNC_FLOW: Failed to drain queue")
+        }
+    }
+
+    private fun sendPayloadDirect(payload: ByteArray): Boolean {
+        val serverSent = sendViaConnectedClients(payload)
+        val clientSent = sendViaGattClient(payload)
+        return serverSent || clientSent
     }
 
     // ── Identity helpers ─────────────────────────────────────────────────────
@@ -1256,6 +1700,9 @@ class BluetoothTransportImpl @Inject constructor(
             
             // Immediately insert/update the node in network_nodes using real identity
             updateNodeInDb(realBleAddress, remoteUsername, -55, DbNodeStatus.ONLINE)
+
+            // Trigger offline queue drain and history sync
+            onPeerConnected(remoteUserId)
         } catch (e: Exception) {
             Timber.e(e, "PAIR_FLOW: handlePeerIdentity failed — $jsonStr")
         }

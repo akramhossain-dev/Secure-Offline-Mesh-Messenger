@@ -41,6 +41,44 @@ object DateUtils {
         SimpleDateFormat(PATTERN_MESSAGE_TIME, locale).format(Date(millis))
 
     /**
+     * Formats a Unix timestamp [millis] dynamically using the device's 12/24 hour settings.
+     */
+    fun formatMessageTime(context: android.content.Context, millis: Long): String {
+        val is24Hour = android.text.format.DateFormat.is24HourFormat(context)
+        val pattern = if (is24Hour) "HH:mm" else "h:mm a"
+        return SimpleDateFormat(pattern, Locale.getDefault()).format(Date(millis))
+    }
+
+    /**
+     * Returns a relative day string (Today, Yesterday, Day Name, or Full Date).
+     */
+    fun formatRelativeDay(millis: Long): String {
+        val now = System.currentTimeMillis()
+        val calendar = java.util.Calendar.getInstance().apply { timeInMillis = millis }
+        val nowCalendar = java.util.Calendar.getInstance().apply { timeInMillis = now }
+
+        val isToday = calendar.get(java.util.Calendar.YEAR) == nowCalendar.get(java.util.Calendar.YEAR) &&
+                calendar.get(java.util.Calendar.DAY_OF_YEAR) == nowCalendar.get(java.util.Calendar.DAY_OF_YEAR)
+
+        val isYesterday = calendar.get(java.util.Calendar.YEAR) == nowCalendar.get(java.util.Calendar.YEAR) &&
+                calendar.get(java.util.Calendar.DAY_OF_YEAR) == nowCalendar.get(java.util.Calendar.DAY_OF_YEAR) - 1
+
+        return when {
+            isToday -> "Today"
+            isYesterday -> "Yesterday"
+            else -> {
+                val diffMillis = now - millis
+                val diffDays = diffMillis / (24 * 60 * 60 * 1000)
+                if (diffDays in 0..6) {
+                    SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(millis))
+                } else {
+                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(millis))
+                }
+            }
+        }
+    }
+
+    /**
      * Formats a Unix timestamp [millis] as a date string ("MMM dd, yyyy").
      * Used in chat date separators.
      */

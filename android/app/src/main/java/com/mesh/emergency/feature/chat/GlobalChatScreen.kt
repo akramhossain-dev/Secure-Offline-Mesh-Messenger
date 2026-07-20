@@ -3,7 +3,7 @@
  * Copyright (c) 2024. All rights reserved.
  */
 
-package com.mesh.emergency.feature.message.presentation
+package com.mesh.emergency.feature.chat
 
 import android.content.Context
 import android.widget.Toast
@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,24 +77,21 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
-import com.mesh.emergency.data.local.entity.DbDeliveryStatus
-import com.mesh.emergency.feature.message.domain.Message
 
 /**
- * Offline Chat screen — shows message bubbles for a single conversation,
- * with message input and delivery status indicators.
+ * Global Chat Screen — supports mesh-wide message broadcasting, day separators,
+ * context actions (long press), dynamic time formats, and elegant animations.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ChatScreen(
-    conversationId: String,
-    recipientLabel: String,
+fun GlobalChatScreen(
     onBack: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: GlobalChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -102,22 +100,19 @@ fun ChatScreen(
     val semanticColors = MeshThemeTokens.semanticColors
     val context = LocalContext.current
 
-    var selectedMessageForMenu by remember { mutableStateOf<Message?>(null) }
-
-    // Load conversation on first composition
-    LaunchedEffect(conversationId) {
-        viewModel.onEvent(ChatUiEvent.LoadConversation(conversationId, recipientLabel))
-    }
+    var selectedMessageForMenu by remember { mutableStateOf<GlobalChatMessage?>(null) }
 
     // Handle effects
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is ChatUiEffect.ShowToast -> snackbarHostState.showSnackbar(effect.message)
-                ChatUiEffect.ScrollToBottom -> {
+                is GlobalChatUiEffect.ScrollToBottom -> {
                     if (uiState.messages.isNotEmpty()) {
                         listState.animateScrollToItem(uiState.messages.lastIndex)
                     }
+                }
+                is GlobalChatUiEffect.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(effect.message)
                 }
             }
         }
@@ -138,18 +133,16 @@ fun ChatScreen(
             topBar = {
                 TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Column {
-                                Text(
-                                    text = uiState.recipientLabel.ifBlank { recipientLabel },
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                                Text(
-                                    text = if (uiState.isOnline) "Online" else "Offline — queue active",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (uiState.isOnline) semanticColors.connected else semanticColors.warning
-                                )
-                            }
+                        Column {
+                            Text(
+                                text = "Global Mesh Chat",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Text(
+                                text = if (uiState.isOnline) "Mesh active" else "Searching peers…",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (uiState.isOnline) semanticColors.connected else semanticColors.warning
+                            )
                         }
                     },
                     navigationIcon = {
@@ -166,7 +159,7 @@ fun ChatScreen(
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
-            },
+            }
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -174,78 +167,109 @@ fun ChatScreen(
                     .padding(top = paddingValues.calculateTopPadding())
                     .imePadding()
             ) {
+                // Connection indicator
+                if (!uiState.isOnline) {
+                    GlassPanel(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.WifiOff,
+                                contentDescription = null,
+                                tint = semanticColors.warning,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = "No mesh connection — messages queued locally",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = semanticColors.warning
+                            )
+                        }
+                    }
+                }
+
+                // Message list
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                 ) {
-                    if (uiState.messages.isEmpty()) {
-                        EmptyChatHistory()
-                    } else {
-                        LazyColumn(
-                            state = listState,
-                            contentPadding = PaddingValues(
-                                start = spacing.lg, end = spacing.lg,
-                                top = spacing.sm, bottom = spacing.sm
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
-                                val showDateSeparator = index == 0 || !com.mesh.emergency.core.utils.DateUtils.isSameDay(
-                                    uiState.messages[index - 1].timestamp,
-                                    message.timestamp
-                                )
-                                Column(modifier = Modifier.animateItemPlacement()) {
-                                    if (showDateSeparator) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 12.dp)
-                                        ) {
+                    when {
+                        uiState.isLoading -> GlobalChatLoadingState()
+                        uiState.messages.isEmpty() -> GlobalChatEmptyState()
+                        else -> {
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(
+                                    start = spacing.lg,
+                                    end = spacing.lg,
+                                    top = spacing.sm,
+                                    bottom = spacing.sm
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
+                                    val showDateSeparator = index == 0 || !com.mesh.emergency.core.utils.DateUtils.isSameDay(
+                                        uiState.messages[index - 1].timestamp,
+                                        message.timestamp
+                                    )
+                                    Column(modifier = Modifier.animateItemPlacement()) {
+                                        if (showDateSeparator) {
                                             Box(
+                                                contentAlignment = Alignment.Center,
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 12.dp)
                                             ) {
-                                                Text(
-                                                    text = com.mesh.emergency.core.utils.DateUtils.formatRelativeDay(message.timestamp),
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                                        .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = com.mesh.emergency.core.utils.DateUtils.formatRelativeDay(message.timestamp),
+                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
                                             }
                                         }
-                                    }
 
-                                    MessageBubble(
-                                        message = message,
-                                        isSelf = message.isSelf,
-                                        senderName = if (message.isSelf) "You" else uiState.recipientLabel.ifBlank { recipientLabel },
-                                        onLongClick = { selectedMessageForMenu = message }
-                                    )
+                                        GlobalMessageBubble(
+                                            message = message,
+                                            onLongClick = { selectedMessageForMenu = message }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                MessageInputBar(
+                // Input bar
+                GlobalChatInputBar(
                     draft = uiState.draftText,
                     isOnline = uiState.isOnline,
-                    pendingCount = uiState.pendingCount,
                     editingMessage = uiState.editingMessage,
-                    onDraftChange = { viewModel.onEvent(ChatUiEvent.UpdateDraft(it)) },
-                    onSend = { viewModel.onEvent(ChatUiEvent.SendMessage) },
-                    onCancelEdit = { viewModel.onEvent(ChatUiEvent.CancelEditing) }
+                    onDraftChange = { viewModel.onEvent(GlobalChatUiEvent.UpdateDraft(it)) },
+                    onSend = { viewModel.onEvent(GlobalChatUiEvent.SendMessage) },
+                    onCancelEdit = { viewModel.onEvent(GlobalChatUiEvent.CancelEditing) }
                 )
             }
         }
     }
 
     if (selectedMessageForMenu != null) {
-        MessageActionsDialog(
+        GlobalMessageActionsDialog(
             message = selectedMessageForMenu!!,
             onDismiss = { selectedMessageForMenu = null },
             onReply = {
@@ -253,15 +277,15 @@ fun ChatScreen(
                 selectedMessageForMenu = null
             },
             onEdit = {
-                viewModel.onEvent(ChatUiEvent.StartEditing(selectedMessageForMenu!!))
+                viewModel.onEvent(GlobalChatUiEvent.StartEditing(selectedMessageForMenu!!))
                 selectedMessageForMenu = null
             },
             onDeleteForEveryone = {
-                viewModel.onEvent(ChatUiEvent.DeleteMessageForEveryone(selectedMessageForMenu!!.id))
+                viewModel.onEvent(GlobalChatUiEvent.DeleteMessageForEveryone(selectedMessageForMenu!!.id))
                 selectedMessageForMenu = null
             },
             onDeleteForMe = {
-                viewModel.onEvent(ChatUiEvent.DeleteMessageForMe(selectedMessageForMenu!!.id))
+                viewModel.onEvent(GlobalChatUiEvent.DeleteMessageForMe(selectedMessageForMenu!!.id))
                 selectedMessageForMenu = null
             },
             onCopy = {
@@ -272,7 +296,7 @@ fun ChatScreen(
                 selectedMessageForMenu = null
             },
             onForward = {
-                Toast.makeText(context, "Forwarding message: choose contact.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Forwarding: choose peer.", Toast.LENGTH_SHORT).show()
                 selectedMessageForMenu = null
             }
         )
@@ -280,12 +304,12 @@ fun ChatScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Message Actions Dialog
+// Global Message Actions Dialog
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MessageActionsDialog(
-    message: Message,
+private fun GlobalMessageActionsDialog(
+    message: GlobalChatMessage,
     onDismiss: () -> Unit,
     onReply: () -> Unit,
     onEdit: () -> Unit,
@@ -353,33 +377,30 @@ private fun MessageActionsDialog(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MessageBubble(
-    message: Message,
-    isSelf: Boolean,
-    senderName: String,
+private fun GlobalMessageBubble(
+    message: GlobalChatMessage,
     onLongClick: () -> Unit
 ) {
+    val isSelf = message.isSelf
     val context = LocalContext.current
-    val semanticColors = MeshThemeTokens.semanticColors
 
     Row(
         horizontalArrangement = if (isSelf) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.Bottom,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.Bottom
+            .padding(vertical = 4.dp)
     ) {
         if (!isSelf) {
             Box(
-                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(4.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = senderName.take(1).uppercase(),
+                    text = message.senderName.take(1).uppercase(),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -393,8 +414,8 @@ private fun MessageBubble(
         ) {
             if (!isSelf) {
                 Text(
-                    text = senderName,
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    text = message.senderName,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
                 )
@@ -404,9 +425,9 @@ private fun MessageBubble(
                 modifier = Modifier
                     .clip(
                         RoundedCornerShape(
-                            topStart = 16.dp, topEnd = 16.dp,
-                            bottomStart = if (isSelf) 16.dp else 4.dp,
-                            bottomEnd = if (isSelf) 4.dp else 16.dp
+                            topStart = 18.dp, topEnd = 18.dp,
+                            bottomStart = if (isSelf) 18.dp else 4.dp,
+                            bottomEnd = if (isSelf) 4.dp else 18.dp
                         )
                     )
                     .background(
@@ -417,11 +438,11 @@ private fun MessageBubble(
                         onLongClick = onLongClick,
                         onClick = {}
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Column {
                     val displayContent = when {
-                        message.deleted -> if (isSelf) "You deleted this message." else "$senderName deleted this message."
+                        message.deleted -> if (isSelf) "You deleted this message." else "${message.senderName} deleted this message."
                         else -> message.content
                     }
                     val textStyle = if (message.deleted) {
@@ -470,18 +491,14 @@ private fun MessageBubble(
                     
                     val statusIcon: androidx.compose.ui.graphics.vector.ImageVector
                     val statusColor: Color
-                    when {
-                        message.deliveryStatus in listOf(DbDeliveryStatus.PENDING, DbDeliveryStatus.QUEUED, DbDeliveryStatus.SENDING) -> {
+                    when (message.deliveryStatus.uppercase()) {
+                        "SENDING", "QUEUED" -> {
                             statusIcon = Icons.Default.Schedule
                             statusColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         }
-                        message.deliveryStatus == DbDeliveryStatus.SENT -> {
-                            statusIcon = Icons.Default.Check
-                            statusColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                        message.deliveryStatus == DbDeliveryStatus.DELIVERED -> {
+                        "SENT", "DELIVERED" -> {
                             statusIcon = Icons.Default.DoneAll
-                            statusColor = if (message.readStatus == "READ") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            statusColor = MaterialTheme.colorScheme.onSurfaceVariant
                         }
                         else -> {
                             statusIcon = Icons.Default.Error
@@ -496,41 +513,25 @@ private fun MessageBubble(
                         modifier = Modifier.size(12.dp)
                     )
                 }
-                
-                if (message.priority in listOf(
-                        com.mesh.emergency.data.local.entity.DbMessagePriority.CRITICAL,
-                        com.mesh.emergency.data.local.entity.DbMessagePriority.HIGH
-                    )
-                ) {
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "!",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        color = chatPriorityColor(message.priority)
-                    )
-                }
             }
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Message Input Bar
+// Input Bar
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MessageInputBar(
+private fun GlobalChatInputBar(
     draft: String,
     isOnline: Boolean,
-    pendingCount: Int,
-    editingMessage: Message?,
+    editingMessage: GlobalChatMessage?,
     onDraftChange: (String) -> Unit,
     onSend: () -> Unit,
     onCancelEdit: () -> Unit
 ) {
-    val semanticColors = MeshThemeTokens.semanticColors
     val isEditing = editingMessage != null
-
     val sendButtonScale by animateFloatAsState(
         targetValue = if (draft.isNotBlank()) 1f else 0.8f,
         animationSpec = tween(200),
@@ -559,7 +560,7 @@ private fun MessageInputBar(
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Edit Message",
+                            text = "Edit Broadcast",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -580,16 +581,6 @@ private fun MessageInputBar(
                         modifier = Modifier.size(16.dp)
                     )
                 }
-            }
-        }
-
-        if (pendingCount > 0) {
-            GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "📦 $pendingCount message(s) queued — will send when node is reachable",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = semanticColors.warning
-                )
             }
         }
 
@@ -620,7 +611,7 @@ private fun MessageInputBar(
                 onValueChange = onDraftChange,
                 placeholder = {
                     Text(
-                        text = if (isOnline) "Message…" else "Message (offline queue)…",
+                        text = if (isOnline) "Broadcast to all nodes…" else "Message (offline queue)…",
                         style = MaterialTheme.typography.bodySmall
                     )
                 },
@@ -630,7 +621,7 @@ private fun MessageInputBar(
                 maxLines = 4,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 )
             )
             Spacer(Modifier.width(4.dp))
@@ -652,9 +643,55 @@ private fun MessageInputBar(
     }
 }
 
-private fun chatPriorityColor(priority: com.mesh.emergency.data.local.entity.DbMessagePriority): Color =
-    when (priority) {
-        com.mesh.emergency.data.local.entity.DbMessagePriority.CRITICAL -> Color.Red
-        com.mesh.emergency.data.local.entity.DbMessagePriority.HIGH     -> Color(0xFFFF9800)
-        else                                                             -> Color.Gray
+// ─────────────────────────────────────────────────────────────────────────────
+// Empty State
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun GlobalChatEmptyState() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Text(text = "🌐", style = MaterialTheme.typography.displaySmall)
+            Text(
+                text = "No messages yet",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Be the first to broadcast to the mesh!\nAll connected nodes will receive your message.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading State
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun GlobalChatLoadingState() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            androidx.compose.material3.CircularProgressIndicator(
+                modifier = Modifier.size(32.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Loading messages…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}

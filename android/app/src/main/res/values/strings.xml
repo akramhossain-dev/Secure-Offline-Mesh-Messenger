@@ -161,6 +161,7 @@
     <!-- Navigation Bar Labels -->
     <string name="nav_home_label">Home</string>
     <string name="nav_chats_label">Chats</string>
+    <string name="nav_global_label">Global</string>
     <string name="nav_map_label">Map</string>
     <string name="nav_network_label">Network</string>
     <string name="nav_settings_label">Settings</string>

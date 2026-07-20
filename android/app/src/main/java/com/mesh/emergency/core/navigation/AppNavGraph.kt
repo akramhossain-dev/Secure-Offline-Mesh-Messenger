@@ -15,6 +15,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.mesh.emergency.core.presentation.base.PlaceholderScreen
 import com.mesh.emergency.feature.chat.CommunicationScreen
+import com.mesh.emergency.feature.chat.GlobalChatScreen
 import com.mesh.emergency.feature.contacts.DeviceScreen
 import com.mesh.emergency.feature.dashboard.HomeScreen
 import com.mesh.emergency.feature.dashboard.NetworkHealthScreen
@@ -130,13 +131,9 @@ fun AppNavGraph(
             )
         }
 
-        // ── Global Chat ───────────────────────────────────────────────────────
+        // ── Global Chat ─────────────────────────────────────────────────────
         composable(route = NavigationDestination.GlobalChat.route) {
-            ChatScreen(
-                conversationId = "conv-broadcast",
-                recipientLabel = "BROADCAST",
-                onBack = { navController.popBackStack() }
-            )
+            GlobalChatScreen(onBack = { navController.popBackStack() })
         }
 
         // ── Devices / Contacts ────────────────────────────────────────────────

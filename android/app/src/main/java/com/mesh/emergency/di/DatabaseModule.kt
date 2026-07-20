@@ -11,6 +11,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.LocalDataSourceImpl
+import com.mesh.emergency.data.local.dao.GlobalMessageDao
 import com.mesh.emergency.data.local.dao.MessageDao
 import com.mesh.emergency.data.local.dao.ConversationDao
 import com.mesh.emergency.data.local.dao.EmergencyEventDao
@@ -42,8 +43,20 @@ abstract class DatabaseModule {
         // Incremental upgrades use migrations to ensure no user data is lost.
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Future SQL schema modifications go here
-                // e.g. db.execSQL("ALTER TABLE messages ADD COLUMN signature TEXT")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `global_messages` (
+                        `messageId` TEXT NOT NULL,
+                        `senderId` TEXT NOT NULL,
+                        `senderName` TEXT NOT NULL,
+                        `content` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `deliveryStatus` TEXT NOT NULL DEFAULT 'SENT',
+                        PRIMARY KEY(`messageId`)
+                    )
+                """.trimIndent())
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_global_messages_timestamp` ON `global_messages` (`timestamp`)"
+                )
             }
         }
 
@@ -86,5 +99,9 @@ abstract class DatabaseModule {
         @Provides
         @Singleton
         fun provideEmergencyEventDao(db: AppDatabase): EmergencyEventDao = db.emergencyEventDao()
+
+        @Provides
+        @Singleton
+        fun provideGlobalMessageDao(db: AppDatabase): GlobalMessageDao = db.globalMessageDao()
     }
 }

@@ -45,13 +45,18 @@ data class ChatUiState(
     val draftText: String = "",
     val isOnline: Boolean = false,
     val pendingCount: Int = 0,
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val editingMessage: Message? = null
 ) : BaseUiState
 
 sealed interface ChatUiEvent : BaseUiEvent {
     data class UpdateDraft(val text: String)  : ChatUiEvent
     data object SendMessage                   : ChatUiEvent
-    data class DeleteMessage(val id: String)  : ChatUiEvent
+    data class StartEditing(val message: Message) : ChatUiEvent
+    data object CancelEditing                 : ChatUiEvent
+    data class EditMessage(val messageId: String, val newText: String) : ChatUiEvent
+    data class DeleteMessageForEveryone(val id: String) : ChatUiEvent
+    data class DeleteMessageForMe(val id: String) : ChatUiEvent
     data class LoadConversation(val id: String, val recipientLabel: String) : ChatUiEvent
 }
 
@@ -91,7 +96,8 @@ class MessageListViewModel @Inject constructor(
 class ChatViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager,
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val bluetoothTransport: com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
 ) : BaseViewModel<ChatUiState, ChatUiEvent, ChatUiEffect>(ChatUiState()) {
 
     init {
@@ -110,8 +116,64 @@ class ChatViewModel @Inject constructor(
         when (event) {
             is ChatUiEvent.LoadConversation -> loadConversation(event.id, event.recipientLabel)
             is ChatUiEvent.UpdateDraft      -> updateState { copy(draftText = event.text) }
-            ChatUiEvent.SendMessage         -> sendCurrentDraft()
-            is ChatUiEvent.DeleteMessage    -> {
+            ChatUiEvent.SendMessage         -> {
+                if (currentState.editingMessage != null) {
+                    onEvent(ChatUiEvent.EditMessage(currentState.editingMessage!!.id, currentState.draftText))
+                } else {
+                    sendCurrentDraft()
+                }
+            }
+            is ChatUiEvent.StartEditing     -> {
+                updateState { copy(editingMessage = event.message, draftText = event.message.content) }
+            }
+            ChatUiEvent.CancelEditing       -> {
+                updateState { copy(editingMessage = null, draftText = "") }
+            }
+            is ChatUiEvent.EditMessage      -> {
+                viewModelScope.launch {
+                    val msg = messageRepository.getMessageById(event.messageId)
+                    if (msg != null) {
+                        val currentUser = localDataSource.getCurrentUser().firstOrNull()
+                        val localUserId = currentUser?.entityId ?: "self"
+                        val peerId = currentState.conversationId
+                        
+                        val history = msg.editHistory.toMutableList()
+                        if (!history.contains(msg.content)) {
+                            history.add(msg.content)
+                        }
+                        val updated = msg.copy(
+                            content = event.newText,
+                            edited = true,
+                            updatedAt = System.currentTimeMillis(),
+                            editHistory = history
+                        )
+                        messageRepository.updateMessage(updated)
+                        
+                        bluetoothTransport.sendPrivateMessageEdit(event.messageId, localUserId, peerId, event.newText)
+                    }
+                    updateState { copy(editingMessage = null, draftText = "") }
+                }
+            }
+            is ChatUiEvent.DeleteMessageForEveryone -> {
+                viewModelScope.launch {
+                    val msg = messageRepository.getMessageById(event.id)
+                    if (msg != null) {
+                        val currentUser = localDataSource.getCurrentUser().firstOrNull()
+                        val localUserId = currentUser?.entityId ?: "self"
+                        val peerId = currentState.conversationId
+
+                        val updated = msg.copy(
+                            content = "You deleted this message.",
+                            deleted = true,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        messageRepository.updateMessage(updated)
+                        
+                        bluetoothTransport.sendPrivateMessageDelete(event.id, localUserId, peerId)
+                    }
+                }
+            }
+            is ChatUiEvent.DeleteMessageForMe -> {
                 viewModelScope.launch {
                     messageRepository.deleteMessage(event.id)
                 }
@@ -141,6 +203,14 @@ class ChatViewModel @Inject constructor(
                 val mappedMsgs = msgs.map { msg ->
                     msg.copy(isSelf = msg.senderId == localUserId || msg.senderId == "self")
                 }
+                
+                // Real-time: mark received messages as read and send receipts
+                val unread = mappedMsgs.filter { !it.isSelf && it.readStatus == "UNREAD" }
+                for (msg in unread) {
+                    messageRepository.markMessageAsRead(msg.id)
+                    bluetoothTransport.sendReadReceipt(msg.id, localUserId, msg.senderId)
+                }
+
                 val pending = mappedMsgs.count { it.deliveryStatus in listOf(DbDeliveryStatus.PENDING, DbDeliveryStatus.QUEUED) }
                 updateState {
                     copy(messages = mappedMsgs, pendingCount = pending, isLoading = false)
@@ -158,6 +228,10 @@ class ChatViewModel @Inject constructor(
             val currentUser = localDataSource.getCurrentUser().firstOrNull()
             val senderId    = currentUser?.entityId?.takeIf { it.isNotBlank() } ?: "self"
 
+            val senderName = currentUser?.nickname?.takeIf { it.isNotBlank() }
+                ?: currentUser?.username?.takeIf { it.isNotBlank() }
+                ?: "Me"
+
             // conversationId == peer entityId (set during QR pairing)
             val peerId = currentState.conversationId
 
@@ -165,10 +239,18 @@ class ChatViewModel @Inject constructor(
                 id             = UUID.randomUUID().toString(),
                 conversationId = peerId,
                 senderId       = senderId,
+                senderName     = senderName,
                 recipientId    = peerId,
                 content        = draft,
                 timestamp      = System.currentTimeMillis(),
+                createdAt      = System.currentTimeMillis(),
+                updatedAt      = System.currentTimeMillis(),
+                edited         = false,
+                deleted        = false,
                 deliveryStatus = if (currentState.isOnline) DbDeliveryStatus.SENDING else DbDeliveryStatus.QUEUED,
+                readStatus     = "UNREAD",
+                syncState      = if (currentState.isOnline) "SYNCED" else "PENDING",
+                editHistory    = emptyList(),
                 type           = DbMessageType.TEXT,
                 priority       = DbMessagePriority.MEDIUM,
                 retryCount     = 0,

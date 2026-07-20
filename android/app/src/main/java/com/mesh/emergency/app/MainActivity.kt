@@ -41,6 +41,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var appStateRepository: AppStateRepository
 
+    @Inject
+    lateinit var messageNotifier: com.mesh.emergency.core.notification.MessageNotifier
+
     private val requestPermissionLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
     ) { _ -> }
@@ -86,6 +89,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        handleIntent(intent)
+
         setContent {
             val appState by appStateRepository.appState.collectAsState()
 
@@ -102,7 +107,26 @@ class MainActivity : AppCompatActivity() {
             }
 
             MeshTheme(themeMode = appState.themeMode) {
-                AppShell(appNavigator = appNavigator)
+                AppShell(appNavigator = appNavigator, messageNotifier = messageNotifier)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: android.content.Intent?) {
+        intent ?: return
+        val convId = intent.getStringExtra("convId")
+        val label = intent.getStringExtra("label") ?: "Chat"
+        if (!convId.isNullOrEmpty()) {
+            if (convId == "global") {
+                appNavigator.navigateTo(com.mesh.emergency.core.navigation.NavRoutes.GLOBAL_CHAT)
+            } else {
+                appNavigator.navigateTo(com.mesh.emergency.core.navigation.NavRoutes.chatScreen(convId, label))
             }
         }
     }

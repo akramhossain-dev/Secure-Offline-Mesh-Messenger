@@ -6,9 +6,13 @@
 package com.mesh.emergency.core.presentation
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalNavigationDrawer
@@ -20,6 +24,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -42,12 +47,54 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppShell(
     appNavigator: AppNavigator,
+    messageNotifier: com.mesh.emergency.core.notification.MessageNotifier,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val windowSize = rememberWindowSize()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val localScope = rememberCoroutineScope()
+
+    // ── Collect message notifications when app is open ───────────────────────
+    LaunchedEffect(messageNotifier, navController) {
+        messageNotifier.events.collect { event ->
+            val messageText: String
+            val convId: String
+            val label: String
+            val isGlobal: Boolean
+            when (event) {
+                is com.mesh.emergency.core.notification.MessageNotifier.Event.PrivateMessage -> {
+                    messageText = "New message from ${event.senderName}: ${event.text}"
+                    convId = event.senderId
+                    label = event.senderName
+                    isGlobal = false
+                }
+                is com.mesh.emergency.core.notification.MessageNotifier.Event.GlobalMessage -> {
+                    messageText = "[Global] ${event.senderName}: ${event.text}"
+                    convId = "global"
+                    label = "Global Chat"
+                    isGlobal = true
+                }
+            }
+
+            localScope.launch {
+                val result = snackbarHostState.showSnackbar(
+                    message = messageText,
+                    actionLabel = "Reply",
+                    duration = androidx.compose.material3.SnackbarDuration.Short
+                )
+                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                    if (isGlobal) {
+                        navController.navigate(com.mesh.emergency.core.navigation.NavRoutes.GLOBAL_CHAT)
+                    } else {
+                        navController.navigate(com.mesh.emergency.core.navigation.NavRoutes.chatScreen(convId, label))
+                    }
+                }
+            }
+        }
+    }
 
     // ── Bind AppNavigator actions to the NavHost ───────────────────────────
     LaunchedEffect(navController, appNavigator) {
@@ -74,6 +121,7 @@ fun AppShell(
     val isTopLevelRoute = currentRoute in listOf(
         "home",
         "chat-list",
+        "global-chat",
         "map",
         "network-dashboard",
         "settings"
@@ -132,10 +180,19 @@ fun AppShell(
                 }
             }
 
+            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+            val isKeyboardVisible = WindowInsets.isImeVisible
+
             Scaffold(
+                contentWindowInsets = if (isKeyboardVisible) {
+                    WindowInsets.statusBars
+                } else {
+                    WindowInsets.systemBars
+                },
+                snackbarHost = { androidx.compose.material3.SnackbarHost(hostState = snackbarHostState) },
                 bottomBar = {
                     // Mobile navigation layout
-                    if (windowSize == WindowSize.COMPACT && isTopLevelRoute) {
+                    if (windowSize == WindowSize.COMPACT && isTopLevelRoute && !isKeyboardVisible) {
                         MeshNavigationBar(
                             selectedRoute = currentRoute,
                             onNavigateToRoute = { route ->

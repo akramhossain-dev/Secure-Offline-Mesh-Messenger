@@ -69,6 +69,22 @@ class MeshApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         initializeLogging()
+        
+        // Track activities to know if the app is in foreground
+        registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
+            override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) {}
+            override fun onActivityStarted(activity: android.app.Activity) {
+                AppLifecycleTracker.activityStarted()
+            }
+            override fun onActivityResumed(activity: android.app.Activity) {}
+            override fun onActivityPaused(activity: android.app.Activity) {}
+            override fun onActivityStopped(activity: android.app.Activity) {
+                AppLifecycleTracker.activityStopped()
+            }
+            override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) {}
+            override fun onActivityDestroyed(activity: android.app.Activity) {}
+        })
+
         // Initialize global CrashHandler with application context for local crash log persistence
         com.mesh.emergency.core.error.CrashHandler.install(this)
 
@@ -85,6 +101,20 @@ class MeshApplication : Application(), Configuration.Provider {
             } catch (e: Exception) {
                 Timber.e(e, "BLE_FLOW: Eager BLE connect() failed in Application.onCreate()")
             }
+        }
+    }
+
+    object AppLifecycleTracker {
+        private var activeActivities = 0
+        val isAppInForeground: Boolean
+            get() = activeActivities > 0
+
+        fun activityStarted() {
+            activeActivities++
+        }
+
+        fun activityStopped() {
+            activeActivities = maxOf(0, activeActivities - 1)
         }
     }
 

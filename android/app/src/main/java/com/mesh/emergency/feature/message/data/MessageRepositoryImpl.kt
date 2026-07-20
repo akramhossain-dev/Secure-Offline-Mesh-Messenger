@@ -88,6 +88,10 @@ class MessageRepositoryImpl @Inject constructor(
         val senderId    = currentUser?.entityId?.takeIf { it.isNotBlank() }
             ?: deviceFingerprintProvider.getDeviceFingerprint()
 
+        val senderName = currentUser?.nickname?.takeIf { it.isNotBlank() }
+            ?: currentUser?.username?.takeIf { it.isNotBlank() }
+            ?: "Me"
+
         // Resolve recipient display name for the local conversation record
         val peerId       = message.conversationId  // conversationId == peer entityId
         val peerUser     = userDao.getUserById(peerId)
@@ -97,6 +101,7 @@ class MessageRepositoryImpl @Inject constructor(
 
         // Build lightweight BLE message packet
         val msgJson = JSONObject().apply {
+            put("type", "chat")
             put("id",   message.id)
             put("from", senderId)
             put("to",   peerId)
@@ -118,7 +123,7 @@ class MessageRepositoryImpl @Inject constructor(
         val finalStatus = when (result) {
             is Result.Success -> {
                 Timber.d("MSG_FLOW: Message delivered via BLE — id=${message.id}")
-                DbDeliveryStatus.DELIVERED
+                DbDeliveryStatus.SENT // End-to-end receipt will transition to DELIVERED
             }
             else -> {
                 Timber.w("MSG_FLOW: BLE send failed — message queued — id=${message.id}")
@@ -129,9 +134,11 @@ class MessageRepositoryImpl @Inject constructor(
         // Persist outbound message to Room (sender side)
         val entity = message.toEntity().copy(
             senderId       = senderId,
+            senderName     = senderName,
             recipientId    = peerId,
             conversationId = peerId,   // conversation keyed by peer's userId (same as receive side)
-            deliveryStatus = finalStatus
+            deliveryStatus = finalStatus,
+            syncState      = if (finalStatus == DbDeliveryStatus.SENT) "SYNCED" else "PENDING"
         )
         messageDao.insertMessage(entity)
 
@@ -156,4 +163,16 @@ class MessageRepositoryImpl @Inject constructor(
 
     override suspend fun getMessageById(messageId: String): Message? =
         messageDao.getMessageById(messageId)?.toDomain()
+
+    override suspend fun updateMessage(message: Message) {
+        messageDao.insertMessage(message.toEntity())
+    }
+
+    override suspend fun markMessageAsRead(messageId: String) {
+        val existing = messageDao.getMessageById(messageId)
+        if (existing != null) {
+            val updated = existing.copy(readStatus = "READ")
+            messageDao.insertMessage(updated)
+        }
+    }
 }

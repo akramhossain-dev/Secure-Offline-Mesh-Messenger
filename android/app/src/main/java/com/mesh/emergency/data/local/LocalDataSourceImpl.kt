@@ -16,6 +16,7 @@ import com.mesh.emergency.data.local.entity.NetworkNodeEntity
 import com.mesh.emergency.data.local.entity.ResourceEntity
 import com.mesh.emergency.data.local.entity.UserEntity
 import com.mesh.emergency.data.local.entity.VoiceMessageEntity
+import com.mesh.emergency.data.local.entity.GlobalMessageEntity
 import com.mesh.emergency.data.local.entity.LogEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -40,6 +41,7 @@ class LocalDataSourceImpl @Inject constructor(
     private val deliveryStatusDao = database.deliveryStatusDao()
     private val voiceMessageDao = database.voiceMessageDao()
     private val logDao = database.logDao()
+    private val globalMessageDao = database.globalMessageDao()
 
     override fun getCurrentUser(): Flow<UserEntity?> = userDao.getCurrentUser()
 
@@ -151,4 +153,12 @@ class LocalDataSourceImpl @Inject constructor(
     override suspend fun clearLogs() = logDao.clearLogs()
 
     override suspend fun clearDatabase() = database.clearAllTables()
+
+    // ── Global Chat Operations ───────────────────────────────────────────────
+    override fun getGlobalMessages() = globalMessageDao.getAllMessages()
+    override suspend fun insertGlobalMessage(message: GlobalMessageEntity) = globalMessageDao.insertMessage(message)
+    override suspend fun getGlobalMessageById(id: String) = globalMessageDao.getById(id)
+    override suspend fun updateGlobalMessageStatus(id: String, status: String) = globalMessageDao.updateDeliveryStatus(id, status)
+    override suspend fun failStuckGlobalMessages() = globalMessageDao.failStuckMessages()
+    override suspend fun deleteGlobalMessage(id: String) = globalMessageDao.deleteMessage(id)
 }

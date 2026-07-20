@@ -22,10 +22,18 @@ data class Message(
     val id: String,
     val conversationId: String,
     val senderId: String,
+    val senderName: String,
     val recipientId: String,
     val content: String,
     val timestamp: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val edited: Boolean,
+    val deleted: Boolean,
     val deliveryStatus: DbDeliveryStatus,
+    val readStatus: String, // "UNREAD" | "READ"
+    val syncState: String, // "PENDING" | "SYNCED"
+    val editHistory: List<String>,
     val type: DbMessageType,
     val priority: DbMessagePriority,
     val retryCount: Int,
@@ -55,6 +63,8 @@ interface MessageRepository {
     suspend fun sendMessage(message: Message)
     suspend fun deleteMessage(messageId: String)
     suspend fun getMessageById(messageId: String): Message?
+    suspend fun updateMessage(message: Message)
+    suspend fun markMessageAsRead(messageId: String)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,10 +75,18 @@ fun MessageEntity.toDomain() = Message(
     id             = entityId,
     conversationId = conversationId,
     senderId       = senderId,
+    senderName     = senderName,
     recipientId    = recipientId,
     content        = content,
     timestamp      = timestamp,
+    createdAt      = createdAt,
+    updatedAt      = updatedAt,
+    edited         = edited,
+    deleted        = deleted,
     deliveryStatus = deliveryStatus,
+    readStatus     = readStatus,
+    syncState      = syncState,
+    editHistory    = editHistory,
     type           = type,
     priority       = priority,
     retryCount     = retryCount,
@@ -77,12 +95,21 @@ fun MessageEntity.toDomain() = Message(
 
 fun Message.toEntity() = MessageEntity(
     entityId       = id,
+    messageId      = id,
     conversationId = conversationId,
     senderId       = senderId,
+    senderName     = senderName,
     recipientId    = recipientId,
     content        = content,
     timestamp      = timestamp,
+    createdAt      = createdAt,
+    updatedAt      = updatedAt,
+    edited         = edited,
+    deleted        = deleted,
     deliveryStatus = deliveryStatus,
+    readStatus     = readStatus,
+    syncState      = syncState,
+    editHistory    = editHistory,
     type           = type,
     priority       = priority,
     retryCount     = retryCount,

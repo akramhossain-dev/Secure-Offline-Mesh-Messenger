@@ -31,7 +31,7 @@ fun MeshNavigationBar(
     val items = listOf(
         NavigationItem.Home,
         NavigationItem.Chats,
-        NavigationItem.Map,
+        NavigationItem.GlobalChat,
         NavigationItem.Network,
         NavigationItem.Settings
     )
@@ -71,9 +71,9 @@ private sealed class NavigationItem(
     val icon: ImageVector,
     @StringRes val labelResId: Int
 ) {
-    data object Home    : NavigationItem("home",              MeshIcons.Home,         R.string.nav_home_label)
-    data object Chats   : NavigationItem("chat-list",         MeshIcons.Chat,         R.string.nav_chats_label)
-    data object Map     : NavigationItem("map",               MeshIcons.Map,          R.string.nav_map_label)
-    data object Network : NavigationItem("network-dashboard", MeshIcons.NetworkCheck, R.string.nav_network_label)
-    data object Settings: NavigationItem("settings",          MeshIcons.Settings,     R.string.nav_settings_label)
+    data object Home       : NavigationItem("home",              MeshIcons.Home,         R.string.nav_home_label)
+    data object Chats      : NavigationItem("chat-list",         MeshIcons.Chat,         R.string.nav_chats_label)
+    data object GlobalChat : NavigationItem("global-chat",       MeshIcons.Global,       R.string.nav_global_label)
+    data object Network    : NavigationItem("network-dashboard", MeshIcons.NetworkCheck, R.string.nav_network_label)
+    data object Settings   : NavigationItem("settings",          MeshIcons.Settings,     R.string.nav_settings_label)
 }
