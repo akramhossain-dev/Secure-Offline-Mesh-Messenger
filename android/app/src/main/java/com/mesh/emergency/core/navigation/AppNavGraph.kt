@@ -142,7 +142,10 @@ fun AppNavGraph(
         // ── Devices / Contacts ────────────────────────────────────────────────
         composable(route = NavigationDestination.Contacts.route) {
             DeviceScreen(
-                onNavigateToQrPair = { navController.navigate(NavigationDestination.QrPair.route) }
+                onNavigateToQrPair = { navController.navigate(NavigationDestination.QrPair.route) },
+                onNavigateToChat   = { deviceId, deviceName ->
+                    navController.navigate(NavRoutes.chatScreen(deviceId, deviceName))
+                }
             )
         }
 

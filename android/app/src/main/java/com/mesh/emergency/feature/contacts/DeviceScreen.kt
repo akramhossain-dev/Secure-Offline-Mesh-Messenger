@@ -58,6 +58,7 @@ import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 @Composable
 fun DeviceScreen(
     onNavigateToQrPair: () -> Unit,
+    onNavigateToChat: (deviceId: String, deviceName: String) -> Unit = { _, _ -> },
     viewModel: DeviceViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -67,8 +68,9 @@ fun DeviceScreen(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is DeviceUiEffect.ShowToast   -> snackbarHostState.showSnackbar(effect.message)
+                is DeviceUiEffect.ShowToast     -> snackbarHostState.showSnackbar(effect.message)
                 DeviceUiEffect.NavigateToQrPair -> onNavigateToQrPair()
+                is DeviceUiEffect.NavigateToChat -> onNavigateToChat(effect.deviceId, effect.deviceName)
             }
         }
     }
@@ -133,7 +135,11 @@ fun DeviceScreen(
 
                 // ── Device rows ───────────────────────────────────────────────
                 items(uiState.pairedDevices, key = { it.id }) { device ->
-                    DeviceRow(device = device, onUnpair = { viewModel.onEvent(DeviceUiEvent.UnpairDevice(device.id)) })
+                    DeviceRow(
+                        device     = device,
+                        onUnpair   = { viewModel.onEvent(DeviceUiEvent.UnpairDevice(device.id)) },
+                        onOpenChat = { viewModel.onEvent(DeviceUiEvent.OpenChat(device.id, device.name)) }
+                    )
                 }
 
                 if (uiState.pairedDevices.isEmpty()) {
@@ -153,7 +159,11 @@ fun DeviceScreen(
 }
 
 @Composable
-private fun DeviceRow(device: DeviceDisplayModel, onUnpair: () -> Unit) {
+private fun DeviceRow(
+    device: DeviceDisplayModel,
+    onUnpair: () -> Unit,
+    onOpenChat: () -> Unit
+) {
     val semantic = MeshThemeTokens.semanticColors
     GlassPanel(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
         Column {
@@ -178,18 +188,41 @@ private fun DeviceRow(device: DeviceDisplayModel, onUnpair: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Last seen: ${device.lastSeenLabel}  •  ${device.transport}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = if (device.isTrusted) stringResource(R.string.contacts_trusted) else stringResource(R.string.contacts_unknown),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = if (device.isTrusted) semantic.connected else semantic.warning
                 )
+            }
+            Spacer(Modifier.height(8.dp))
+            // ── Action row: Chat + Unpair ──────────────────────────────────
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                MeshButton(
+                    text = "Chat",
+                    onClick = onOpenChat,
+                    modifier = Modifier.weight(1f)
+                )
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onUnpair,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.contacts_trusted).let { "Unpair" },
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
         }
     }

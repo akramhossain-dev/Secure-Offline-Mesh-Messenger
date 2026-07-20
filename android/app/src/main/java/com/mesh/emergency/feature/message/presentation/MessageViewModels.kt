@@ -10,6 +10,7 @@ import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
+import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbDeliveryStatus
 import com.mesh.emergency.data.local.entity.DbMessagePriority
 import com.mesh.emergency.data.local.entity.DbMessageType
@@ -17,6 +18,7 @@ import com.mesh.emergency.feature.message.domain.ConversationSummary
 import com.mesh.emergency.feature.message.domain.Message
 import com.mesh.emergency.feature.message.domain.MessageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -88,7 +90,8 @@ class MessageListViewModel @Inject constructor(
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
-    private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager
+    private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager,
+    private val localDataSource: LocalDataSource
 ) : BaseViewModel<ChatUiState, ChatUiEvent, ChatUiEffect>(ChatUiState()) {
 
     init {
@@ -133,11 +136,18 @@ class ChatViewModel @Inject constructor(
         if (draft.isEmpty()) return
 
         viewModelScope.launch {
+            // Use the real current-user entityId so messages persist and display correctly
+            val currentUser = localDataSource.getCurrentUser().firstOrNull()
+            val senderId    = currentUser?.entityId?.takeIf { it.isNotBlank() } ?: "self"
+
+            // conversationId == peer entityId (set during QR pairing)
+            val peerId = currentState.conversationId
+
             val msg = Message(
                 id             = UUID.randomUUID().toString(),
-                conversationId = currentState.conversationId,
-                senderId       = "self",
-                recipientId    = currentState.recipientLabel,
+                conversationId = peerId,
+                senderId       = senderId,
+                recipientId    = peerId,
                 content        = draft,
                 timestamp      = System.currentTimeMillis(),
                 deliveryStatus = if (currentState.isOnline) DbDeliveryStatus.SENDING else DbDeliveryStatus.QUEUED,

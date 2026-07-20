@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -663,9 +664,21 @@ class BluetoothTransportImpl @Inject constructor(
                 BluetoothProfile.STATE_CONNECTED -> {
                     connectedDevices.add(device)
                     _status.value = TransportStatus.CONNECTED
-                    Timber.d("BluetoothTransport Server: Client device connected: ${device.address}")
-                    // Drain any pending reverse handshake now that a client is connected
-                    scope.launch { drainPendingViaServer() }
+                    Timber.d("PAIR_FLOW: GATT client connected to our server — ${device.address}")
+                    scope.launch {
+                        // Drain any QR-triggered pending reverse handshake first
+                        drainPendingViaServer()
+                        // Push our identity to the new client so they can save us as a peer.
+                        // Delay 800 ms: let the client enable TX notifications before we notify.
+                        delay(800L)
+                        val identityPayload = buildLocalIdentityPayload()
+                        if (identityPayload != null) {
+                            val sent = sendViaConnectedClients(identityPayload)
+                            Timber.d("PAIR_FLOW: Identity pushed to new GATT client — sent=$sent (${identityPayload.size} bytes)")
+                        } else {
+                            Timber.w("PAIR_FLOW: Skipping identity push — local profile not set up yet")
+                        }
+                    }
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     connectedDevices.remove(device)
@@ -691,60 +704,77 @@ class BluetoothTransportImpl @Inject constructor(
                 val str = String(value, Charsets.UTF_8)
                 Timber.d("BLE_FLOW: Data characteristic received — ${str.take(120)}")
 
-                // Check if this is a reverse handshake — auto-save the sender as a paired contact
-                if (str.contains("\"type\":\"REVERSE_HANDSHAKE\"")) {
-                    try {
-                        val json = org.json.JSONObject(str)
-                        val remoteUserId    = json.getString("uid")
-                        val remoteUsername  = json.optString("un", "").ifBlank { "Contact-${remoteUserId.take(6)}" }
-                        val remotePublicKey = json.optString("pub", "")
-                        val realBleAddress  = device?.address?.takeIf { it != "02:00:00:00:00:00" }
-                            ?: json.optString("ble", "")
-                        val remoteDeviceType = json.optString("dt", "SMARTPHONE")
-
-                        Timber.d("PAIR_FLOW: Pair request received (via server RX write) — uid=$remoteUserId un='$remoteUsername' ble=$realBleAddress")
-
+                when {
+                    // ── Chat message packet ──────────────────────────────────
+                    str.startsWith("MSG:") -> {
                         scope.launch {
-                            val userEntity = com.mesh.emergency.data.local.entity.UserEntity(
-                                entityId = remoteUserId,
-                                username = remoteUsername,
-                                profileImageRef = null,
-                                languagePreference = "en",
-                                createdTime = System.currentTimeMillis(),
-                                updatedTime = System.currentTimeMillis(),
-                                status = "ACTIVE",
-                                isCurrentUser = false,
-                                lastSeen = System.currentTimeMillis(),
-                                trustedStatus = true,
-                                nickname = remoteUsername,
-                                publicKey = remotePublicKey
-                            )
-                            val deviceEntity = com.mesh.emergency.data.local.entity.DeviceEntity(
-                                entityId = remoteUserId,
-                                name = remoteUsername,
-                                rssi = -55,
-                                lastSeen = System.currentTimeMillis(),
-                                deviceType = remoteDeviceType,
-                                platformInfo = "ANDROID",
-                                createdTime = System.currentTimeMillis(),
-                                lastActiveTime = System.currentTimeMillis(),
-                                trustStatus = com.mesh.emergency.data.local.entity.DbTrustStatus.TRUSTED,
-                                nickname = remoteUsername,
-                                bleAddress = realBleAddress
-                            )
-                            Timber.d("DATABASE: Before saving peer (server RX) — userId=$remoteUserId name='$remoteUsername'")
-                            localDataSource.insertUser(userEntity)
-                            Timber.d("DATABASE: After saving peer — UserEntity inserted id=$remoteUserId name='$remoteUsername'")
-                            localDataSource.insertDevice(deviceEntity)
-                            Timber.d("DATABASE: After saving peer — DeviceEntity inserted id=$remoteUserId ble=$realBleAddress")
-                            Timber.d("PAIR_FLOW: Pair accepted — bidirectional pairing complete for $remoteUserId")
+                            handleInboundMessage(str.removePrefix("MSG:"), device?.address)
                         }
-                    } catch (e: Exception) {
-                        Timber.e(e, "PAIR_FLOW: Failed to parse reverse handshake (server RX)")
-                        _receiveFlow.tryEmit(value)
                     }
-                } else {
-                    _receiveFlow.tryEmit(value)
+
+                    // ── Auto-identity exchange (server RX) ───────────────────
+                    // Phone B connected as GATT client and wrote its identity to our RX char
+                    str.startsWith("IDENTITY:") -> {
+                        Timber.d("PAIR_FLOW: IDENTITY packet received via server RX write")
+                        scope.launch { handlePeerIdentity(str.removePrefix("IDENTITY:"), device?.address) }
+                    }
+
+                    // ── Reverse handshake (pairing) ──────────────────────────
+                    str.contains("\"type\":\"REVERSE_HANDSHAKE\"") -> {
+                        try {
+                            val json = org.json.JSONObject(str)
+                            val remoteUserId    = json.getString("uid")
+                            val remoteUsername  = json.optString("un", "").ifBlank { "Contact-${remoteUserId.take(6)}" }
+                            val remotePublicKey = json.optString("pub", "")
+                            val realBleAddress  = device?.address?.takeIf { it != "02:00:00:00:00:00" }
+                                ?: json.optString("ble", "")
+                            val remoteDeviceType = json.optString("dt", "SMARTPHONE")
+
+                            Timber.d("PAIR_FLOW: Pair request received (via server RX write) — uid=$remoteUserId un='$remoteUsername' ble=$realBleAddress")
+
+                            scope.launch {
+                                val userEntity = com.mesh.emergency.data.local.entity.UserEntity(
+                                    entityId = remoteUserId,
+                                    username = remoteUsername,
+                                    profileImageRef = null,
+                                    languagePreference = "en",
+                                    createdTime = System.currentTimeMillis(),
+                                    updatedTime = System.currentTimeMillis(),
+                                    status = "ACTIVE",
+                                    isCurrentUser = false,
+                                    lastSeen = System.currentTimeMillis(),
+                                    trustedStatus = true,
+                                    nickname = remoteUsername,
+                                    publicKey = remotePublicKey
+                                )
+                                val deviceEntity = com.mesh.emergency.data.local.entity.DeviceEntity(
+                                    entityId = remoteUserId,
+                                    name = remoteUsername,
+                                    rssi = -55,
+                                    lastSeen = System.currentTimeMillis(),
+                                    deviceType = remoteDeviceType,
+                                    platformInfo = "ANDROID",
+                                    createdTime = System.currentTimeMillis(),
+                                    lastActiveTime = System.currentTimeMillis(),
+                                    trustStatus = com.mesh.emergency.data.local.entity.DbTrustStatus.TRUSTED,
+                                    nickname = remoteUsername,
+                                    bleAddress = realBleAddress
+                                )
+                                Timber.d("DATABASE: Before saving peer (server RX) — userId=$remoteUserId name='$remoteUsername'")
+                                localDataSource.insertUser(userEntity)
+                                Timber.d("DATABASE: After saving peer — UserEntity inserted id=$remoteUserId name='$remoteUsername'")
+                                localDataSource.insertDevice(deviceEntity)
+                                Timber.d("DATABASE: After saving peer — DeviceEntity inserted id=$remoteUserId ble=$realBleAddress")
+                                Timber.d("PAIR_FLOW: Pair accepted — bidirectional pairing complete for $remoteUserId")
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "PAIR_FLOW: Failed to parse reverse handshake (server RX)")
+                            _receiveFlow.tryEmit(value)
+                        }
+                    }
+
+                    // ── Unknown payload — forward to receive flow ────────────
+                    else -> _receiveFlow.tryEmit(value)
                 }
 
                 if (responseNeeded) {
@@ -820,23 +850,55 @@ class BluetoothTransportImpl @Inject constructor(
                 rxCharacteristic = service?.getCharacteristic(RX_CHAR_UUID)
                 val txChar = service?.getCharacteristic(TX_CHAR_UUID)
 
-                // Enable GATT Notifications on the Tx Characteristic
+                Timber.d("BLE_FLOW: Services discovered on ${gatt?.device?.address} — rxChar=${rxCharacteristic != null} txChar=${txChar != null}")
+
+                // Enable GATT Notifications on the Tx Characteristic so the server can notify us
                 if (txChar != null) {
                     gatt.setCharacteristicNotification(txChar, true)
                     val descriptor = txChar.getDescriptor(CLIENT_CONFIG_DESCRIPTOR_UUID)
-                    descriptor?.let {
-                        it.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        gatt.writeDescriptor(it)
+                    if (descriptor != null) {
+                        descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        val ok = gatt.writeDescriptor(descriptor)
+                        // ⚠️  GATT only allows ONE outstanding operation at a time.
+                        // Drain + identity write is deferred to onDescriptorWrite so we don't
+                        // collide with the descriptor write that is still in-flight here.
+                        Timber.d("BLE_FLOW: CCCD descriptor write queued=$ok — drain deferred to onDescriptorWrite")
+                    } else {
+                        // No CCCD — safe to proceed immediately
+                        _status.value = TransportStatus.CONNECTED
+                        scope.launch { drainPendingViaClient(); sendIdentityAsClient() }
                     }
-                    _status.value = TransportStatus.CONNECTED
-                    Timber.d("BluetoothTransport Client: Services discovered. Subscribed to Tx Notifications.")
-                    // Drain any pending reverse handshake now that the GATT client connection is ready
-                    drainPendingViaClient()
                 } else {
                     _status.value = if (connectedDevices.isNotEmpty()) TransportStatus.CONNECTED else TransportStatus.DISCONNECTED
+                    // Still try to send our identity even without TX notifications
+                    scope.launch { drainPendingViaClient(); sendIdentityAsClient() }
                 }
             } else {
+                Timber.w("BLE_FLOW: Service discovery failed status=$status")
                 _status.value = if (connectedDevices.isNotEmpty()) TransportStatus.CONNECTED else TransportStatus.DISCONNECTED
+            }
+        }
+
+        /**
+         * Called when the CCCD descriptor write completes — at this point TX notifications
+         * are enabled and the GATT channel is idle, so we can safely write our identity
+         * and drain any pending reverse handshake without a GATT operation collision.
+         */
+        @SuppressLint("MissingPermission")
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor?,
+            status: Int
+        ) {
+            if (descriptor?.uuid == CLIENT_CONFIG_DESCRIPTOR_UUID) {
+                _status.value = TransportStatus.CONNECTED
+                Timber.d("BLE_FLOW: TX notifications enabled (descriptor write status=$status) — draining + sending identity")
+                scope.launch {
+                    // Drain any QR-triggered pending reverse handshake first
+                    drainPendingViaClient()
+                    // Then send our identity so the server can add us as a paired peer
+                    sendIdentityAsClient()
+                }
             }
         }
 
@@ -847,63 +909,229 @@ class BluetoothTransportImpl @Inject constructor(
                     val str = String(data, Charsets.UTF_8)
                     Timber.d("BLE_FLOW: Data characteristic received (client TX notification) — ${str.take(80)}")
 
-                    // Handle REVERSE_HANDSHAKE delivered via server notify (TX characteristic)
-                    if (str.contains("\"type\":\"REVERSE_HANDSHAKE\"")) {
-                        Timber.d("PAIR_FLOW: Pair request received (via client TX notification)")
-                        try {
-                            val json = org.json.JSONObject(str)
-                            val remoteUserId    = json.getString("uid")
-                            val remoteUsername  = json.optString("un", "").ifBlank { "Contact-${remoteUserId.take(6)}" }
-                            val remotePublicKey = json.optString("pub", "")
-                            val realBleAddress  = gatt?.device?.address?.takeIf { it != "02:00:00:00:00:00" }
-                                ?: json.optString("ble", "")
-                            val remoteDeviceType = json.optString("dt", "SMARTPHONE")
-
-                            Timber.d("PAIR_FLOW: Pair request received — uid=$remoteUserId un='$remoteUsername' ble=$realBleAddress")
+                    when {
+                        // ── Chat message packet ──────────────────────────────
+                        str.startsWith("MSG:") -> {
                             scope.launch {
-                                val userEntity = com.mesh.emergency.data.local.entity.UserEntity(
-                                    entityId = remoteUserId,
-                                    username = remoteUsername,
-                                    profileImageRef = null,
-                                    languagePreference = "en",
-                                    createdTime = System.currentTimeMillis(),
-                                    updatedTime = System.currentTimeMillis(),
-                                    status = "ACTIVE",
-                                    isCurrentUser = false,
-                                    lastSeen = System.currentTimeMillis(),
-                                    trustedStatus = true,
-                                    nickname = remoteUsername,
-                                    publicKey = remotePublicKey
-                                )
-                                val deviceEntity = com.mesh.emergency.data.local.entity.DeviceEntity(
-                                    entityId = remoteUserId,
-                                    name = remoteUsername,
-                                    rssi = -55,
-                                    lastSeen = System.currentTimeMillis(),
-                                    deviceType = remoteDeviceType,
-                                    platformInfo = "ANDROID",
-                                    createdTime = System.currentTimeMillis(),
-                                    lastActiveTime = System.currentTimeMillis(),
-                                    trustStatus = com.mesh.emergency.data.local.entity.DbTrustStatus.TRUSTED,
-                                    nickname = remoteUsername,
-                                    bleAddress = realBleAddress
-                                )
-                                Timber.d("DATABASE: Before saving peer (client TX) — userId=$remoteUserId name='$remoteUsername'")
-                                localDataSource.insertUser(userEntity)
-                                Timber.d("DATABASE: After saving peer — UserEntity inserted id=$remoteUserId name='$remoteUsername'")
-                                localDataSource.insertDevice(deviceEntity)
-                                Timber.d("DATABASE: After saving peer — DeviceEntity inserted id=$remoteUserId ble=$realBleAddress")
-                                Timber.d("PAIR_FLOW: Pair accepted — bidirectional pairing complete for $remoteUserId")
+                                handleInboundMessage(str.removePrefix("MSG:"), gatt?.device?.address)
                             }
-                        } catch (e: Exception) {
-                            Timber.e(e, "PAIR_FLOW: Failed to handle REVERSE_HANDSHAKE notification (client TX)")
-                            _receiveFlow.tryEmit(data)
                         }
-                    } else {
-                        _receiveFlow.tryEmit(data)
+
+                        // ── Auto-identity exchange (client RX notification) ──
+                        // Server pushed its identity to us via TX notify — save it and reply
+                        str.startsWith("IDENTITY:") -> {
+                            Timber.d("PAIR_FLOW: IDENTITY notification received from server ${gatt?.device?.address}")
+                            scope.launch { handlePeerIdentity(str.removePrefix("IDENTITY:"), gatt?.device?.address) }
+                        }
+
+                        // ── Reverse handshake (pairing) ──────────────────────
+                        str.contains("\"type\":\"REVERSE_HANDSHAKE\"") -> {
+                            Timber.d("PAIR_FLOW: Pair request received (via client TX notification)")
+                            try {
+                                val json = org.json.JSONObject(str)
+                                val remoteUserId    = json.getString("uid")
+                                val remoteUsername  = json.optString("un", "").ifBlank { "Contact-${remoteUserId.take(6)}" }
+                                val remotePublicKey = json.optString("pub", "")
+                                val realBleAddress  = gatt?.device?.address?.takeIf { it != "02:00:00:00:00:00" }
+                                    ?: json.optString("ble", "")
+                                val remoteDeviceType = json.optString("dt", "SMARTPHONE")
+
+                                Timber.d("PAIR_FLOW: Pair request received — uid=$remoteUserId un='$remoteUsername' ble=$realBleAddress")
+                                scope.launch {
+                                    val userEntity = com.mesh.emergency.data.local.entity.UserEntity(
+                                        entityId = remoteUserId,
+                                        username = remoteUsername,
+                                        profileImageRef = null,
+                                        languagePreference = "en",
+                                        createdTime = System.currentTimeMillis(),
+                                        updatedTime = System.currentTimeMillis(),
+                                        status = "ACTIVE",
+                                        isCurrentUser = false,
+                                        lastSeen = System.currentTimeMillis(),
+                                        trustedStatus = true,
+                                        nickname = remoteUsername,
+                                        publicKey = remotePublicKey
+                                    )
+                                    val deviceEntity = com.mesh.emergency.data.local.entity.DeviceEntity(
+                                        entityId = remoteUserId,
+                                        name = remoteUsername,
+                                        rssi = -55,
+                                        lastSeen = System.currentTimeMillis(),
+                                        deviceType = remoteDeviceType,
+                                        platformInfo = "ANDROID",
+                                        createdTime = System.currentTimeMillis(),
+                                        lastActiveTime = System.currentTimeMillis(),
+                                        trustStatus = com.mesh.emergency.data.local.entity.DbTrustStatus.TRUSTED,
+                                        nickname = remoteUsername,
+                                        bleAddress = realBleAddress
+                                    )
+                                    Timber.d("DATABASE: Before saving peer (client TX) — userId=$remoteUserId name='$remoteUsername'")
+                                    localDataSource.insertUser(userEntity)
+                                    Timber.d("DATABASE: After saving peer — UserEntity inserted id=$remoteUserId name='$remoteUsername'")
+                                    localDataSource.insertDevice(deviceEntity)
+                                    Timber.d("DATABASE: After saving peer — DeviceEntity inserted id=$remoteUserId ble=$realBleAddress")
+                                    Timber.d("PAIR_FLOW: Pair accepted — bidirectional pairing complete for $remoteUserId")
+                                }
+                            } catch (e: Exception) {
+                                Timber.e(e, "PAIR_FLOW: Failed to handle REVERSE_HANDSHAKE notification (client TX)")
+                                _receiveFlow.tryEmit(data)
+                            }
+                        }
+
+                        // ── Unknown payload — forward to receive flow ────────
+                        else -> _receiveFlow.tryEmit(data)
                     }
                 }
             }
         }
+    }
+
+    // ── Inbound MSG: message handler ─────────────────────────────────────────
+
+    /**
+     * Parses a lightweight `MSG:{json}` chat packet received over BLE and persists
+     * the [MessageEntity] and [ConversationEntity] to Room so the UI updates via Flow.
+     *
+     * Packet format: `{"id":"uuid","from":"senderId","to":"receiverId","text":"...","ts":1234567890}`
+     */
+    private suspend fun handleInboundMessage(jsonStr: String, senderBleAddress: String?) {
+        try {
+            Timber.d("MSG_FLOW: Inbound message received — ${jsonStr.take(120)}")
+            val json      = org.json.JSONObject(jsonStr)
+            val msgId     = json.getString("id")
+            val senderId  = json.getString("from")
+            val receiverId = json.optString("to", "")
+            val text      = json.getString("text")
+            val timestamp = json.optLong("ts", System.currentTimeMillis())
+
+            // Look up sender display name for conversation title
+            val senderUser  = localDataSource.getUserById(senderId)
+            val senderName  = senderUser?.nickname?.takeIf { it.isNotBlank() }
+                ?: senderUser?.username?.takeIf { it.isNotBlank() }
+                ?: "Contact-${senderId.take(6)}"
+
+            val messageEntity = com.mesh.emergency.data.local.entity.MessageEntity(
+                entityId       = msgId,
+                conversationId = senderId,   // conversation keyed by peer's userId
+                senderId       = senderId,
+                recipientId    = receiverId,
+                content        = text,
+                timestamp      = timestamp,
+                deliveryStatus = com.mesh.emergency.data.local.entity.DbDeliveryStatus.DELIVERED,
+                type           = com.mesh.emergency.data.local.entity.DbMessageType.TEXT,
+                priority       = com.mesh.emergency.data.local.entity.DbMessagePriority.MEDIUM,
+                expiryTime     = timestamp + 86_400_000L,
+                retryCount     = 0
+            )
+
+            val conversationEntity = com.mesh.emergency.data.local.entity.ConversationEntity(
+                entityId      = senderId,
+                title         = senderName,
+                lastMessageId = msgId,
+                unreadCount   = 0,
+                updatedAt     = timestamp
+            )
+
+            localDataSource.insertMessage(messageEntity)
+            localDataSource.insertConversation(conversationEntity)
+            Timber.d("MSG_FLOW: Message saved — id=$msgId from='$senderName' text='${text.take(40)}'")
+        } catch (e: Exception) {
+            Timber.e(e, "MSG_FLOW: Failed to parse inbound MSG: packet — $jsonStr")
+        }
+    }
+
+    // ── Identity helpers ─────────────────────────────────────────────────────
+
+    /**
+     * Reads the local user profile from Room and encodes it as an `IDENTITY:{json}` BLE packet.
+     * Returns null if no profile has been set up yet (first-run before onboarding completes).
+     */
+    private suspend fun buildLocalIdentityPayload(): ByteArray? {
+        return try {
+            val localUser = localDataSource.getCurrentUser().firstOrNull()
+            if (localUser == null) {
+                Timber.w("PAIR_FLOW: buildLocalIdentityPayload — no local user profile found")
+                return null
+            }
+            val json = org.json.JSONObject().apply {
+                put("uid", localUser.entityId)
+                put("un",  localUser.username.ifBlank { "Unknown" })
+                put("pub", localUser.publicKey ?: "")
+                put("ble", localBleAddress)
+                put("dt",  "SMARTPHONE")
+            }
+            "IDENTITY:$json".toByteArray(Charsets.UTF_8)
+        } catch (e: Exception) {
+            Timber.e(e, "PAIR_FLOW: buildLocalIdentityPayload failed")
+            null
+        }
+    }
+
+    /**
+     * Parses a peer's identity JSON (from either `IDENTITY:` or `REVERSE_HANDSHAKE` packets)
+     * and upserts UserEntity + DeviceEntity into Room so the peer appears in Paired Devices.
+     *
+     * Expected JSON: `{"uid":"…","un":"…","pub":"…","ble":"…","dt":"…"}`
+     */
+    private suspend fun handlePeerIdentity(jsonStr: String, bleAddress: String?) {
+        try {
+            val json             = org.json.JSONObject(jsonStr)
+            val remoteUserId     = json.getString("uid")
+            val remoteUsername   = json.optString("un", "").ifBlank { "Contact-${remoteUserId.take(6)}" }
+            val remotePublicKey  = json.optString("pub", "")
+            val realBleAddress   = bleAddress?.takeIf { it != "02:00:00:00:00:00" }
+                                    ?: json.optString("ble", "")
+            val remoteDeviceType = json.optString("dt", "SMARTPHONE")
+
+            Timber.d("PAIR_FLOW: handlePeerIdentity — uid=$remoteUserId un='$remoteUsername' ble=$realBleAddress")
+
+            val userEntity = com.mesh.emergency.data.local.entity.UserEntity(
+                entityId        = remoteUserId,
+                username        = remoteUsername,
+                profileImageRef = null,
+                languagePreference = "en",
+                createdTime     = System.currentTimeMillis(),
+                updatedTime     = System.currentTimeMillis(),
+                status          = "ACTIVE",
+                isCurrentUser   = false,
+                lastSeen        = System.currentTimeMillis(),
+                trustedStatus   = true,
+                nickname        = remoteUsername,
+                publicKey       = remotePublicKey
+            )
+            val deviceEntity = com.mesh.emergency.data.local.entity.DeviceEntity(
+                entityId      = remoteUserId,
+                name          = remoteUsername,
+                rssi          = -55,
+                lastSeen      = System.currentTimeMillis(),
+                deviceType    = remoteDeviceType,
+                platformInfo  = "ANDROID",
+                createdTime   = System.currentTimeMillis(),
+                lastActiveTime = System.currentTimeMillis(),
+                trustStatus   = com.mesh.emergency.data.local.entity.DbTrustStatus.TRUSTED,
+                nickname      = remoteUsername,
+                bleAddress    = realBleAddress
+            )
+
+            localDataSource.insertUser(userEntity)
+            localDataSource.insertDevice(deviceEntity)
+            Timber.d("DATABASE: Peer saved — id=$remoteUserId name='$remoteUsername' ble=$realBleAddress")
+            Timber.d("PAIR_FLOW: Auto-pairing complete for $remoteUserId")
+        } catch (e: Exception) {
+            Timber.e(e, "PAIR_FLOW: handlePeerIdentity failed — $jsonStr")
+        }
+    }
+
+    /**
+     * Sends our local identity to the GATT server we are connected to as a client.
+     * Called from [onDescriptorWrite] after TX notifications are successfully enabled.
+     */
+    private suspend fun sendIdentityAsClient() {
+        val payload = buildLocalIdentityPayload() ?: run {
+            Timber.w("PAIR_FLOW: sendIdentityAsClient — skipped (no local profile)")
+            return
+        }
+        val sent = sendViaGattClient(payload)
+        Timber.d("PAIR_FLOW: Identity written to server as GATT client — sent=$sent (${payload.size} bytes)")
     }
 }

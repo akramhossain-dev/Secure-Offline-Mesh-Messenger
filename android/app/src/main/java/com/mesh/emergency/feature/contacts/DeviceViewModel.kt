@@ -39,12 +39,14 @@ data class DeviceDisplayModel(
 sealed interface DeviceUiEvent : BaseUiEvent {
     data object StartScan : DeviceUiEvent
     data class UnpairDevice(val deviceId: String) : DeviceUiEvent
+    data class OpenChat(val deviceId: String, val deviceName: String) : DeviceUiEvent
 }
 
 // ── Effects ───────────────────────────────────────────────────────────────────
 sealed interface DeviceUiEffect : BaseUiEffect {
     data class ShowToast(val message: String) : DeviceUiEffect
     data object NavigateToQrPair : DeviceUiEffect
+    data class NavigateToChat(val deviceId: String, val deviceName: String) : DeviceUiEffect
 }
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -102,6 +104,9 @@ class DeviceViewModel @Inject constructor(
                         sendEffect(DeviceUiEffect.ShowToast("Device removed"))
                     }
                 }
+            }
+            is DeviceUiEvent.OpenChat -> {
+                sendEffect(DeviceUiEffect.NavigateToChat(event.deviceId, event.deviceName))
             }
         }
     }
