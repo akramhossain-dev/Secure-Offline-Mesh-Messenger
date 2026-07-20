@@ -157,6 +157,7 @@ class LocalDataSourceImpl @Inject constructor(
     // ── Global Chat Operations ───────────────────────────────────────────────
     override fun getGlobalMessages() = globalMessageDao.getAllMessages()
     override suspend fun insertGlobalMessage(message: GlobalMessageEntity) = globalMessageDao.insertMessage(message)
+    override suspend fun updateGlobalMessage(message: GlobalMessageEntity) = globalMessageDao.updateMessage(message)
     override suspend fun getGlobalMessageById(id: String) = globalMessageDao.getById(id)
     override suspend fun updateGlobalMessageStatus(id: String, status: String) = globalMessageDao.updateDeliveryStatus(id, status)
     override suspend fun failStuckGlobalMessages() = globalMessageDao.failStuckMessages()

@@ -183,7 +183,7 @@ class GlobalChatViewModel @Inject constructor(
                             updatedAt = System.currentTimeMillis(),
                             editHistory = history
                         )
-                        localDataSource.insertGlobalMessage(updated)
+                        localDataSource.updateGlobalMessage(updated)
                         
                         bluetoothTransport.sendGlobalMessageEdit(event.id, senderId, senderName, text)
                     }
@@ -201,7 +201,7 @@ class GlobalChatViewModel @Inject constructor(
                             deleted = true,
                             updatedAt = System.currentTimeMillis()
                         )
-                        localDataSource.insertGlobalMessage(updated)
+                        localDataSource.updateGlobalMessage(updated)
                         
                         bluetoothTransport.sendGlobalMessageDelete(event.id, senderId, senderName)
                     }

@@ -183,8 +183,16 @@ fun GlobalChatScreen(
                         },
                         actions = {
                             if (uiState.selectedMessageIds.size == 1) {
+                                val selectedMsg = uiState.messages.firstOrNull { it.id in uiState.selectedMessageIds }
+                                if (selectedMsg != null && selectedMsg.isSelf && !selectedMsg.deleted) {
+                                    IconButton(onClick = {
+                                        viewModel.onEvent(GlobalChatUiEvent.StartEditing(selectedMsg))
+                                        viewModel.onEvent(GlobalChatUiEvent.ClearSelection)
+                                    }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit")
+                                    }
+                                }
                                 IconButton(onClick = {
-                                    val selectedMsg = uiState.messages.firstOrNull { it.id in uiState.selectedMessageIds }
                                     selectedMsg?.let {
                                         viewModel.onEvent(GlobalChatUiEvent.StartReply(it))
                                     }

@@ -1217,7 +1217,7 @@ class BluetoothTransportImpl @Inject constructor(
                             content = json.getString("text"),
                             updatedAt = timestamp
                         )
-                        localDataSource.insertGlobalMessage(updated)
+                        localDataSource.updateGlobalMessage(updated)
                         reBroadcastPacket("GCHAT:$jsonStr")
                     }
                 }
@@ -1252,7 +1252,7 @@ class BluetoothTransportImpl @Inject constructor(
                             updatedAt = timestamp,
                             editHistory = history
                         )
-                        localDataSource.insertGlobalMessage(updated)
+                        localDataSource.updateGlobalMessage(updated)
                         reBroadcastPacket("GCHAT:$jsonStr")
                     }
                 }
@@ -1280,7 +1280,7 @@ class BluetoothTransportImpl @Inject constructor(
                             deleted = true,
                             updatedAt = timestamp
                         )
-                        localDataSource.insertGlobalMessage(updated)
+                        localDataSource.updateGlobalMessage(updated)
                         reBroadcastPacket("GCHAT:$jsonStr")
                     }
                 }

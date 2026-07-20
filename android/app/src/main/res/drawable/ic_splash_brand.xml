@@ -1,11 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder branding image — replace with actual drawable in Phase A2 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="240dp"
     android:height="60dp"
     android:viewportWidth="240"
     android:viewportHeight="60">
+
+    <!-- Small Lock + Signal Indicator (Secure Mesh) -->
+    <!-- Lock Body -->
     <path
         android:fillColor="#C4C3EE"
-        android:pathData="M20,20 h200 v20 h-200 Z" />
+        android:pathData="M114,26 h12 v10 h-12 Z" />
+    <!-- Lock Shackle -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="1.5"
+        android:pathData="M116,26 V22 c0,-2 2,-4 4,-4 c2,0 4,2 4,4 v4" />
+    
+    <!-- Pulse Waves (Network representation) -->
+    <path
+        android:strokeColor="#8B89F9"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M106,24 C102,28 102,36 106,40" />
+    <path
+        android:strokeColor="#8B89F9"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M134,24 C138,28 138,36 134,40" />
+
+    <!-- Branding Text - OFFLINE MESH (Simulated premium sleek blocks/letters) -->
+    <!-- Letter O -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:pathData="M24,24 A6,6 0 1,1 24,36 A6,6 0 1,1 24,24" />
+    <!-- Letter F -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M38,36 V24 h8 M38,30 h6" />
+    <!-- Letter F -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M52,36 V24 h8 M52,30 h6" />
+    <!-- Letter L -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M66,24 v12 h8" />
+    <!-- Letter I -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M80,24 v12" />
+    <!-- Letter N -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M88,36 V24 L96,36 V24" />
+
+    <!-- Letter M -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M148,36 V24 L154,31 L160,24 V36" />
+    <!-- Letter E -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M168,36 V24 h8 M168,30 h6 M168,36 h8" />
+    <!-- Letter S -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M188,24 h6 a3,3 0 0,1 0,6 h-2 a3,3 0 0,0 0,6 h6" />
+    <!-- Letter H -->
+    <path
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M204,24 v12 M212,24 v12 M204,30 h8" />
 </vector>

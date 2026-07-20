@@ -48,6 +48,10 @@ interface GlobalMessageDao {
     @Query("UPDATE global_messages SET deliveryStatus = 'FAILED' WHERE deliveryStatus = 'SENDING'")
     suspend fun failStuckMessages()
 
+    /** Updates a global message log. */
+    @androidx.room.Update
+    suspend fun updateMessage(message: GlobalMessageEntity)
+
     /** Deletes a message by its ID. */
     @Query("DELETE FROM global_messages WHERE messageId = :id")
     suspend fun deleteMessage(id: String)

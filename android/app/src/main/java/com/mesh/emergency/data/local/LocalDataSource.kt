@@ -93,6 +93,7 @@ interface LocalDataSource {
     // ── Global Chat Operations ────────────────────────────────────────────────
     fun getGlobalMessages(): kotlinx.coroutines.flow.Flow<List<GlobalMessageEntity>>
     suspend fun insertGlobalMessage(message: GlobalMessageEntity)
+    suspend fun updateGlobalMessage(message: GlobalMessageEntity)
     suspend fun getGlobalMessageById(id: String): GlobalMessageEntity?
     suspend fun updateGlobalMessageStatus(id: String, status: String)
     suspend fun failStuckGlobalMessages()
