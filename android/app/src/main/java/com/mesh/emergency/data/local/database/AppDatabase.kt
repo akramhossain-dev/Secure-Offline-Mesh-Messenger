@@ -51,7 +51,7 @@ import com.mesh.emergency.data.local.entity.VoiceMessageEntity
         LogEntity::class,
         GlobalMessageEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

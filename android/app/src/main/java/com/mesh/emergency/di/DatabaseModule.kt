@@ -60,6 +60,44 @@ abstract class DatabaseModule {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Upgrade messages table
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `messageId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `senderName` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `edited` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `deleted` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `readStatus` TEXT NOT NULL DEFAULT 'UNREAD'")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `syncState` TEXT NOT NULL DEFAULT 'SYNCED'")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `editHistory` TEXT NOT NULL DEFAULT '[]'")
+
+                // Upgrade global_messages table
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `edited` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `deleted` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `readStatus` TEXT NOT NULL DEFAULT 'READ'")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `syncState` TEXT NOT NULL DEFAULT 'SYNCED'")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `editHistory` TEXT NOT NULL DEFAULT '[]'")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Upgrade messages table
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `replyToMessageId` TEXT")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `replyToSenderName` TEXT")
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `replyToContent` TEXT")
+
+                // Upgrade global_messages table
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `replyToMessageId` TEXT")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `replyToSenderName` TEXT")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `replyToContent` TEXT")
+            }
+        }
+
         /**
          * Provides the singleton database instance.
          */
@@ -73,9 +111,9 @@ abstract class DatabaseModule {
                 AppDatabase::class.java,
                 AppDatabase.DATABASE_NAME
             )
-            .addMigrations(MIGRATION_1_2)
-            .fallbackToDestructiveMigration()
-            .fallbackToDestructiveMigrationOnDowngrade()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .fallbackToDestructiveMigration(true)
+            .fallbackToDestructiveMigrationOnDowngrade(true)
             // A33.3 — Enable WAL for faster concurrent reads + larger page cache
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {

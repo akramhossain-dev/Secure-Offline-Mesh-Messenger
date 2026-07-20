@@ -44,7 +44,10 @@ data class MessageEntity(
     val type: DbMessageType,
     val priority: DbMessagePriority,
     val expiryTime: Long,
-    val retryCount: Int
+    val retryCount: Int,
+    val replyToMessageId: String? = null,
+    val replyToSenderName: String? = null,
+    val replyToContent: String? = null
 ) : BaseEntity
 
 /**

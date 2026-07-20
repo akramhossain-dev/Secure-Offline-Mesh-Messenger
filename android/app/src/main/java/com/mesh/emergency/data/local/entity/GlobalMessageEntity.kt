@@ -34,5 +34,8 @@ data class GlobalMessageEntity(
     val deliveryStatus: String = "SENT", // "SENDING" | "SENT" | "DELIVERED" | "QUEUED" | "FAILED"
     val readStatus: String = "READ",
     val syncState: String = "SYNCED",
-    val editHistory: List<String> = emptyList()
+    val editHistory: List<String> = emptyList(),
+    val replyToMessageId: String? = null,
+    val replyToSenderName: String? = null,
+    val replyToContent: String? = null
 )

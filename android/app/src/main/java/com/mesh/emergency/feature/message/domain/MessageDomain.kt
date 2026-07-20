@@ -38,6 +38,9 @@ data class Message(
     val priority: DbMessagePriority,
     val retryCount: Int,
     val expiryTime: Long,
+    val replyToMessageId: String? = null,
+    val replyToSenderName: String? = null,
+    val replyToContent: String? = null,
     val isSelf: Boolean = senderId == "self"
 )
 
@@ -90,7 +93,10 @@ fun MessageEntity.toDomain() = Message(
     type           = type,
     priority       = priority,
     retryCount     = retryCount,
-    expiryTime     = expiryTime
+    expiryTime     = expiryTime,
+    replyToMessageId = replyToMessageId,
+    replyToSenderName = replyToSenderName,
+    replyToContent = replyToContent
 )
 
 fun Message.toEntity() = MessageEntity(
@@ -113,5 +119,8 @@ fun Message.toEntity() = MessageEntity(
     type           = type,
     priority       = priority,
     retryCount     = retryCount,
-    expiryTime     = expiryTime
+    expiryTime     = expiryTime,
+    replyToMessageId = replyToMessageId,
+    replyToSenderName = replyToSenderName,
+    replyToContent = replyToContent
 )

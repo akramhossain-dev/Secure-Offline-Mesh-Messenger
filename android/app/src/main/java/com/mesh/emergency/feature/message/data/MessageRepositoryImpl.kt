@@ -107,6 +107,11 @@ class MessageRepositoryImpl @Inject constructor(
             put("to",   peerId)
             put("text", message.content)
             put("ts",   message.timestamp)
+            if (message.replyToMessageId != null) {
+                put("replyToId", message.replyToMessageId)
+                put("replyToName", message.replyToSenderName)
+                put("replyToText", message.replyToContent)
+            }
         }.toString()
 
         val blePayload = "MSG:$msgJson".toByteArray(Charsets.UTF_8)

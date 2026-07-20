@@ -41,7 +41,10 @@ data class GlobalChatMessage(
     val isSelf: Boolean,
     /** SENDING | SENT | DELIVERED | QUEUED | FAILED */
     val deliveryStatus: String,
-    val editHistory: List<String> = emptyList()
+    val editHistory: List<String> = emptyList(),
+    val replyToMessageId: String? = null,
+    val replyToSenderName: String? = null,
+    val replyToContent: String? = null
 )
 
 // ── UI State / Events / Effects ───────────────────────────────────────────────
@@ -53,7 +56,9 @@ data class GlobalChatUiState(
     val isLoading: Boolean = true,
     val localUserId: String = "",
     val localUserName: String = "",
-    val editingMessage: GlobalChatMessage? = null
+    val editingMessage: GlobalChatMessage? = null,
+    val selectedMessageIds: Set<String> = emptySet(),
+    val replyingToMessage: GlobalChatMessage? = null
 ) : BaseUiState
 
 sealed interface GlobalChatUiEvent : BaseUiEvent {
@@ -64,6 +69,10 @@ sealed interface GlobalChatUiEvent : BaseUiEvent {
     data class EditMessage(val id: String, val newText: String) : GlobalChatUiEvent
     data class DeleteMessageForEveryone(val id: String) : GlobalChatUiEvent
     data class DeleteMessageForMe(val id: String) : GlobalChatUiEvent
+    data class ToggleMessageSelection(val messageId: String) : GlobalChatUiEvent
+    data object ClearSelection : GlobalChatUiEvent
+    data class StartReply(val message: GlobalChatMessage) : GlobalChatUiEvent
+    data object CancelReply : GlobalChatUiEvent
 }
 
 sealed interface GlobalChatUiEffect : BaseUiEffect {
@@ -151,7 +160,7 @@ class GlobalChatViewModel @Inject constructor(
                 }
             }
             is GlobalChatUiEvent.StartEditing -> {
-                updateState { copy(editingMessage = event.message, draftText = event.message.content) }
+                updateState { copy(editingMessage = event.message, draftText = event.message.content, replyingToMessage = null) }
             }
             GlobalChatUiEvent.CancelEditing -> {
                 updateState { copy(editingMessage = null, draftText = "") }
@@ -203,6 +212,24 @@ class GlobalChatViewModel @Inject constructor(
                     localDataSource.deleteGlobalMessage(event.id)
                 }
             }
+            is GlobalChatUiEvent.ToggleMessageSelection -> {
+                val current = currentState.selectedMessageIds.toMutableSet()
+                if (current.contains(event.messageId)) {
+                    current.remove(event.messageId)
+                } else {
+                    current.add(event.messageId)
+                }
+                updateState { copy(selectedMessageIds = current) }
+            }
+            GlobalChatUiEvent.ClearSelection -> {
+                updateState { copy(selectedMessageIds = emptySet()) }
+            }
+            is GlobalChatUiEvent.StartReply -> {
+                updateState { copy(replyingToMessage = event.message, editingMessage = null) }
+            }
+            GlobalChatUiEvent.CancelReply -> {
+                updateState { copy(replyingToMessage = null) }
+            }
         }
     }
 
@@ -216,6 +243,7 @@ class GlobalChatViewModel @Inject constructor(
         val now        = System.currentTimeMillis()
         val isOnline   = currentState.isOnline
 
+        val replyMsg   = currentState.replyingToMessage
         viewModelScope.launch {
             // Optimistic insert — message appears instantly in the list
             val entity = GlobalMessageEntity(
@@ -231,10 +259,13 @@ class GlobalChatViewModel @Inject constructor(
                 deliveryStatus = "SENDING",
                 readStatus     = "READ",
                 syncState      = if (isOnline) "SYNCED" else "PENDING",
-                editHistory    = emptyList()
+                editHistory    = emptyList(),
+                replyToMessageId = replyMsg?.id,
+                replyToSenderName = replyMsg?.senderName,
+                replyToContent = replyMsg?.content
             )
             localDataSource.insertGlobalMessage(entity)
-            updateState { copy(draftText = "") }
+            updateState { copy(draftText = "", replyingToMessage = null) }
             sendEffect(GlobalChatUiEffect.ScrollToBottom)
 
             // Always attempt BLE broadcast — transport knows if peers are connected
@@ -242,7 +273,10 @@ class GlobalChatViewModel @Inject constructor(
                 messageId  = msgId,
                 senderId   = senderId,
                 senderName = senderName,
-                text       = draft
+                text       = draft,
+                replyToId  = replyMsg?.id,
+                replyToName = replyMsg?.senderName,
+                replyToText = replyMsg?.content
             )
             Timber.d("GCHAT: Message sent via BLE — id=$msgId success=$sent online=$isOnline")
 
@@ -277,5 +311,8 @@ private fun GlobalMessageEntity.toUi(localUserId: String) = GlobalChatMessage(
     deleted        = deleted,
     isSelf         = senderId == localUserId || senderId == "self",
     deliveryStatus = deliveryStatus,
-    editHistory    = editHistory
+    editHistory    = editHistory,
+    replyToMessageId = replyToMessageId,
+    replyToSenderName = replyToSenderName,
+    replyToContent = replyToContent
 )

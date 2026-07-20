@@ -1181,6 +1181,9 @@ class BluetoothTransportImpl @Inject constructor(
                 "chat" -> {
                     if (existing == null) {
                         val text = json.getString("text")
+                        val replyToId = json.optString("replyToId").takeIf { it.isNotEmpty() }
+                        val replyToName = json.optString("replyToName").takeIf { it.isNotEmpty() }
+                        val replyToText = json.optString("replyToText").takeIf { it.isNotEmpty() }
                         val entity = com.mesh.emergency.data.local.entity.GlobalMessageEntity(
                             messageId      = msgId,
                             senderId       = senderId,
@@ -1194,7 +1197,10 @@ class BluetoothTransportImpl @Inject constructor(
                             deliveryStatus = "DELIVERED",
                             readStatus     = "READ",
                             syncState      = "SYNCED",
-                            editHistory    = emptyList()
+                            editHistory    = emptyList(),
+                            replyToMessageId = replyToId,
+                            replyToSenderName = replyToName,
+                            replyToContent = replyToText
                         )
                         localDataSource.insertGlobalMessage(entity)
                         
@@ -1288,7 +1294,10 @@ class BluetoothTransportImpl @Inject constructor(
         messageId: String,
         senderId: String,
         senderName: String,
-        text: String
+        text: String,
+        replyToId: String? = null,
+        replyToName: String? = null,
+        replyToText: String? = null
     ): Boolean {
         val json = org.json.JSONObject().apply {
             put("type", "chat")
@@ -1297,6 +1306,11 @@ class BluetoothTransportImpl @Inject constructor(
             put("name", senderName)
             put("text", text)
             put("ts",   System.currentTimeMillis())
+            if (replyToId != null) {
+                put("replyToId", replyToId)
+                put("replyToName", replyToName)
+                put("replyToText", replyToText)
+            }
         }
         val payload = "GCHAT:$json".toByteArray(Charsets.UTF_8)
         Timber.d("GCHAT_FLOW: Sending global message — id=$messageId name='$senderName' text='${text.take(40)}'")
@@ -1367,6 +1381,9 @@ class BluetoothTransportImpl @Inject constructor(
                     "chat" -> {
                         if (existing == null) {
                             val text = json.getString("text")
+                            val replyToId = json.optString("replyToId").takeIf { it.isNotEmpty() }
+                            val replyToName = json.optString("replyToName").takeIf { it.isNotEmpty() }
+                            val replyToText = json.optString("replyToText").takeIf { it.isNotEmpty() }
                             val messageEntity = com.mesh.emergency.data.local.entity.MessageEntity(
                                 entityId       = msgId,
                                 messageId      = msgId,
@@ -1387,7 +1404,10 @@ class BluetoothTransportImpl @Inject constructor(
                                 type           = com.mesh.emergency.data.local.entity.DbMessageType.TEXT,
                                 priority       = com.mesh.emergency.data.local.entity.DbMessagePriority.MEDIUM,
                                 expiryTime     = timestamp + 86_400_000L,
-                                retryCount     = 0
+                                retryCount     = 0,
+                                replyToMessageId = replyToId,
+                                replyToSenderName = replyToName,
+                                replyToContent = replyToText
                             )
                             val conversationEntity = com.mesh.emergency.data.local.entity.ConversationEntity(
                                 entityId      = senderId,

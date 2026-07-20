@@ -46,7 +46,9 @@ data class ChatUiState(
     val isOnline: Boolean = false,
     val pendingCount: Int = 0,
     val isLoading: Boolean = true,
-    val editingMessage: Message? = null
+    val editingMessage: Message? = null,
+    val selectedMessageIds: Set<String> = emptySet(),
+    val replyingToMessage: Message? = null
 ) : BaseUiState
 
 sealed interface ChatUiEvent : BaseUiEvent {
@@ -58,6 +60,10 @@ sealed interface ChatUiEvent : BaseUiEvent {
     data class DeleteMessageForEveryone(val id: String) : ChatUiEvent
     data class DeleteMessageForMe(val id: String) : ChatUiEvent
     data class LoadConversation(val id: String, val recipientLabel: String) : ChatUiEvent
+    data class ToggleMessageSelection(val messageId: String) : ChatUiEvent
+    data object ClearSelection : ChatUiEvent
+    data class StartReply(val message: Message) : ChatUiEvent
+    data object CancelReply : ChatUiEvent
 }
 
 sealed interface ChatUiEffect : BaseUiEffect {
@@ -124,7 +130,7 @@ class ChatViewModel @Inject constructor(
                 }
             }
             is ChatUiEvent.StartEditing     -> {
-                updateState { copy(editingMessage = event.message, draftText = event.message.content) }
+                updateState { copy(editingMessage = event.message, draftText = event.message.content, replyingToMessage = null) }
             }
             ChatUiEvent.CancelEditing       -> {
                 updateState { copy(editingMessage = null, draftText = "") }
@@ -177,6 +183,24 @@ class ChatViewModel @Inject constructor(
                 viewModelScope.launch {
                     messageRepository.deleteMessage(event.id)
                 }
+            }
+            is ChatUiEvent.ToggleMessageSelection -> {
+                val current = currentState.selectedMessageIds.toMutableSet()
+                if (current.contains(event.messageId)) {
+                    current.remove(event.messageId)
+                } else {
+                    current.add(event.messageId)
+                }
+                updateState { copy(selectedMessageIds = current) }
+            }
+            ChatUiEvent.ClearSelection -> {
+                updateState { copy(selectedMessageIds = emptySet()) }
+            }
+            is ChatUiEvent.StartReply -> {
+                updateState { copy(replyingToMessage = event.message, editingMessage = null) }
+            }
+            ChatUiEvent.CancelReply -> {
+                updateState { copy(replyingToMessage = null) }
             }
         }
     }
@@ -235,6 +259,7 @@ class ChatViewModel @Inject constructor(
             // conversationId == peer entityId (set during QR pairing)
             val peerId = currentState.conversationId
 
+            val replyMsg = currentState.replyingToMessage
             val msg = Message(
                 id             = UUID.randomUUID().toString(),
                 conversationId = peerId,
@@ -254,10 +279,13 @@ class ChatViewModel @Inject constructor(
                 type           = DbMessageType.TEXT,
                 priority       = DbMessagePriority.MEDIUM,
                 retryCount     = 0,
-                expiryTime     = System.currentTimeMillis() + 86_400_000L
+                expiryTime     = System.currentTimeMillis() + 86_400_000L,
+                replyToMessageId = replyMsg?.id,
+                replyToSenderName = replyMsg?.senderName,
+                replyToContent = replyMsg?.content
             )
             messageRepository.sendMessage(msg)
-            updateState { copy(draftText = "") }
+            updateState { copy(draftText = "", replyingToMessage = null) }
             sendEffect(ChatUiEffect.ScrollToBottom)
             if (!currentState.isOnline) {
                 sendEffect(ChatUiEffect.ShowToast("Message queued — will deliver when node is reachable"))
