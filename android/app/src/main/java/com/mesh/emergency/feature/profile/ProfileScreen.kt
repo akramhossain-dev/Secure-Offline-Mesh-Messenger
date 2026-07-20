@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import com.mesh.emergency.core.discovery.qr.QRHandshakeData
 import com.mesh.emergency.core.discovery.qr.QRHandshakeManager
@@ -63,10 +64,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.R
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
-import com.mesh.emergency.core.designsystem.component.ShimmerPlaceholder
+import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 
 /**
@@ -83,6 +81,8 @@ fun ProfileScreen(
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
+    var showSaveSuccess by remember { androidx.compose.runtime.mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -90,10 +90,21 @@ fun ProfileScreen(
                     Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
                 }
                 ProfileUiEffect.SaveSuccess -> {
-                    onBack()
+                    showSaveSuccess = true
                 }
             }
         }
+    }
+
+    if (showSaveSuccess) {
+        MeshSuccessDialog(
+            title = "Profile Saved",
+            message = "Your profile nickname has been updated successfully.",
+            onConfirm = {
+                showSaveSuccess = false
+                onBack()
+            }
+        )
     }
 
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {

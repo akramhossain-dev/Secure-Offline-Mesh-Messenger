@@ -19,19 +19,14 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -41,6 +36,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,10 +76,7 @@ import com.mesh.emergency.R
 import timber.log.Timber
 import java.util.concurrent.Executors
 import com.mesh.emergency.core.common.extensions.hasPermission
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
-import com.mesh.emergency.core.designsystem.component.MeshButton
+import com.mesh.emergency.core.designsystem.component.*
 
 /**
  * QR Scanner screen — securely pairs with mesh contacts by exchanging cryptographic keys.
@@ -110,6 +103,9 @@ fun QrPairScreen(
     var showRationaleDialog by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
 
+    var successMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     val isPermanentlyDenied = alreadyRequested &&
         !hasCameraPermission &&
         activity != null &&
@@ -131,15 +127,42 @@ fun QrPairScreen(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is QrPairUiEffect.Success -> {
-                    Toast.makeText(context, effect.message, Toast.LENGTH_LONG).show()
-                    onBack()
+                    successMessage = effect.message
                 }
                 is QrPairUiEffect.Error -> {
-                    Toast.makeText(context, effect.message, Toast.LENGTH_LONG).show()
+                    errorMessage = effect.message
                     isProcessing = false
                 }
             }
         }
+    }
+
+    if (successMessage != null) {
+        MeshSuccessDialog(
+            title = "Pairing Successful",
+            message = successMessage!!,
+            onConfirm = {
+                successMessage = null
+                onBack()
+            }
+        )
+    }
+
+    if (errorMessage != null) {
+        MeshErrorDialog(
+            title = "Pairing Failed",
+            message = errorMessage!!,
+            onClose = {
+                errorMessage = null
+            }
+        )
+    }
+
+    if (isProcessing) {
+        MeshLoadingDialog(
+            title = "Connecting to Node...",
+            message = "Establishing secure cryptographic connection..."
+        )
     }
 
     // Rationale dialog — shown when user denied once and can still be asked
@@ -358,6 +381,17 @@ private fun QrScannerContent(
     isProcessing: Boolean,
     onQrCodeDetected: (String) -> Unit
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "LaserScan")
+    val laserOffsetY by infiniteTransition.animateFloat(
+        initialValue = 0.05f,
+        targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "LaserOffset"
+    )
+
     // ── 1. Camera Viewfinder Overlay ────────────────────────────────────
     Box(
         contentAlignment = Alignment.Center,
@@ -370,14 +404,90 @@ private fun QrScannerContent(
         if (!isProcessing) {
             CameraPreview(onQrCodeDetected = onQrCodeDetected)
         }
-        // Visual scanner guides
+        
+        // Visual scanner guides with animated laser line and glowing neon corners
         Box(
             modifier = Modifier
                 .size(200.dp)
-                .border(1.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
-        )
+                .clip(RoundedCornerShape(12.dp))
+        ) {
+            if (!isProcessing) {
+                // Neon corners
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 3.dp.toPx()
+                    val len = 24.dp.toPx()
+                    val r = 12.dp.toPx()
+                    val primaryColor = Color(0xFF5ADFF0) // Electric teal neon
+                    
+                    // Top Left Corner
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = 180f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        style = Stroke(width = stroke)
+                    )
+                    drawLine(color = primaryColor, start = Offset(0f, r), end = Offset(0f, len), strokeWidth = stroke)
+                    drawLine(color = primaryColor, start = Offset(r, 0f), end = Offset(len, 0f), strokeWidth = stroke)
+
+                    // Top Right Corner
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = 270f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        style = Stroke(width = stroke)
+                    )
+                    drawLine(color = primaryColor, start = Offset(size.width, r), end = Offset(size.width, len), strokeWidth = stroke)
+                    drawLine(color = primaryColor, start = Offset(size.width - r, 0f), end = Offset(size.width - len, 0f), strokeWidth = stroke)
+
+                    // Bottom Left Corner
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = 90f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        style = Stroke(width = stroke)
+                    )
+                    drawLine(color = primaryColor, start = Offset(0f, size.height - r), end = Offset(0f, size.height - len), strokeWidth = stroke)
+                    drawLine(color = primaryColor, start = Offset(r, size.height), end = Offset(len, size.height), strokeWidth = stroke)
+
+                    // Bottom Right Corner
+                    drawArc(
+                        color = primaryColor,
+                        startAngle = 0f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        style = Stroke(width = stroke)
+                    )
+                    drawLine(color = primaryColor, start = Offset(size.width, size.height - r), end = Offset(size.width, size.height - len), strokeWidth = stroke)
+                    drawLine(color = primaryColor, start = Offset(size.width - r, size.height), end = Offset(size.width - len, size.height), strokeWidth = stroke)
+                }
+
+                // Laser scan line
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .align(Alignment.TopCenter)
+                        .offset(y = 200.dp * laserOffsetY)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    Color.Transparent,
+                                    Color(0xFF5ADFF0).copy(alpha = 0.8f),
+                                    Color(0xFF5ADFF0),
+                                    Color(0xFF5ADFF0).copy(alpha = 0.8f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
+        }
+
         if (isProcessing) {
-            androidx.compose.material3.CircularProgressIndicator(
+            CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.primary
             )
         } else {
@@ -385,17 +495,11 @@ private fun QrScannerContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.QrCodeScanner,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                    modifier = Modifier.size(56.dp)
-                )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(140.dp))
                 Text(
                     stringResource(R.string.qr_pair_scan_label),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.8f)
                 )
             }
         }

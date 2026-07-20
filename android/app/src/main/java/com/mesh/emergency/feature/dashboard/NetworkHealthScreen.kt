@@ -225,10 +225,16 @@ fun NetworkHealthScreen(
                     }
                 }
 
-                // ── Connection type ───────────────────────────────────────────
+                // ── Connection details ───────────────────────────────────────────
                 item {
                     SectionLabel("Connection")
                     InfoRow("Type", uiState.connectionType)
+                    InfoRow("Topology", uiState.topologyLabel)
+                    InfoRow("Uptime", uiState.uptimeLabel)
+                    InfoRow("Local Battery", uiState.batteryLevelLabel)
+                    InfoRow("Packets Sent", uiState.packetsSentCount.toString())
+                    InfoRow("Packets Received", uiState.packetsReceivedCount.toString())
+                    InfoRow("Failed Packets / Errors", uiState.failedPacketsCount.toString())
                     InfoRow("Last Activity",
                         if (uiState.lastActivityTime == 0L) "None"
                         else SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(uiState.lastActivityTime))
@@ -262,21 +268,19 @@ fun NetworkHealthScreen(
                     items(uiState.recentNodes, key = { it.id }) { node ->
                         RecentNodeRow(node = node)
                     }
-                }
-
-                // ── Simulation controls (debug) ────────────────────────────────
-                item {
-                    SectionLabel("Simulation (Debug)")
-                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = viewModel::onSimulateNodeJoin, modifier = Modifier.weight(1f)) {
-                                Text("+ Node", style = MaterialTheme.typography.labelSmall)
-                            }
-                            Button(onClick = viewModel::onSimulateNodeLeave, modifier = Modifier.weight(1f)) {
-                                Text("- Node", style = MaterialTheme.typography.labelSmall)
-                            }
-                            Button(onClick = viewModel::onSimulateFailure, modifier = Modifier.weight(1f)) {
-                                Text("Fail", style = MaterialTheme.typography.labelSmall)
+                } else {
+                    item { SectionLabel("Recent Nodes") }
+                    item {
+                        GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxWidth().padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Waiting for network data",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -329,28 +333,91 @@ private fun InfoRow(label: String, value: String) {
 }
 
 @Composable
-private fun RecentNodeRow(node: NodeDomainModel) {
-    GlassPanel(modifier = Modifier.fillMaxWidth(), contentPadding = 10.dp) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                Icons.Default.Circle,
-                contentDescription = null,
-                tint = when (node.status) {
-                    "ONLINE" -> MeshThemeTokens.semanticColors.connected
-                    "WEAK_CONNECTION" -> MeshThemeTokens.semanticColors.warning
-                    else -> MeshThemeTokens.semanticColors.offline
-                },
-                modifier = Modifier.size(8.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(node.deviceId.take(16), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurface)
-                Text("${node.type} • RSSI: ${node.rssi} dBm", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun RecentNodeRow(node: NetworkHealthNodeUiModel) {
+    val semanticColors = MeshThemeTokens.semanticColors
+    val lastSeenStr = if (node.lastSeen <= 0) "Never" else {
+        val diffMs = System.currentTimeMillis() - node.lastSeen
+        val diffSec = diffMs / 1000
+        if (diffSec < 60) "Just now"
+        else "${diffSec / 60}m ago"
+    }
+
+    GlassPanel(modifier = Modifier.fillMaxWidth(), contentPadding = 12.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Circle,
+                    contentDescription = null,
+                    tint = when (node.status) {
+                        "ONLINE" -> semanticColors.connected
+                        "WEAK_CONNECTION" -> semanticColors.warning
+                        else -> semanticColors.offline
+                    },
+                    modifier = Modifier.size(8.dp)
+                )
+                Text(
+                    text = node.deviceName,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = node.status,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = when (node.status) {
+                        "ONLINE" -> semanticColors.connected
+                        "WEAK_CONNECTION" -> semanticColors.warning
+                        else -> semanticColors.offline
+                    }
+                )
             }
-            Text(node.status, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Device ID: ${node.id.take(12)}...",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Signal: ${node.rssi} dBm",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Last Seen: $lastSeenStr",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Type: ${node.type}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Messages Exchanged: ${node.messageCount}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

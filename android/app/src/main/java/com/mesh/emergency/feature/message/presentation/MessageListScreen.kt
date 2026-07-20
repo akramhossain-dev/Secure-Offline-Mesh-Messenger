@@ -39,10 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.MeshConnectionStatus
-import com.mesh.emergency.core.designsystem.component.ShimmerPlaceholder
+import com.mesh.emergency.core.designsystem.component.*
+import com.mesh.emergency.core.designsystem.icon.MeshIcons
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 import com.mesh.emergency.data.local.entity.DbDeliveryStatus
 import com.mesh.emergency.data.local.entity.DbMessagePriority
@@ -64,14 +62,7 @@ fun MessageListScreen(
     val uiState by viewModel.uiState.collectAsState()
     val spacing = MeshThemeTokens.spacing
 
-    LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
-            when (effect) {
-                is MessageListUiEffect.NavigateToChat ->
-                    onOpenConversation(effect.conversationId, "")
-            }
-        }
-    }
+    // No-op: Navigation handled directly via row click handler
 
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {
         Scaffold(
@@ -110,31 +101,12 @@ fun MessageListScreen(
                     }
                 }
             } else if (uiState.conversations.isEmpty()) {
-                // ── Empty state ───────────────────────────────────────────────
-                Box(
-                    contentAlignment = Alignment.Center,
+                MeshEmptyState(
+                    title = "No Conversations Yet",
+                    description = "Pair with nearby contacts using QR codes to start chat conversations.",
+                    icon = MeshIcons.Chat,
                     modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Default.Chat,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(spacing.md))
-                        Text(
-                            "No conversations yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Messages will appear here once nodes are discovered",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                )
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(
@@ -149,7 +121,6 @@ fun MessageListScreen(
                         ConversationRow(
                             conversation = conv,
                             onClick = {
-                                viewModel.onEvent(MessageListUiEvent.OpenConversation(conv.id))
                                 onOpenConversation(conv.id, conv.title)
                             }
                         )

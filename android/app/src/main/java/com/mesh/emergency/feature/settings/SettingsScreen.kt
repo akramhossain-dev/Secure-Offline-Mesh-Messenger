@@ -44,10 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.R
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
-import com.mesh.emergency.core.designsystem.component.MeshOutlinedButton
+import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 import com.mesh.emergency.core.designsystem.theme.ThemeMode
 
@@ -87,7 +84,7 @@ fun SettingsScreen(
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Color.Transparent,
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { MeshSnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
@@ -265,27 +262,17 @@ fun SettingsScreen(
 
     // Confirmation dialog
     if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text(confirmTitle, fontWeight = FontWeight.Bold) },
-            text = { Text(confirmMessage) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        pendingEvent?.let { viewModel.onEvent(it) }
-                        showConfirmDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Proceed")
-                }
+        MeshConfirmationDialog(
+            title = confirmTitle,
+            message = confirmMessage,
+            confirmText = "Proceed",
+            cancelText = "Cancel",
+            onConfirm = {
+                pendingEvent?.let { viewModel.onEvent(it) }
+                showConfirmDialog = false
             },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
-                }
+            onCancel = {
+                showConfirmDialog = false
             }
         )
     }

@@ -40,7 +40,7 @@ sealed interface MessageListUiEffect : BaseUiEffect {
 // ── Chat State ────────────────────────────────────────────────────────────────
 data class ChatUiState(
     val conversationId: String = "",
-    val recipientLabel: String = "Unknown",
+    val recipientLabel: String = "Loading...",
     val messages: List<Message> = emptyList(),
     val draftText: String = "",
     val isOnline: Boolean = false,
@@ -120,12 +120,30 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun loadConversation(id: String, recipientLabel: String) {
-        updateState { copy(conversationId = id, recipientLabel = recipientLabel, isLoading = true) }
+        updateState { copy(conversationId = id, recipientLabel = "Loading...", isLoading = true) }
         viewModelScope.launch {
+            timber.log.Timber.d("PAIR_FLOW: Chat opened peerId=$id recipientLabel=$recipientLabel")
+            val peerUser = localDataSource.getUserById(id)
+            val dbName = peerUser?.nickname?.takeIf { it.isNotBlank() }
+                ?: peerUser?.username?.takeIf { it.isNotBlank() }
+            
+            timber.log.Timber.d("PAIR_FLOW: Database profile query result for $id: dbName='$dbName'")
+            val finalLabel = dbName
+                ?: recipientLabel.takeIf { it.isNotBlank() && it != "Node" }
+                ?: "Contact-${id.take(6)}"
+
+            timber.log.Timber.d("PAIR_FLOW: Username loaded value finalLabel='$finalLabel'")
+            updateState { copy(recipientLabel = finalLabel) }
+
+            val currentUser = localDataSource.getCurrentUser().firstOrNull()
+            val localUserId = currentUser?.entityId?.takeIf { it.isNotBlank() } ?: "self"
             messageRepository.getMessagesForConversation(id).collect { msgs ->
-                val pending = msgs.count { it.deliveryStatus in listOf(DbDeliveryStatus.PENDING, DbDeliveryStatus.QUEUED) }
+                val mappedMsgs = msgs.map { msg ->
+                    msg.copy(isSelf = msg.senderId == localUserId || msg.senderId == "self")
+                }
+                val pending = mappedMsgs.count { it.deliveryStatus in listOf(DbDeliveryStatus.PENDING, DbDeliveryStatus.QUEUED) }
                 updateState {
-                    copy(messages = msgs, pendingCount = pending, isLoading = false)
+                    copy(messages = mappedMsgs, pendingCount = pending, isLoading = false)
                 }
             }
         }

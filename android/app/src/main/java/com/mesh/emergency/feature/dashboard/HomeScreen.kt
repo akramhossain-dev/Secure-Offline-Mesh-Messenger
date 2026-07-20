@@ -43,13 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.R
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.BatteryStatusCard
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.GlassPanelVariant
-import com.mesh.emergency.core.designsystem.component.MeshSosButton
-import com.mesh.emergency.core.designsystem.component.NetworkStatusCard
-import com.mesh.emergency.core.designsystem.component.SosIndicatorBanner
+import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 
 /**
@@ -81,7 +75,7 @@ fun HomeScreen(
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Color.Transparent,
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { MeshSnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     navigationIcon = {

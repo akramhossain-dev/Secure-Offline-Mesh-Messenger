@@ -5,6 +5,7 @@
 
 package com.mesh.emergency.core.network
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -22,6 +23,21 @@ interface NetworkHealthManager {
 
     /** Average link quality signal values (0.0 to 100.0). */
     val averageSignalQuality: StateFlow<Float>
+
+    /** Real-time packets sent counter. */
+    val packetsSent: StateFlow<Int>
+
+    /** Real-time packets received counter. */
+    val packetsReceived: StateFlow<Int>
+
+    /** Real-time failed packets counter. */
+    val failedPackets: StateFlow<Int>
+
+    /** Real-time connection uptime in milliseconds. */
+    val connectionUptime: Flow<Long>
+
+    /** Local battery level (0-100), or -1 if unavailable. */
+    val localBatteryLevel: Int
 
     /** Logs a connection attempt failure. */
     fun recordFailure()

@@ -52,9 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.MeshConnectionStatus
+import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 import com.mesh.emergency.data.local.entity.DbDeliveryStatus
 import com.mesh.emergency.feature.message.domain.Message
@@ -142,7 +140,42 @@ fun ChatScreen(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             },
-            bottomBar = {
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = paddingValues.calculateTopPadding())
+                    .navigationBarsPadding()
+                    .imePadding()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    if (uiState.messages.isEmpty()) {
+                        EmptyChatHistory()
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            contentPadding = PaddingValues(
+                                start = spacing.lg, end = spacing.lg,
+                                top = spacing.sm, bottom = spacing.sm
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(uiState.messages, key = { it.id }) { message ->
+                                MessageBubble(
+                                    message = message,
+                                    isSelf = message.isSelf,
+                                    senderName = if (message.isSelf) "You" else uiState.recipientLabel.ifBlank { recipientLabel }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 MessageInputBar(
                     draft = uiState.draftText,
                     isOnline = uiState.isOnline,
@@ -150,45 +183,6 @@ fun ChatScreen(
                     onDraftChange = { viewModel.onEvent(ChatUiEvent.UpdateDraft(it)) },
                     onSend = { viewModel.onEvent(ChatUiEvent.SendMessage) }
                 )
-            }
-        ) { paddingValues ->
-            if (uiState.messages.isEmpty()) {
-                // ── Empty Chat ─────────────────────────────────────────────────
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "No messages yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Messages will be queued offline until node is reachable",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    contentPadding = PaddingValues(
-                        start = spacing.lg, end = spacing.lg,
-                        top = paddingValues.calculateTopPadding() + spacing.sm,
-                        bottom = paddingValues.calculateBottomPadding() + spacing.sm
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(uiState.messages, key = { it.id }) { message ->
-                        MessageBubble(
-                            message = message,
-                            isSelf = message.isSelf
-                        )
-                    }
-                }
             }
         }
     }
@@ -199,7 +193,7 @@ fun ChatScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun MessageBubble(message: Message, isSelf: Boolean) {
+private fun MessageBubble(message: Message, isSelf: Boolean, senderName: String) {
     val semanticColors = MeshThemeTokens.semanticColors
 
     Row(
@@ -213,7 +207,7 @@ private fun MessageBubble(message: Message, isSelf: Boolean) {
             // Sender label for received messages
             if (!isSelf) {
                 Text(
-                    text = message.senderId,
+                    text = senderName,
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 4.dp, bottom = 2.dp)
@@ -307,10 +301,7 @@ private fun MessageInputBar(
     val semanticColors = MeshThemeTokens.semanticColors
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .imePadding()
+        modifier = Modifier.fillMaxWidth()
     ) {
         // Pending count banner
         if (pendingCount > 0) {

@@ -6,9 +6,19 @@
 package com.mesh.emergency.data.network
 
 import com.mesh.emergency.core.network.NetworkHealthManager
-import kotlinx.coroutines.flow.MutableStateFlow
+import com.mesh.emergency.data.local.LocalDataSource
+import com.mesh.emergency.data.local.entity.DbNodeStatus
+import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,43 +26,65 @@ import javax.inject.Singleton
  * Implementation of [NetworkHealthManager] tracking active statistics of mesh connectivity.
  */
 @Singleton
-class NetworkHealthManagerImpl @Inject constructor() : NetworkHealthManager {
+class NetworkHealthManagerImpl @Inject constructor(
+    private val localDataSource: LocalDataSource,
+    private val bluetoothTransport: BluetoothTransportImpl
+) : NetworkHealthManager {
 
-    private val _availableNodesCount = MutableStateFlow(0)
-    override val availableNodesCount: StateFlow<Int> = _availableNodesCount.asStateFlow()
+    private val scope = CoroutineScope(Dispatchers.IO)
 
-    private val _activeConnectionsCount = MutableStateFlow(0)
-    override val activeConnectionsCount: StateFlow<Int> = _activeConnectionsCount.asStateFlow()
+    override val availableNodesCount: StateFlow<Int> = localDataSource.getNetworkNodes()
+        .map { list ->
+            val activeCount = list.count { it.status == DbNodeStatus.ONLINE || it.status == DbNodeStatus.WEAK_CONNECTION }
+            if (activeCount > 0) activeCount + 1 else 0
+        }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
 
-    private val _networkFailureRate = MutableStateFlow(0.0f)
-    override val networkFailureRate: StateFlow<Float> = _networkFailureRate.asStateFlow()
+    override val activeConnectionsCount: StateFlow<Int> = localDataSource.getNetworkNodes()
+        .map { list ->
+            list.count { it.status == DbNodeStatus.ONLINE || it.status == DbNodeStatus.WEAK_CONNECTION }
+        }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
 
-    private val _averageSignalQuality = MutableStateFlow(100.0f)
-    override val averageSignalQuality: StateFlow<Float> = _averageSignalQuality.asStateFlow()
+    override val averageSignalQuality: StateFlow<Float> = localDataSource.getNetworkNodes()
+        .map { list ->
+            val active = list.filter { it.status == DbNodeStatus.ONLINE || it.status == DbNodeStatus.WEAK_CONNECTION }
+            if (active.isEmpty()) 100.0f
+            else active.map { it.signalQuality }.average().toFloat()
+        }
+        .stateIn(scope, SharingStarted.Eagerly, 100.0f)
 
-    private var totalAttempts = 0
-    private var failedAttempts = 0
+    override val networkFailureRate: StateFlow<Float> = combine(
+        bluetoothTransport.packetsSentCount,
+        bluetoothTransport.failedPacketsCount
+    ) { sent, failed ->
+        val total = sent + failed
+        if (total == 0) 0.0f else failed.toFloat() / total.toFloat()
+    }.stateIn(scope, SharingStarted.Eagerly, 0.0f)
+
+    override val packetsSent: StateFlow<Int> = bluetoothTransport.packetsSentCount
+    override val packetsReceived: StateFlow<Int> = bluetoothTransport.packetsReceivedCount
+    override val failedPackets: StateFlow<Int> = bluetoothTransport.failedPacketsCount
+
+    override val connectionUptime: Flow<Long> = flow {
+        while (true) {
+            emit(bluetoothTransport.getConnectionUptime())
+            delay(1000L)
+        }
+    }
+
+    override val localBatteryLevel: Int
+        get() = bluetoothTransport.getLocalBatteryLevel()
 
     override fun recordFailure() {
-        totalAttempts++
-        failedAttempts++
-        recalculateFailureRate()
+        // No-op: handled directly by packet transmission handlers in BLE transport
     }
 
     override fun recordSuccess() {
-        totalAttempts++
-        recalculateFailureRate()
+        // No-op: handled directly by packet transmission handlers in BLE transport
     }
 
     override fun updateCounts(nodes: Int, connections: Int, signal: Float) {
-        _availableNodesCount.value = nodes
-        _activeConnectionsCount.value = connections
-        _averageSignalQuality.value = signal
-    }
-
-    private fun recalculateFailureRate() {
-        if (totalAttempts > 0) {
-            _networkFailureRate.value = failedAttempts.toFloat() / totalAttempts.toFloat()
-        }
+        // No-op: handled dynamically from database state and packet flow
     }
 }

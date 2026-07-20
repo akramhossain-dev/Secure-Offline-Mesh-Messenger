@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,10 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.R
-import com.mesh.emergency.core.designsystem.component.AuroraBackdrop
-import com.mesh.emergency.core.designsystem.component.GlassPanel
-import com.mesh.emergency.core.designsystem.component.MeshButton
-import com.mesh.emergency.core.designsystem.component.MeshSignalIndicator
+import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.theme.MeshThemeTokens
 
 /**
@@ -65,6 +63,8 @@ fun DeviceScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val spacing = MeshThemeTokens.spacing
 
+    var deviceToUnpair by remember { androidx.compose.runtime.mutableStateOf<DeviceDisplayModel?>(null) }
+
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -75,10 +75,33 @@ fun DeviceScreen(
         }
     }
 
+    if (deviceToUnpair != null) {
+        MeshConfirmationDialog(
+            title = "Unpair Device",
+            message = "Are you sure you want to unpair from '${deviceToUnpair?.name}'? You will not be able to send or receive messages until you pair again.",
+            confirmText = "Unpair",
+            cancelText = "Cancel",
+            onConfirm = {
+                viewModel.onEvent(DeviceUiEvent.UnpairDevice(deviceToUnpair!!.id))
+                deviceToUnpair = null
+            },
+            onCancel = {
+                deviceToUnpair = null
+            }
+        )
+    }
+
+    if (uiState.isScanning) {
+        MeshScanningDialog(
+            discoveredCount = uiState.pairedDevices.size,
+            onCancel = { viewModel.onEvent(DeviceUiEvent.CancelScan) }
+        )
+    }
+
     AuroraBackdrop(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             containerColor = Color.Transparent,
-            snackbarHost = { SnackbarHost(snackbarHostState) },
+            snackbarHost = { MeshSnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.contacts_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
@@ -108,22 +131,6 @@ fun DeviceScreen(
                 verticalArrangement = Arrangement.spacedBy(spacing.md),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // ── Scanning status ───────────────────────────────────────────
-                if (uiState.isScanning) {
-                    item {
-                        GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                androidx.compose.material3.CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Text(stringResource(R.string.contacts_scanning), style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                }
-
                 // ── Section header ────────────────────────────────────────────
                 item {
                     Text(
@@ -137,20 +144,14 @@ fun DeviceScreen(
                 items(uiState.pairedDevices, key = { it.id }) { device ->
                     DeviceRow(
                         device     = device,
-                        onUnpair   = { viewModel.onEvent(DeviceUiEvent.UnpairDevice(device.id)) },
+                        onUnpair   = { deviceToUnpair = device },
                         onOpenChat = { viewModel.onEvent(DeviceUiEvent.OpenChat(device.id, device.name)) }
                     )
                 }
 
                 if (uiState.pairedDevices.isEmpty()) {
                     item {
-                        GlassPanel(modifier = Modifier.fillMaxWidth()) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                                Text(stringResource(R.string.contacts_no_paired), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.height(8.dp))
-                                MeshButton(text = stringResource(R.string.qr_pair_title), onClick = onNavigateToQrPair)
-                            }
-                        }
+                        EmptyDevicesDiscovered(modifier = Modifier.fillMaxWidth())
                     }
                 }
             }

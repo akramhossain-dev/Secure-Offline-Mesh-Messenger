@@ -38,6 +38,7 @@ data class DeviceDisplayModel(
 // ── Events ────────────────────────────────────────────────────────────────────
 sealed interface DeviceUiEvent : BaseUiEvent {
     data object StartScan : DeviceUiEvent
+    data object CancelScan : DeviceUiEvent
     data class UnpairDevice(val deviceId: String) : DeviceUiEvent
     data class OpenChat(val deviceId: String, val deviceName: String) : DeviceUiEvent
 }
@@ -86,15 +87,23 @@ class DeviceViewModel @Inject constructor(
         }
     }
 
+    private var scanJob: kotlinx.coroutines.Job? = null
+
     override fun onEvent(event: DeviceUiEvent) {
         when (event) {
             DeviceUiEvent.StartScan -> {
-                viewModelScope.launch {
+                scanJob?.cancel()
+                scanJob = viewModelScope.launch {
                     updateState { copy(isScanning = true) }
-                    kotlinx.coroutines.delay(2000L)
+                    kotlinx.coroutines.delay(4000L)
                     updateState { copy(isScanning = false) }
                     sendEffect(DeviceUiEffect.ShowToast("Scan complete — no new nodes found"))
                 }
+            }
+            DeviceUiEvent.CancelScan -> {
+                scanJob?.cancel()
+                updateState { copy(isScanning = false) }
+                sendEffect(DeviceUiEffect.ShowToast("Scan cancelled"))
             }
             is DeviceUiEvent.UnpairDevice -> {
                 viewModelScope.launch {
