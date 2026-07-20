@@ -123,7 +123,7 @@ fun OnboardingScreen(
                         Spacer(modifier = Modifier.height(spacing.lg))
 
                         Text(
-                            text = "Welcome to OfflineMesh",
+                            text = "Welcome to Emergency Connect",
                             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center

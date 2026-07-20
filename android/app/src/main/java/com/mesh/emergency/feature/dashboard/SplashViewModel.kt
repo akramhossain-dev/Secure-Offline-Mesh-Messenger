@@ -21,7 +21,7 @@ import javax.inject.Inject
 // ── State ────────────────────────────────────────────────────────────────────
 data class SplashUiState(
     val isLoading: Boolean = true,
-    val appName: String = "OfflineMesh",
+    val appName: String = "Emergency Connect",
     val version: String = "v0.1.0"
 ) : BaseUiState
 

@@ -17,8 +17,8 @@
     <!-- Application Identity                                                  -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
 
-    <string name="app_name">অফলাইন ইমার্জেন্সি মেশ</string>
-    <string name="app_short_name">অফলাইনমেশ</string>
+    <string name="app_name">ইমার্জেন্সি কানেক্ট</string>
+    <string name="app_short_name">ই-কানেক্ট</string>
     <string name="app_tagline">যোগাযোগ করুন। সমন্বয় করুন। বেঁচে থাকুন।</string>
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->
@@ -155,7 +155,7 @@
     <string name="nav_settings_label">সেটিংস</string>
 
     <!-- Drawer Labels -->
-    <string name="drawer_messenger_category">মেসেঞ্জার</string>
+    <string name="drawer_messenger_category">ইমার্জেন্সি কানেক্ট</string>
     <string name="drawer_conversations">কথোপকথন</string>
     <string name="drawer_contacts_nodes">যোগাযোগ ও নোড</string>
     <string name="drawer_safety_category">নিরাপত্তা ও রাডার</string>
@@ -166,7 +166,7 @@
     <string name="drawer_system_category">সিস্টেম কনফিগারেশন</string>
     <string name="drawer_my_profile">আমার প্রোফাইল কার্ড</string>
     <string name="drawer_app_settings">অ্যাপ্লিকেশন সেটিংস</string>
-    <string name="drawer_about">মেসেঞ্জার সম্পর্কে</string>
+    <string name="drawer_about">ইমার্জেন্সি কানেক্ট সম্পর্কে</string>
     <string name="drawer_theme_mode">থিম মোড</string>
     <string name="drawer_language">ভাষা</string>
     <string name="drawer_connected">মেশের সাথে সংযুক্ত</string>

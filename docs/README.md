@@ -1,4 +1,4 @@
-# Offline Emergency Mesh Communication System
+# Emergency Connect System
 
 > A decentralized, infrastructure-free communication platform for emergency and remote scenarios.
 

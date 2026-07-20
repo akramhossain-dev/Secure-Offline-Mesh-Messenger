@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 // ── State ─────────────────────────────────────────────────────────────────────
 data class HomeUiState(
-    val appName: String = "OfflineMesh",
+    val appName: String = "Emergency Connect",
     val isOnline: Boolean = false,
     val batteryLevel: Float = 1.0f,
     val isCharging: Boolean = false,

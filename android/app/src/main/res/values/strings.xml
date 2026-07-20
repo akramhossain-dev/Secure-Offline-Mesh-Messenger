@@ -22,9 +22,8 @@
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- Application Identity                                                  -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
-
-    <string name="app_name">Offline Emergency Mesh</string>
-    <string name="app_short_name">OfflineMesh</string>
+    <string name="app_name">Emergency Connect</string>
+    <string name="app_short_name">E-Connect</string>
     <string name="app_tagline">Communicate. Coordinate. Survive.</string>
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->

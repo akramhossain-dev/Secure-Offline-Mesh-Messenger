@@ -21,7 +21,7 @@ object AppConstants {
     // ─────────────────────────────────────────────────────────────────────────
 
     const val APP_PACKAGE = "com.mesh.emergency"
-    const val APP_DISPLAY_NAME = "OfflineMesh"
+    const val APP_DISPLAY_NAME = "Emergency Connect"
 
     // ─────────────────────────────────────────────────────────────────────────
     // SharedPreferences / DataStore Keys
