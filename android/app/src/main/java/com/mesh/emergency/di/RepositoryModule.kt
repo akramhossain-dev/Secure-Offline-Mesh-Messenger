@@ -7,12 +7,10 @@ package com.mesh.emergency.di
 
 import com.mesh.emergency.data.repository.CommunicationRepositoryImpl
 import com.mesh.emergency.data.repository.DeviceRepositoryImpl
-import com.mesh.emergency.data.repository.MessageRepositoryImpl
 import com.mesh.emergency.data.repository.SettingsRepositoryImpl
 import com.mesh.emergency.data.repository.UserRepositoryImpl
 import com.mesh.emergency.domain.repository.CommunicationRepository
 import com.mesh.emergency.domain.repository.DeviceRepository
-import com.mesh.emergency.domain.repository.MessageRepository
 import com.mesh.emergency.domain.repository.SettingsRepository
 import com.mesh.emergency.domain.repository.UserRepository
 import dagger.Binds
@@ -32,11 +30,6 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
-
-    /** Binds [MessageRepositoryImpl] to the [MessageRepository] interface. */
-    @Binds
-    @Singleton
-    abstract fun bindMessageRepository(impl: MessageRepositoryImpl): MessageRepository
 
     /** Binds [DeviceRepositoryImpl] to the [DeviceRepository] interface. */
     @Binds

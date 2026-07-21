@@ -34,7 +34,8 @@ data class OverlayMessage(
     val senderName: String,
     val content: String,
     val timestamp: Long,
-    val isSelf: Boolean
+    val isSelf: Boolean,
+    val deliveryStatus: String = "SENT" // "SENDING" | "SENT" | "DELIVERED" | "READ" | "QUEUED" | "FAILED"
 )
 
 data class OverlayUiState(
@@ -116,12 +117,13 @@ class OverlayConversationViewModel(
                     val localId = _uiState.value.localUserId
                     val mapped = entities.map { msg ->
                         OverlayMessage(
-                            id         = msg.messageId,
-                            senderId   = msg.senderId,
-                            senderName = msg.senderName,
-                            content    = msg.content,
-                            timestamp  = msg.timestamp,
-                            isSelf     = msg.senderId == localId || msg.senderId == "self"
+                            id             = msg.messageId,
+                            senderId       = msg.senderId,
+                            senderName     = msg.senderName,
+                            content        = msg.content,
+                            timestamp      = msg.timestamp,
+                            isSelf         = msg.senderId == localId || msg.senderId == "self",
+                            deliveryStatus = msg.deliveryStatus
                         )
                     }
                     _uiState.update { it.copy(messages = mapped) }
@@ -130,13 +132,15 @@ class OverlayConversationViewModel(
                 localDataSource.getMessagesForConversation(convId).collect { entities ->
                     val localId = _uiState.value.localUserId
                     val mapped = entities.map { msg ->
+                        val statusStr = if (msg.readStatus == "READ") "READ" else msg.deliveryStatus.name
                         OverlayMessage(
-                            id         = msg.messageId,
-                            senderId   = msg.senderId,
-                            senderName = msg.senderName,
-                            content    = msg.content,
-                            timestamp  = msg.timestamp,
-                            isSelf     = msg.senderId == localId || msg.senderId == "self"
+                            id             = msg.messageId,
+                            senderId       = msg.senderId,
+                            senderName     = msg.senderName,
+                            content        = msg.content,
+                            timestamp      = msg.timestamp,
+                            isSelf         = msg.senderId == localId || msg.senderId == "self",
+                            deliveryStatus = statusStr
                         )
                     }
                     _uiState.update { it.copy(messages = mapped) }
@@ -228,18 +232,21 @@ class OverlayConversationViewModel(
                         expiryTime     = now + 86_400_000L,
                         retryCount     = 0
                     )
-                    localDataSource.insertMessage(entity)
+                    val sent = messagingService.sendPrivateMessage(
+                        messageId   = msgId,
+                        senderId    = senderId,
+                        senderName  = senderName,
+                        recipientId = convId,
+                        text        = draft
+                    )
 
-                    val json = org.json.JSONObject().apply {
-                        put("type", "chat")
-                        put("id",   msgId)
-                        put("from", senderId)
-                        put("to",   convId)
-                        put("text", draft)
-                        put("ts",   now)
-                    }
-                    val payload = "MSG:$json".toByteArray(Charsets.UTF_8)
-                    communicationManager.sendMessage(payload)
+                    val finalStatus = if (sent) DbDeliveryStatus.SENT else DbDeliveryStatus.QUEUED
+                    localDataSource.insertMessage(
+                        entity.copy(
+                            deliveryStatus = finalStatus,
+                            syncState      = if (sent) "SYNCED" else "PENDING"
+                        )
+                    )
                 }
                 Timber.d("OVERLAY_VM[$convId]: Message sent — id=$msgId")
             } catch (e: Exception) {

@@ -63,11 +63,25 @@ class MeshApplication : Application(), Configuration.Provider {
         super.onCreate()
         initializeLogging()
         
-        // Track activities to know if the app is in foreground
+        // Track activities to know if the app is in foreground.
+        // Auto-dismiss all chat heads when the app returns to foreground.
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) {}
             override fun onActivityStarted(activity: android.app.Activity) {
+                val wasBackground = !AppLifecycleTracker.isAppInForeground
                 AppLifecycleTracker.activityStarted()
+                if (wasBackground) {
+                    // App just entered foreground — clear all floating chat heads
+                    try {
+                        val clearIntent = android.content.Intent(this@MeshApplication,
+                            com.mesh.emergency.core.overlay.ChatHeadService::class.java).apply {
+                            action = com.mesh.emergency.core.overlay.ChatHeadService.ACTION_CLEAR_ALL
+                        }
+                        androidx.core.content.ContextCompat.startForegroundService(this@MeshApplication, clearIntent)
+                    } catch (e: Exception) {
+                        Timber.w(e, "Could not clear chat heads on foreground")
+                    }
+                }
             }
             override fun onActivityResumed(activity: android.app.Activity) {}
             override fun onActivityPaused(activity: android.app.Activity) {}

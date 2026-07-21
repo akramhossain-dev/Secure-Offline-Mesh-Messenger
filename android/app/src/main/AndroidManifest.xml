@@ -88,7 +88,7 @@
 
         <!-- ── Chat Head Floating Overlay System Service ────────────────── -->
         <service
-            android:name=".core.system.ChatHeadService"
+            android:name=".core.overlay.ChatHeadService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="specialUse">

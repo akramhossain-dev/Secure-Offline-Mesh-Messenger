@@ -306,16 +306,40 @@ private fun OverlayMessageBubble(
                         fontSize = 13.sp
                     )
                 )
-                // Time only at the bottom of each group
+                // Time & delivery status at the bottom of each group
                 if (isLastInGroup) {
-                    Text(
-                        text     = timeFormatter.format(Date(msg.timestamp)),
-                        style    = MaterialTheme.typography.bodySmall.copy(
-                            color    = Color.White.copy(alpha = 0.55f),
-                            fontSize = 9.sp
-                        ),
-                        modifier = Modifier.align(Alignment.End)
-                    )
+                    Row(
+                        modifier = Modifier.align(Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text     = timeFormatter.format(Date(msg.timestamp)),
+                            style    = MaterialTheme.typography.bodySmall.copy(
+                                color    = Color.White.copy(alpha = 0.55f),
+                                fontSize = 9.sp
+                            )
+                        )
+                        if (isSelf) {
+                            Spacer(Modifier.width(4.dp))
+                            val (statusText, statusColor) = when (msg.deliveryStatus.uppercase()) {
+                                "SENDING"   -> "🕒" to Color.White.copy(alpha = 0.5f)
+                                "QUEUED"    -> "🕒" to Color.White.copy(alpha = 0.5f)
+                                "SENT"      -> "✓" to Color.White.copy(alpha = 0.7f)
+                                "DELIVERED" -> "✓✓" to Color.White.copy(alpha = 0.85f)
+                                "READ"      -> "✓✓" to Color(0xFF64B5F6) // Light Blue double tick
+                                "FAILED"    -> "⚠️" to Color(0xFFFF5252)
+                                else        -> "✓" to Color.White.copy(alpha = 0.7f)
+                            }
+                            Text(
+                                text  = statusText,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color    = statusColor,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }

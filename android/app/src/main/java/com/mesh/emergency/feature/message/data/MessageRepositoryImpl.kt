@@ -28,22 +28,16 @@ import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.mesh.emergency.core.messaging.MessagingService
+
 /**
- * Room-backed implementation of [MessageRepository] with lightweight BLE message transmission.
- *
- * Message send path:
- *   sendMessage() → builds MSG:{json} BLE packet → CommunicationManager.sendMessage()
- *
- * Message receive path (handled by BluetoothTransportImpl.handleInboundMessage()):
- *   BLE RX characteristic → MSG: prefix detection → Room insert → UI updates via Flow
- *
- * The previous heavy Packet/PacketSerializer/encryption pipeline is replaced with a
- * simpler format that is decoded symmetrically on the receiving device.
+ * Room-backed implementation of [MessageRepository] delegating to [MessagingService].
  */
 @Singleton
 class MessageRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
     private val communicationManager: CommunicationManager,
+    private val messagingService: MessagingService,
     private val deviceFingerprintProvider: DeviceFingerprintProvider,
     private val localDataSource: LocalDataSource
 ) : MessageRepository {
@@ -74,16 +68,8 @@ class MessageRepositoryImpl @Inject constructor(
 
     // ── Send ──────────────────────────────────────────────────────────────────
 
-    /**
-     * Sends a chat message to the peer via BLE using the lightweight MSG: packet format.
-     *
-     * Packet: `MSG:{"id":"...","from":"senderId","to":"peerId","text":"...","ts":ms}`
-     *
-     * The [conversationId] of the [Message] is used as the recipient identifier because
-     * in this app's design conversationId == peer's entityId (set when pairing).
-     */
     override suspend fun sendMessage(message: Message) {
-        // Resolve the actual local user identity (prefer profile userId over device fingerprint)
+        // Resolve the actual local user identity
         val currentUser = localDataSource.getCurrentUser().firstOrNull()
         val senderId    = currentUser?.entityId?.takeIf { it.isNotBlank() }
             ?: deviceFingerprintProvider.getDeviceFingerprint()
@@ -93,57 +79,34 @@ class MessageRepositoryImpl @Inject constructor(
             ?: "Me"
 
         // Resolve recipient display name for the local conversation record
-        val peerId       = message.conversationId  // conversationId == peer entityId
-        val peerUser     = userDao.getUserById(peerId)
-        val peerName     = peerUser?.nickname?.takeIf { it.isNotBlank() }
+        val peerId   = message.conversationId
+        val peerUser = userDao.getUserById(peerId)
+        val peerName = peerUser?.nickname?.takeIf { it.isNotBlank() }
             ?: peerUser?.username?.takeIf { it.isNotBlank() }
             ?: peerId
 
-        // Build lightweight BLE message packet
-        val msgJson = JSONObject().apply {
-            put("type", "chat")
-            put("id",   message.id)
-            put("from", senderId)
-            put("to",   peerId)
-            put("text", message.content)
-            put("ts",   message.timestamp)
-            if (message.replyToMessageId != null) {
-                put("replyToId", message.replyToMessageId)
-                put("replyToName", message.replyToSenderName)
-                put("replyToText", message.replyToContent)
-            }
-        }.toString()
+        // Delegate private message dispatch through central MessagingService
+        val sent = messagingService.sendPrivateMessage(
+            messageId   = message.id,
+            senderId    = senderId,
+            senderName  = senderName,
+            recipientId = peerId,
+            text        = message.content,
+            replyToId   = message.replyToMessageId,
+            replyToName = message.replyToSenderName,
+            replyToText = message.replyToContent
+        )
 
-        val blePayload = "MSG:$msgJson".toByteArray(Charsets.UTF_8)
-        Timber.d("MSG_FLOW: Sending message to '$peerName' (${blePayload.size} bytes) id=${message.id}")
+        val finalStatus = if (sent) DbDeliveryStatus.SENT else DbDeliveryStatus.QUEUED
 
-        // Attempt BLE delivery
-        val result = try {
-            communicationManager.sendMessage(blePayload)
-        } catch (e: Exception) {
-            Timber.e(e, "MSG_FLOW: BLE send exception for message ${message.id}")
-            Result.Error(e)
-        }
-
-        val finalStatus = when (result) {
-            is Result.Success -> {
-                Timber.d("MSG_FLOW: Message delivered via BLE — id=${message.id}")
-                DbDeliveryStatus.SENT // End-to-end receipt will transition to DELIVERED
-            }
-            else -> {
-                Timber.w("MSG_FLOW: BLE send failed — message queued — id=${message.id}")
-                DbDeliveryStatus.QUEUED
-            }
-        }
-
-        // Persist outbound message to Room (sender side)
+        // Persist outbound message to Room
         val entity = message.toEntity().copy(
             senderId       = senderId,
             senderName     = senderName,
             recipientId    = peerId,
-            conversationId = peerId,   // conversation keyed by peer's userId (same as receive side)
+            conversationId = peerId,
             deliveryStatus = finalStatus,
-            syncState      = if (finalStatus == DbDeliveryStatus.SENT) "SYNCED" else "PENDING"
+            syncState      = if (sent) "SYNCED" else "PENDING"
         )
         messageDao.insertMessage(entity)
 

@@ -67,6 +67,22 @@ interface MessagingService {
     // ── Private Messaging ─────────────────────────────────────────────────────
 
     /**
+     * Sends a private chat message to [recipientId].
+     *
+     * @return true if dispatched to transport successfully.
+     */
+    suspend fun sendPrivateMessage(
+        messageId: String,
+        senderId: String,
+        senderName: String,
+        recipientId: String,
+        text: String,
+        replyToId: String? = null,
+        replyToName: String? = null,
+        replyToText: String? = null
+    ): Boolean
+
+    /**
      * Sends an edit update for an existing private message.
      * Routed to the specific recipient identified by [recipientId].
      */

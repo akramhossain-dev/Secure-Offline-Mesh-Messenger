@@ -13,6 +13,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,10 +32,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -56,7 +60,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -172,22 +175,19 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                // ── Chat Head Permission Banner ────────────────────────────
+                // ── Chat Head Permission Card ─────────────────────────────
                 item {
                     AnimatedVisibility(
                         visible = !hasOverlay,
-                        enter   = expandVertically(),
-                        exit    = shrinkVertically()
+                        enter   = expandVertically() + fadeIn(),
+                        exit    = shrinkVertically() + fadeOut()
                     ) {
-                        Box(
+                        Surface(
+                            shape  = RoundedCornerShape(20.dp),
+                            color  = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                            tonalElevation = 4.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(Color(0xFFFF6B35), Color(0xFFFF8C42))
-                                    )
-                                )
                                 .clickable {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                                         overlayLauncher.launch(
@@ -198,36 +198,46 @@ fun HomeScreen(
                                         )
                                     }
                                 }
-                                .padding(horizontal = 16.dp, vertical = 14.dp)
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.ChatBubble,
-                                    contentDescription = null,
-                                    tint   = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                                Spacer(Modifier.width(12.dp))
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ChatBubble,
+                                        contentDescription = null,
+                                        tint     = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(14.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text  = "Enable Floating Chat Heads",
+                                        text  = "Enable Chat Heads",
                                         style = MaterialTheme.typography.titleSmall.copy(
-                                            fontWeight = FontWeight.ExtraBold,
-                                            color      = Color.White
+                                            fontWeight = FontWeight.Bold,
+                                            color      = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                     )
                                     Text(
-                                        text  = "Tap to allow — get Messenger-style bubbles when messages arrive",
+                                        text  = "Get Messenger-style bubbles when new messages arrive",
                                         style = MaterialTheme.typography.bodySmall.copy(
-                                            color    = Color.White.copy(alpha = 0.9f),
+                                            color    = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f),
                                             fontSize = 11.sp
                                         )
                                     )
                                 }
                                 Icon(
-                                    imageVector = Icons.Default.OpenInNew,
+                                    imageVector      = Icons.AutoMirrored.Filled.OpenInNew,
                                     contentDescription = null,
-                                    tint   = Color.White.copy(alpha = 0.8f),
+                                    tint    = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }

@@ -124,9 +124,9 @@ abstract class DatabaseModule {
                 AppDatabase.DATABASE_NAME
             )
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-            .fallbackToDestructiveMigration(true)
-            .fallbackToDestructiveMigrationOnDowngrade(true)
-            // A33.3 — Enable WAL for faster concurrent reads + larger page cache
+            // NOTE: fallbackToDestructiveMigration intentionally REMOVED.
+            // A missing migration must throw a clear exception — never silently wipe user data.
+            // A33.6 — Enable WAL for faster concurrent reads + larger page cache
             .addCallback(object : androidx.room.RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)

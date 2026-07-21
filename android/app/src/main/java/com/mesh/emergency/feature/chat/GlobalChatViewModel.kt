@@ -22,6 +22,9 @@ import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+
 // ── Domain model ──────────────────────────────────────────────────────────────
 
 /**
@@ -93,6 +96,7 @@ sealed interface GlobalChatUiEffect : BaseUiEffect {
  */
 @HiltViewModel
 class GlobalChatViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val localDataSource: LocalDataSource,
     private val messagingService: MessagingService,
     private val communicationManager: CommunicationManager
@@ -102,12 +106,28 @@ class GlobalChatViewModel @Inject constructor(
         loadLocalProfile()
         observeMessages()
         observeConnectionState()
+        dismissGlobalChatHead()
         viewModelScope.launch {
             try {
                 localDataSource.failStuckGlobalMessages()
             } catch (e: Exception) {
                 Timber.e(e, "GCHAT: Failed to sanitize stuck messages")
             }
+        }
+    }
+
+    private fun dismissGlobalChatHead() {
+        try {
+            val removeIntent = android.content.Intent(
+                context,
+                com.mesh.emergency.core.overlay.ChatHeadService::class.java
+            ).apply {
+                action = com.mesh.emergency.core.overlay.ChatHeadService.ACTION_REMOVE_HEAD
+                putExtra(com.mesh.emergency.core.overlay.ChatHeadService.EXTRA_CONV_ID, "global")
+            }
+            androidx.core.content.ContextCompat.startForegroundService(context, removeIntent)
+        } catch (e: Exception) {
+            // Ignore if service is not running
         }
     }
 

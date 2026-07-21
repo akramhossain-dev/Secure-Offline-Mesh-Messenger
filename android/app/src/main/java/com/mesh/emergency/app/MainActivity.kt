@@ -23,7 +23,6 @@ import com.mesh.emergency.core.domain.AppStateRepository
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
 
 /**
@@ -67,23 +66,6 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         org.maplibre.android.MapLibre.getInstance(this)
         
-        // Sync application locale synchronously before UI composition begins,
-        // preventing configuration change re-creation cycles on cold starts.
-        runBlocking {
-            try {
-                val languageCode = appStateRepository.appState.first().languageCode
-                val localeList = if (languageCode == "system" || languageCode.isEmpty()) {
-                    LocaleListCompat.getEmptyLocaleList()
-                } else {
-                    LocaleListCompat.forLanguageTags(languageCode)
-                }
-                if (AppCompatDelegate.getApplicationLocales() != localeList) {
-                    AppCompatDelegate.setApplicationLocales(localeList)
-                }
-            } catch (e: Exception) {
-                // Fallback silently if storage is not ready
-            }
-        }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -119,16 +101,40 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleIntent(intent: android.content.Intent?) {
         intent ?: return
-        val convId = intent.getStringExtra("convId")
-        val label = intent.getStringExtra("label") ?: "Chat"
-        if (!convId.isNullOrEmpty()) {
-            if (convId == "global") {
+        val convId   = intent.getStringExtra("convId")
+        val label    = intent.getStringExtra("label") ?: "Chat"
+        val navRoute = intent.getStringExtra("navRoute")
+
+        val targetConvId = when {
+            !convId.isNullOrEmpty() -> convId
+            navRoute == com.mesh.emergency.core.navigation.NavRoutes.GLOBAL_CHAT -> "global"
+            else -> null
+        }
+
+        if (targetConvId != null) {
+            // Dismiss chat head for this conversation since the full app is opening it
+            try {
+                val removeIntent = android.content.Intent(this, com.mesh.emergency.core.overlay.ChatHeadService::class.java).apply {
+                    action = com.mesh.emergency.core.overlay.ChatHeadService.ACTION_REMOVE_HEAD
+                    putExtra(com.mesh.emergency.core.overlay.ChatHeadService.EXTRA_CONV_ID, targetConvId)
+                }
+                androidx.core.content.ContextCompat.startForegroundService(this, removeIntent)
+            } catch (e: Exception) {
+                // Ignore if service is not running
+            }
+
+            if (targetConvId == "global") {
                 appNavigator.navigateTo(com.mesh.emergency.core.navigation.NavRoutes.GLOBAL_CHAT)
             } else {
-                appNavigator.navigateTo(com.mesh.emergency.core.navigation.NavRoutes.chatScreen(convId, label))
+                appNavigator.navigateTo(com.mesh.emergency.core.navigation.NavRoutes.chatScreen(targetConvId, label))
             }
         }
     }
 
+    companion object {
+        const val EXTRA_CONV_ID   = "convId"
+        const val EXTRA_LABEL     = "label"
+        const val EXTRA_NAV_ROUTE = "navRoute"
+    }
 }
 

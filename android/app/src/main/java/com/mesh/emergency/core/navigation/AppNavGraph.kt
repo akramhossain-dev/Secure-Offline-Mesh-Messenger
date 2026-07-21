@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
-import com.mesh.emergency.core.presentation.base.PlaceholderScreen
+
 import com.mesh.emergency.feature.chat.CommunicationScreen
 import com.mesh.emergency.feature.chat.GlobalChatScreen
 import com.mesh.emergency.feature.contacts.DeviceScreen
@@ -157,7 +157,12 @@ fun AppNavGraph(
             arguments = listOf(navArgument("contactId") { type = NavType.StringType })
         ) { backStackEntry ->
             val contactId = backStackEntry.arguments?.getString("contactId") ?: "unknown"
-            PlaceholderScreen(title = "Contact Profile of $contactId")
+            DeviceScreen(
+                    onNavigateToQrPair = { navController.popBackStack() },
+                    onNavigateToChat   = { deviceId, deviceName ->
+                        navController.navigate(NavRoutes.chatScreen(deviceId, deviceName))
+                    }
+                )
         }
 
         // ── Emergency Dashboard ───────────────────────────────────────────────

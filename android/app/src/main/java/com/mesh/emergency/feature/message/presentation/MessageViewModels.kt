@@ -18,6 +18,8 @@ import com.mesh.emergency.data.local.entity.DbMessageType
 import com.mesh.emergency.feature.message.domain.ConversationSummary
 import com.mesh.emergency.feature.message.domain.Message
 import com.mesh.emergency.feature.message.domain.MessageRepository
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -101,6 +103,7 @@ class MessageListViewModel @Inject constructor(
 // ── Chat ViewModel ─────────────────────────────────────────────────────────────
 @HiltViewModel
 class ChatViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val messageRepository: MessageRepository,
     private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager,
     private val localDataSource: LocalDataSource,
@@ -222,6 +225,20 @@ class ChatViewModel @Inject constructor(
 
             val currentUser = localDataSource.getCurrentUser().firstOrNull()
             val localUserId = currentUser?.entityId?.takeIf { it.isNotBlank() } ?: "self"
+            // Dismiss Chat Head for this conversation when opened in the main app
+            try {
+                val removeIntent = android.content.Intent(
+                    context,
+                    com.mesh.emergency.core.overlay.ChatHeadService::class.java
+                ).apply {
+                    action = com.mesh.emergency.core.overlay.ChatHeadService.ACTION_REMOVE_HEAD
+                    putExtra(com.mesh.emergency.core.overlay.ChatHeadService.EXTRA_CONV_ID, id)
+                }
+                androidx.core.content.ContextCompat.startForegroundService(context, removeIntent)
+            } catch (e: Exception) {
+                // Ignore if service not active
+            }
+
             messageRepository.getMessagesForConversation(id).collect { msgs ->
                 val mappedMsgs = msgs.map { msg ->
                     msg.copy(isSelf = msg.senderId == localUserId || msg.senderId == "self")
