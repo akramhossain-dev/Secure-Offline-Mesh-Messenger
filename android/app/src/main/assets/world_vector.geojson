@@ -1,0 +1,116 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Asia Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [60.0, 5.0],
+          [145.0, 5.0],
+          [145.0, 55.0],
+          [60.0, 55.0],
+          [60.0, 5.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Europe Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-10.0, 35.0],
+          [40.0, 35.0],
+          [40.0, 70.0],
+          [-10.0, 70.0],
+          [-10.0, 35.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Africa Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-18.0, -35.0],
+          [51.0, -35.0],
+          [51.0, 37.0],
+          [-18.0, 37.0],
+          [-18.0, -35.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "North America Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-170.0, 15.0],
+          [-50.0, 15.0],
+          [-50.0, 75.0],
+          [-170.0, 75.0],
+          [-170.0, 15.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "South America Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-82.0, -56.0],
+          [-34.0, -56.0],
+          [-34.0, 13.0],
+          [-82.0, 13.0],
+          [-82.0, -56.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Bangladesh Country Boundary", "type": "country" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [88.01, 20.65],
+          [92.67, 20.65],
+          [92.67, 26.63],
+          [88.01, 26.63],
+          [88.01, 20.65]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Padma & Meghna River Network", "type": "river" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [88.50, 24.30],
+          [89.80, 23.80],
+          [90.60, 23.00],
+          [90.70, 22.20]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Dhaka Metropolis District", "type": "city" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [90.3200, 23.6800],
+          [90.5000, 23.6800],
+          [90.5000, 23.9000],
+          [90.3200, 23.9000],
+          [90.3200, 23.6800]
+        ]]
+      }
+    }
+  ]
+}

@@ -1,53 +1,21 @@
 {
   "version": 8,
-  "name": "Emergency Mesh Inbuilt Offline Map",
+  "name": "Full World Inbuilt Vector & Offline Hybrid Style",
   "center": [90.4125, 23.8103],
   "zoom": 12,
   "sources": {
-    "osm": {
+    "world_data": {
+      "type": "geojson",
+      "data": "asset://world_full.geojson"
+    },
+    "hd-base": {
       "type": "raster",
       "tiles": [
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"
       ],
-      "tileSize": 256,
-      "attribution": "&copy; OpenStreetMap contributors",
-      "maxzoom": 19
-    },
-    "mesh_grid": {
-      "type": "geojson",
-      "data": {
-        "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "properties": { "name": "Primary Emergency Route Alpha" },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [90.3800, 23.7900],
-                [90.4000, 23.8000],
-                [90.4200, 23.8150],
-                [90.4400, 23.8300]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "name": "Secondary Evacuation Highway" },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [90.3600, 23.8200],
-                [90.3900, 23.8100],
-                [90.4100, 23.7950],
-                [90.4500, 23.7800]
-              ]
-            }
-          }
-        ]
-      }
+      "tileSize": 512,
+      "maxzoom": 22
     }
   },
   "layers": [
@@ -55,28 +23,67 @@
       "id": "background",
       "type": "background",
       "paint": {
-        "background-color": "#0B0F19"
+        "background-color": "#0F172A"
       }
     },
     {
-      "id": "osm-tiles",
+      "id": "world-continents",
+      "type": "fill",
+      "source": "world_data",
+      "filter": ["==", "type", "continent"],
+      "paint": {
+        "fill-color": "#1E293B",
+        "fill-opacity": 1.0
+      }
+    },
+    {
+      "id": "world-countries",
+      "type": "fill",
+      "source": "world_data",
+      "filter": ["==", "type", "country"],
+      "paint": {
+        "fill-color": "#334155",
+        "fill-opacity": 0.95
+      }
+    },
+    {
+      "id": "world-districts",
+      "type": "fill",
+      "source": "world_data",
+      "filter": ["==", "type", "district"],
+      "paint": {
+        "fill-color": "#475569",
+        "fill-opacity": 0.9
+      }
+    },
+    {
+      "id": "world-rivers",
+      "type": "line",
+      "source": "world_data",
+      "filter": ["==", "type", "river"],
+      "paint": {
+        "line-color": "#38BDF8",
+        "line-width": 3.5
+      }
+    },
+    {
+      "id": "world-highways",
+      "type": "line",
+      "source": "world_data",
+      "filter": ["==", "type", "highway"],
+      "paint": {
+        "line-color": "#F59E0B",
+        "line-width": 2.5
+      }
+    },
+    {
+      "id": "hd-base-tiles",
       "type": "raster",
-      "source": "osm",
+      "source": "hd-base",
       "minzoom": 0,
-      "maxzoom": 19,
+      "maxzoom": 22,
       "paint": {
         "raster-opacity": 1.0
-      }
-    },
-    {
-      "id": "emergency_routes",
-      "type": "line",
-      "source": "mesh_grid",
-      "filter": ["==", "$type", "LineString"],
-      "paint": {
-        "line-color": "#00E5FF",
-        "line-width": 4,
-        "line-dasharray": [2, 1]
       }
     }
   ]

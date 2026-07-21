@@ -126,9 +126,7 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize()
             ) { paddingValues ->
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     // ── 1. MapLibre Native MapView Wrapper ────────────────────
                     MapLibreMapView(
@@ -136,6 +134,7 @@ fun MapScreen(
                         mapCenterLon = uiState.mapCenterLon,
                         zoomLevel = uiState.zoomLevel,
                         isAutoCentering = uiState.isAutoCentering,
+                        selectedMapStyle = uiState.selectedMapStyle,
                         visibleNodes = uiState.visibleNodes,
                         emergencyEvents = uiState.emergencyEvents,
                         resources = uiState.resources,
@@ -156,7 +155,8 @@ fun MapScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp, start = 12.dp, end = 12.dp),
+                            .statusBarsPadding()
+                            .padding(top = 8.dp, start = 12.dp, end = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Embedded Search Capsule with Back, Status, & Search
@@ -235,8 +235,7 @@ fun MapScreen(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clickable {
-                                                    viewModel.onMapMoved(result.latitude, result.longitude)
-                                                    viewModel.onSearchQueryChanged("")
+                                                    viewModel.selectSearchResult(result)
                                                 }
                                                 .padding(horizontal = 16.dp, vertical = 12.dp),
                                             horizontalArrangement = Arrangement.SpaceBetween
@@ -260,6 +259,11 @@ fun MapScreen(
                         // Layer Filters Toggle chips
                         LayerToggleRow(
                             layers = uiState.layers,
+                            selectedStyle = uiState.selectedMapStyle,
+                            onStyleToggle = {
+                                val nextStyle = if (uiState.selectedMapStyle == "SATELLITE") "STREET" else "SATELLITE"
+                                viewModel.switchMapStyle(nextStyle)
+                            },
                             onToggle = { id, vis -> viewModel.onLayerToggled(id, vis) }
                         )
 
@@ -293,7 +297,11 @@ fun MapScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp),
+                            .padding(
+                                start = 12.dp,
+                                end = 12.dp,
+                                bottom = paddingValues.calculateBottomPadding() + 8.dp
+                            ),
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         Column(
@@ -326,7 +334,20 @@ fun MapScreen(
                                     ) {
                                         Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(18.dp))
                                     }
-
+                                    FloatingActionButton(
+                                        onClick = {
+                                            val nextStyle = if (uiState.selectedMapStyle == "SATELLITE") "STREET" else "SATELLITE"
+                                            viewModel.switchMapStyle(nextStyle)
+                                        },
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(38.dp)
+                                    ) {
+                                        Text(
+                                            text = if (uiState.selectedMapStyle == "SATELLITE") "🗺️" else "🛰️",
+                                            style = MaterialTheme.typography.labelMedium
+                                        )
+                                    }
                                     FloatingActionButton(
                                         onClick = { viewModel.onMyLocationClicked() },
                                         containerColor = if (uiState.isAutoCentering) MeshThemeTokens.semanticColors.connected else Color.Black.copy(alpha = 0.75f),
@@ -365,12 +386,12 @@ fun MapScreen(
                                         )
                                         Column {
                                             Text(
-                                                text = "Inbuilt Offline Map",
+                                                text = if (uiState.selectedMapStyle == "SATELLITE") "Satellite Hybrid Map" else "Clean HD Street Map",
                                                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                                 color = Color.White
                                             )
                                             Text(
-                                                text = "Vector Mesh Map • Ready Offline",
+                                                text = if (uiState.selectedMapStyle == "SATELLITE") "Aerial Imagery & Labels • Active" else "Retina HD Vector/Raster • Active",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = Color.White.copy(alpha = 0.6f)
                                             )
@@ -473,31 +494,70 @@ fun MapScreen(
 @Composable
 private fun LayerToggleRow(
     layers: List<MapLayerModel>,
+    selectedStyle: String,
+    onStyleToggle: () -> Unit,
     onToggle: (String, Boolean) -> Unit
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
+        // 1. Style Chip (Satellite vs Street)
+        item {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (selectedStyle == "SATELLITE") MaterialTheme.colorScheme.primaryContainer else Color.Black.copy(alpha = 0.75f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onStyleToggle() }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Text(if (selectedStyle == "SATELLITE") "🛰️" else "🗺️")
+                    Text(
+                        text = if (selectedStyle == "SATELLITE") "Satellite" else "Streets",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (selectedStyle == "SATELLITE") MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+                    )
+                }
+            }
+        }
+
+        // 2. Layer Chips
         items(layers, key = { it.id }) { layer ->
-            FilterChip(
-                selected = layer.isVisible,
-                onClick = { onToggle(layer.id, !layer.isVisible) },
-                label = { Text(layer.name, style = MaterialTheme.typography.labelSmall, maxLines = 1) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = Color.Black.copy(alpha = 0.65f),
-                    labelColor = Color.White.copy(alpha = 0.9f)
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = layer.isVisible,
-                    borderColor = Color.White.copy(alpha = 0.2f),
-                    selectedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (layer.isVisible) MaterialTheme.colorScheme.secondaryContainer else Color.Black.copy(alpha = 0.75f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onToggle(layer.id, !layer.isVisible) }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = when (layer.id) {
+                            "nodes" -> "📡"
+                            "emergency" -> "🚨"
+                            "roads" -> "🛣️"
+                            else -> "📍"
+                        }
+                    )
+                    Text(
+                        text = layer.name,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (layer.isVisible) MaterialTheme.colorScheme.onSecondaryContainer else Color.White
+                    )
+                }
+            }
         }
     }
 }
@@ -532,6 +592,7 @@ private fun MapLibreMapView(
     mapCenterLon: Double,
     zoomLevel: Int,
     isAutoCentering: Boolean,
+    selectedMapStyle: String,
     visibleNodes: List<NodeDomainModel>,
     emergencyEvents: List<EmergencyEvent>,
     resources: List<ResourceDomainModel>,
@@ -570,13 +631,30 @@ private fun MapLibreMapView(
     var mapboxMapState by remember { mutableStateOf<org.maplibre.android.maps.MapLibreMap?>(null) }
 
     AndroidView(
-        factory = { mapView },
+        factory = { ctx ->
+            mapView.apply {
+                setOnTouchListener { v, event ->
+                    when (event.action) {
+                        android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> {
+                            v.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                        android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                            v.parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                    false
+                }
+            }
+        },
         modifier = modifier
     ) { view ->
         if (mapboxMapState == null) {
             view.getMapAsync { mapboxMap ->
                 mapboxMapState = mapboxMap
                 
+                mapboxMap.setMinZoomPreference(2.0)
+                mapboxMap.setMaxZoomPreference(20.0)
+
                 mapboxMap.uiSettings.isRotateGesturesEnabled = true
                 mapboxMap.uiSettings.isScrollGesturesEnabled = true
                 mapboxMap.uiSettings.isZoomGesturesEnabled = true
@@ -606,6 +684,15 @@ private fun MapLibreMapView(
                     true
                 }
             }
+        }
+    }
+
+    // Dynamic Style Switcher Updates
+    LaunchedEffect(selectedMapStyle) {
+        val map = mapboxMapState ?: return@LaunchedEffect
+        val styleFile = File(context.filesDir, "style.json")
+        if (styleFile.exists() && styleFile.length() > 0) {
+            map.setStyle(org.maplibre.android.maps.Style.Builder().fromUri("file://${styleFile.absolutePath}"))
         }
     }
 

@@ -129,7 +129,7 @@ fun AppShell(
 
     ModalNavigationDrawer(
         drawerState = drawerState,
-        gesturesEnabled = isTopLevelRoute,
+        gesturesEnabled = drawerState.isOpen || (isTopLevelRoute && currentRoute != "map"),
         drawerContent = {
             MeshNavigationDrawerSheet(
                 selectedRoute = currentRoute,

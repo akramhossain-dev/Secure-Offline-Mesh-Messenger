@@ -1,0 +1,201 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "Global Ocean", "type": "ocean" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-180.0, -90.0],
+          [180.0, -90.0],
+          [180.0, 90.0],
+          [-180.0, 90.0],
+          [-180.0, -90.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Asia Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [25.0, 5.0],
+          [145.0, 5.0],
+          [180.0, 75.0],
+          [25.0, 75.0],
+          [25.0, 5.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Europe Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-12.0, 35.0],
+          [45.0, 35.0],
+          [45.0, 72.0],
+          [-12.0, 72.0],
+          [-12.0, 35.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Africa Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-18.0, -35.0],
+          [51.0, -35.0],
+          [51.0, 37.0],
+          [-18.0, 37.0],
+          [-18.0, -35.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "North America Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-170.0, 15.0],
+          [-50.0, 15.0],
+          [-50.0, 75.0],
+          [-170.0, 75.0],
+          [-170.0, 15.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "South America Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-82.0, -56.0],
+          [-34.0, -56.0],
+          [-34.0, 13.0],
+          [-82.0, 13.0],
+          [-82.0, -56.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Australia Continent", "type": "continent" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [110.0, -45.0],
+          [155.0, -45.0],
+          [155.0, -10.0],
+          [110.0, -10.0],
+          [110.0, -45.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Bangladesh Country", "type": "country" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [88.01, 20.65],
+          [92.67, 20.65],
+          [92.67, 26.63],
+          [88.01, 26.63],
+          [88.01, 20.65]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "India Country", "type": "country" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [68.1, 8.0],
+          [88.0, 8.0],
+          [88.0, 35.5],
+          [68.1, 35.5],
+          [68.1, 8.0]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Dhaka Metropolis Grid", "type": "district" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [90.3000, 23.6500],
+          [90.5500, 23.6500],
+          [90.5500, 23.9500],
+          [90.3000, 23.9500],
+          [90.3000, 23.6500]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Chittagong Port Grid", "type": "district" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [91.7000, 22.2000],
+          [91.9000, 22.2000],
+          [91.9000, 22.4500],
+          [91.7000, 22.4500],
+          [91.7000, 22.2000]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Sylhet Valley Grid", "type": "district" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [91.7500, 24.7500],
+          [91.9500, 24.7500],
+          [91.9500, 24.9800],
+          [91.7500, 24.9800],
+          [91.7500, 24.7500]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Padma & Jamuna Rivers", "type": "river" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [88.50, 24.30],
+          [89.80, 23.80],
+          [90.40, 23.50],
+          [90.60, 23.00],
+          [90.70, 22.20]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Dhaka-Chittagong Grand Highway", "type": "highway" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [90.4125, 23.8103],
+          [90.4350, 23.7118],
+          [90.6000, 23.6000],
+          [91.1809, 23.4607],
+          [91.7832, 22.3569]
+        ]
+      }
+    }
+  ]
+}

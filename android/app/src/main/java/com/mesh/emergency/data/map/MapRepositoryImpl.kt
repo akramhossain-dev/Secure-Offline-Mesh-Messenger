@@ -34,21 +34,9 @@ class MapRepositoryImpl @Inject constructor(
 
     // ── LRU tile cache (max 100 tiles ≈ ~10 MB at 100 KB per tile) ────────────
     private val tileCache: LinkedHashMap<String, MapTileModel> = object :
-        LinkedHashMap<String, MapTileModel>(16, 0.75f, true) {
+        LinkedHashMap<String, MapTileModel>(128, 0.75f, true) {
         override fun removeEldestEntry(eldest: Map.Entry<String, MapTileModel>): Boolean {
-            val shouldEvict = size > MAX_CACHE_SIZE
-            if (shouldEvict) {
-                val tile = eldest.value
-                try {
-                    val file = getTileFile(tile.layerId, tile.zoom, tile.x, tile.y)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                } catch (e: Exception) {
-                    // Fail silently during initial initialization or tests
-                }
-            }
-            return shouldEvict
+            return size > MAX_CACHE_SIZE
         }
     }
 
@@ -183,6 +171,6 @@ class MapRepositoryImpl @Inject constructor(
     )
 
     companion object {
-        private const val MAX_CACHE_SIZE = 100
+        private const val MAX_CACHE_SIZE = 50000
     }
 }

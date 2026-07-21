@@ -87,13 +87,11 @@ class MapViewModel @Inject constructor(
     fun initStyleJson() {
         try {
             val styleFile = File(context.filesDir, "style.json")
-            val cacheDir = context.cacheDir.absolutePath
             val pmtilesFile = File(context.filesDir, "imported_map.pmtiles")
             val hasPmtiles = pmtilesFile.exists()
             _uiState.update { it.copy(isPmtilesLoaded = hasPmtiles) }
             
             val styleContent = if (hasPmtiles) {
-                // Vector style using local PMTiles source!
                 """
                 {
                   "version": 8,
@@ -109,7 +107,7 @@ class MapViewModel @Inject constructor(
                       "id": "background",
                       "type": "background",
                       "paint": {
-                        "background-color": "#1e293b"
+                        "background-color": "#0b132b"
                       }
                     },
                     {
@@ -130,27 +128,194 @@ class MapViewModel @Inject constructor(
                         "line-color": "#64748b",
                         "line-width": 1.5
                       }
-                    },
-                    {
-                      "id": "buildings",
-                      "type": "fill",
-                      "source": "openmaptiles",
-                      "source-layer": "building",
-                      "paint": {
-                        "fill-color": "#475569"
-                      }
                     }
                   ]
                 }
                 """.trimIndent()
             } else {
-                // Read fresh inbuilt offline map asset from app assets!
-                context.assets.open("style.json").bufferedReader().use { it.readText() }
+                val rawStyle = context.assets.open("style.json").bufferedReader().use { it.readText() }
+                val geoJsonData = try {
+                    context.assets.open("world_full.geojson").bufferedReader().use { it.readText() }
+                } catch (e: Exception) {
+                    "{\"type\":\"FeatureCollection\",\"features\":[]}"
+                }
+                rawStyle.replace("\"asset://world_full.geojson\"", geoJsonData)
             }
             styleFile.writeText(styleContent)
             timber.log.Timber.d("Generated style.json successfully at ${styleFile.absolutePath}")
         } catch (e: Exception) {
             timber.log.Timber.e(e, "Failed to write local style.json")
+        }
+    }
+
+    fun switchMapStyle(style: String) {
+        _uiState.update { it.copy(selectedMapStyle = style) }
+        try {
+            val styleFile = File(context.filesDir, "style.json")
+            val geoJsonData = try {
+                context.assets.open("world_full.geojson").bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                "{\"type\":\"FeatureCollection\",\"features\":[]}"
+            }
+            
+            val styleContent = if (style == "STREET") {
+                """
+                {
+                  "version": 8,
+                  "name": "StreetHDMap",
+                  "sources": {
+                    "world_data": {
+                      "type": "geojson",
+                      "data": $geoJsonData
+                    },
+                    "street-base": {
+                      "type": "raster",
+                      "tiles": [
+                        "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+                        "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png",
+                        "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png"
+                      ],
+                      "tileSize": 512,
+                      "maxzoom": 22
+                    }
+                  },
+                  "layers": [
+                    {
+                      "id": "background",
+                      "type": "background",
+                      "paint": { "background-color": "#0F172A" }
+                    },
+                    {
+                      "id": "world-continents",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "continent"],
+                      "paint": { "fill-color": "#1E293B", "fill-opacity": 1.0 }
+                    },
+                    {
+                      "id": "world-countries",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "country"],
+                      "paint": { "fill-color": "#334155", "fill-opacity": 0.95 }
+                    },
+                    {
+                      "id": "world-districts",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "district"],
+                      "paint": { "fill-color": "#475569", "fill-opacity": 0.9 }
+                    },
+                    {
+                      "id": "world-rivers",
+                      "type": "line",
+                      "source": "world_data",
+                      "filter": ["==", "type", "river"],
+                      "paint": { "line-color": "#38BDF8", "line-width": 3.5 }
+                    },
+                    {
+                      "id": "world-highways",
+                      "type": "line",
+                      "source": "world_data",
+                      "filter": ["==", "type", "highway"],
+                      "paint": { "line-color": "#F59E0B", "line-width": 2.5 }
+                    },
+                    {
+                      "id": "street-tiles",
+                      "type": "raster",
+                      "source": "street-base",
+                      "paint": { "raster-opacity": 1.0 }
+                    }
+                  ]
+                }
+                """.trimIndent()
+            } else {
+                """
+                {
+                  "version": 8,
+                  "name": "SatelliteHybridMap",
+                  "sources": {
+                    "world_data": {
+                      "type": "geojson",
+                      "data": $geoJsonData
+                    },
+                    "satellite": {
+                      "type": "raster",
+                      "tiles": [
+                        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                      ],
+                      "tileSize": 256,
+                      "maxzoom": 22
+                    },
+                    "labels": {
+                      "type": "raster",
+                      "tiles": [
+                        "https://basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
+                      ],
+                      "tileSize": 256,
+                      "maxzoom": 22
+                    }
+                  },
+                  "layers": [
+                    {
+                      "id": "background",
+                      "type": "background",
+                      "paint": { "background-color": "#0B0F19" }
+                    },
+                    {
+                      "id": "world-continents",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "continent"],
+                      "paint": { "fill-color": "#1E293B", "fill-opacity": 1.0 }
+                    },
+                    {
+                      "id": "world-countries",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "country"],
+                      "paint": { "fill-color": "#334155", "fill-opacity": 0.95 }
+                    },
+                    {
+                      "id": "world-districts",
+                      "type": "fill",
+                      "source": "world_data",
+                      "filter": ["==", "type", "district"],
+                      "paint": { "fill-color": "#475569", "fill-opacity": 0.9 }
+                    },
+                    {
+                      "id": "world-rivers",
+                      "type": "line",
+                      "source": "world_data",
+                      "filter": ["==", "type", "river"],
+                      "paint": { "line-color": "#38BDF8", "line-width": 3.5 }
+                    },
+                    {
+                      "id": "world-highways",
+                      "type": "line",
+                      "source": "world_data",
+                      "filter": ["==", "type", "highway"],
+                      "paint": { "line-color": "#F59E0B", "line-width": 2.5 }
+                    },
+                    {
+                      "id": "satellite-tiles",
+                      "type": "raster",
+                      "source": "satellite",
+                      "paint": { "raster-opacity": 1.0 }
+                    },
+                    {
+                      "id": "labels-overlay",
+                      "type": "raster",
+                      "source": "labels",
+                      "paint": { "raster-opacity": 0.95 }
+                    }
+                  ]
+                }
+                """.trimIndent()
+            }
+            styleFile.writeText(styleContent)
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to switch map style")
         }
     }
 
@@ -378,6 +543,11 @@ class MapViewModel @Inject constructor(
     }
 
     fun onLayerToggled(layerId: String, isVisible: Boolean) {
+        if (layerId == "base") {
+            val newStyle = if (_uiState.value.selectedMapStyle == "SATELLITE") "STREET" else "SATELLITE"
+            switchMapStyle(newStyle)
+            return
+        }
         mapProvider.setLayerVisible(layerId, isVisible)
         _uiState.update { state ->
             state.copy(
@@ -389,11 +559,11 @@ class MapViewModel @Inject constructor(
     }
 
     fun onZoomIn() {
-        _uiState.update { it.copy(zoomLevel = (it.zoomLevel + 1).coerceAtMost(17)) }
+        _uiState.update { it.copy(zoomLevel = (it.zoomLevel + 1).coerceAtMost(20), isAutoCentering = true) }
     }
 
     fun onZoomOut() {
-        _uiState.update { it.copy(zoomLevel = (it.zoomLevel - 1).coerceAtLeast(10)) }
+        _uiState.update { it.copy(zoomLevel = (it.zoomLevel - 1).coerceAtLeast(3), isAutoCentering = true) }
     }
 
     fun onSearchQueryChanged(query: String) {
@@ -406,7 +576,7 @@ class MapViewModel @Inject constructor(
         viewModelScope.launch {
             val results = mutableListOf<SearchResult>()
             // 1. Predefined places
-            results.addAll(defaultPlaces.filter { it.name.contains(query, ignoreCase = true) })
+            results.addAll(defaultPlaces.filter { it.name.contains(query, ignoreCase = true) || it.type.contains(query, ignoreCase = true) })
             
             // 2. Saved locations
             val savedResults = _uiState.value.savedLocations.filter {
@@ -422,6 +592,20 @@ class MapViewModel @Inject constructor(
             results.addAll(savedResults)
             
             _uiState.update { it.copy(searchResults = results, isSearching = true) }
+        }
+    }
+
+    fun selectSearchResult(result: SearchResult) {
+        _uiState.update { state ->
+            state.copy(
+                mapCenterLat = result.latitude,
+                mapCenterLon = result.longitude,
+                zoomLevel = 16,
+                isAutoCentering = true,
+                searchQuery = "",
+                isSearching = false,
+                searchResults = emptyList()
+            )
         }
     }
 
@@ -670,7 +854,36 @@ data class SearchResult(
     val longitude: Double
 )
 
-private val defaultPlaces = emptyList<SearchResult>()
+private val defaultPlaces = listOf(
+    SearchResult("Dhaka City", "Capital City", 23.8103, 90.4125),
+    SearchResult("Jatrabari", "City Hub", 23.7118, 90.4350),
+    SearchResult("Motijheel", "Financial District", 23.7330, 90.4172),
+    SearchResult("Dhanmondi", "Residential Area", 23.7461, 90.3742),
+    SearchResult("Gulshan", "Diplomatic Zone", 23.7925, 90.4078),
+    SearchResult("Banani", "Commercial Area", 23.7937, 90.4047),
+    SearchResult("Uttara", "Suburban Sector", 23.8759, 90.3795),
+    SearchResult("Mirpur", "Metro Hub", 23.8069, 90.3687),
+    SearchResult("Demra", "Industrial Area", 23.7081, 90.4950),
+    SearchResult("Matuail", "South Dhaka District", 23.7012, 90.4632),
+    SearchResult("Shyamoli", "Commercial District", 23.7772, 90.3755),
+    SearchResult("Sadarghat / Old Dhaka", "Port & Heritage Zone", 23.7099, 90.4071),
+    SearchResult("Chittagong (Chattogram)", "Port City", 22.3569, 91.7832),
+    SearchResult("Sylhet", "Divisional City", 24.8949, 91.8687),
+    SearchResult("Rajshahi", "Educational City", 24.3745, 88.6042),
+    SearchResult("Khulna", "Divisional City", 22.8456, 89.5403),
+    SearchResult("Barishal", "Divisional City", 22.7010, 90.3535),
+    SearchResult("Rangpur", "Divisional City", 25.7439, 89.2752),
+    SearchResult("Mymensingh", "Divisional City", 24.7471, 90.4203),
+    SearchResult("Cumilla", "City District", 23.4607, 91.1809),
+    SearchResult("Cox's Bazar", "Coastal Tourism Hub", 21.4272, 92.0058),
+    SearchResult("Mugda Medical College & Hospital", "Emergency Medical Center", 23.7289, 90.4285),
+    SearchResult("Dhaka Medical College Hospital", "Primary Trauma Center", 23.7260, 90.3976),
+    SearchResult("Square Hospital", "Medical Center", 23.7531, 90.3816),
+    SearchResult("United Hospital Gulshan", "Medical Center", 23.7978, 90.4162),
+    SearchResult("Matuail Emergency Shelter", "Disaster Rescue Center", 23.7025, 90.4650),
+    SearchResult("Central Police HQ", "Emergency Services", 23.7388, 90.4150),
+    SearchResult("Fire Service & Civil Defence HQ", "Emergency Response", 23.7214, 90.4061)
+)
 
 data class MapUiState(
     val isLoading: Boolean = false,
@@ -692,5 +905,6 @@ data class MapUiState(
     val searchQuery: String = "",
     val searchResults: List<SearchResult> = emptyList(),
     val isSearching: Boolean = false,
-    val isPmtilesLoaded: Boolean = false
+    val isPmtilesLoaded: Boolean = false,
+    val selectedMapStyle: String = "SATELLITE"
 )
