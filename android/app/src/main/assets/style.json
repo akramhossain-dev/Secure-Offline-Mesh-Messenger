@@ -1,0 +1,83 @@
+{
+  "version": 8,
+  "name": "Emergency Mesh Inbuilt Offline Map",
+  "center": [90.4125, 23.8103],
+  "zoom": 12,
+  "sources": {
+    "osm": {
+      "type": "raster",
+      "tiles": [
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      ],
+      "tileSize": 256,
+      "attribution": "&copy; OpenStreetMap contributors",
+      "maxzoom": 19
+    },
+    "mesh_grid": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": { "name": "Primary Emergency Route Alpha" },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [90.3800, 23.7900],
+                [90.4000, 23.8000],
+                [90.4200, 23.8150],
+                [90.4400, 23.8300]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": { "name": "Secondary Evacuation Highway" },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [90.3600, 23.8200],
+                [90.3900, 23.8100],
+                [90.4100, 23.7950],
+                [90.4500, 23.7800]
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#0B0F19"
+      }
+    },
+    {
+      "id": "osm-tiles",
+      "type": "raster",
+      "source": "osm",
+      "minzoom": 0,
+      "maxzoom": 19,
+      "paint": {
+        "raster-opacity": 1.0
+      }
+    },
+    {
+      "id": "emergency_routes",
+      "type": "line",
+      "source": "mesh_grid",
+      "filter": ["==", "$type", "LineString"],
+      "paint": {
+        "line-color": "#00E5FF",
+        "line-width": 4,
+        "line-dasharray": [2, 1]
+      }
+    }
+  ]
+}

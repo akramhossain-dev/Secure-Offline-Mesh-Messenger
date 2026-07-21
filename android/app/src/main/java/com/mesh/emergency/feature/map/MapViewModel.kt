@@ -144,41 +144,8 @@ class MapViewModel @Inject constructor(
                 }
                 """.trimIndent()
             } else {
-                // Raster style using local slippy map png tiles!
-                """
-                {
-                  "version": 8,
-                  "name": "OfflineRasterStyle",
-                  "sources": {
-                    "base": {
-                      "type": "raster",
-                      "tiles": [
-                        "file://${cacheDir}/map_tiles/base/{z}/{x}/{y}.png"
-                      ],
-                      "tileSize": 256,
-                      "minzoom": 10,
-                      "maxzoom": 17
-                    }
-                  },
-                  "layers": [
-                    {
-                      "id": "background",
-                      "type": "background",
-                      "paint": {
-                        "background-color": "#090D1A"
-                      }
-                    },
-                    {
-                      "id": "base-tiles",
-                      "type": "raster",
-                      "source": "base",
-                      "paint": {
-                        "raster-opacity": 0.9
-                      }
-                    }
-                  ]
-                }
-                """.trimIndent()
+                // Read fresh inbuilt offline map asset from app assets!
+                context.assets.open("style.json").bufferedReader().use { it.readText() }
             }
             styleFile.writeText(styleContent)
             timber.log.Timber.d("Generated style.json successfully at ${styleFile.absolutePath}")
@@ -298,19 +265,52 @@ class MapViewModel @Inject constructor(
         }
     }
 
+    @android.annotation.SuppressLint("MissingPermission")
     fun onMyLocationClicked() {
-        _uiState.update { state ->
-            val cur = state.currentLocation
-            if (cur != null) {
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager
+        var lastLoc: LocationData? = _uiState.value.currentLocation
+        if (lastLoc == null && lm != null) {
+            val providers = listOf(
+                android.location.LocationManager.GPS_PROVIDER,
+                android.location.LocationManager.NETWORK_PROVIDER,
+                android.location.LocationManager.PASSIVE_PROVIDER
+            )
+            for (p in providers) {
+                try {
+                    if (lm.isProviderEnabled(p)) {
+                        val loc = lm.getLastKnownLocation(p)
+                        if (loc != null) {
+                            lastLoc = LocationData(
+                                id = java.util.UUID.randomUUID().toString(),
+                                latitude = loc.latitude,
+                                longitude = loc.longitude,
+                                altitude = loc.altitude,
+                                accuracy = loc.accuracy,
+                                timestamp = loc.time,
+                                provider = loc.provider ?: "gps",
+                                deviceId = deviceFingerprintProvider.getDeviceFingerprint()
+                            )
+                            break
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
+        if (lastLoc != null) {
+            val targetLat = lastLoc.latitude
+            val targetLon = lastLoc.longitude
+            _uiState.update { state ->
                 state.copy(
-                    mapCenterLat = cur.latitude,
-                    mapCenterLon = cur.longitude,
-                    zoomLevel = 15,
+                    currentLocation = lastLoc,
+                    mapCenterLat = targetLat,
+                    mapCenterLon = targetLon,
+                    zoomLevel = 16,
                     isAutoCentering = true
                 )
-            } else {
-                state.copy(isAutoCentering = true)
             }
+        } else {
+            _uiState.update { it.copy(isAutoCentering = true) }
         }
     }
 

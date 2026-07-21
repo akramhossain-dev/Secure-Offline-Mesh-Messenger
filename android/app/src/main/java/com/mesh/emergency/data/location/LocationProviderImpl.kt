@@ -75,6 +75,20 @@ class LocationProviderImpl @Inject constructor(
         val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
         var registeredCount = 0
 
+        // Emit last known location immediately if available
+        for (provider in providers) {
+            if (lm.isProviderEnabled(provider)) {
+                try {
+                    val last = lm.getLastKnownLocation(provider)
+                    if (last != null) {
+                        lastLocation.value = last
+                        trySend(Result.Success(last.toLocationData()))
+                        break
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
         for (provider in providers) {
             if (lm.isProviderEnabled(provider)) {
                 try {

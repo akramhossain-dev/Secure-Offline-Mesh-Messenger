@@ -152,58 +152,27 @@ fun MapScreen(
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // ── 2. Floating Google Maps inspired Search capsule ───────
+                    // ── 2. Floating Header & Search Capsule ────────────────────
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                            .padding(top = 12.dp, start = 12.dp, end = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                        // Embedded Search Capsule with Back, Status, & Search
+                        Surface(
+                            shape = RoundedCornerShape(28.dp),
+                            color = Color.Black.copy(alpha = 0.75f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                            shadowElevation = 6.dp,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "OFFLINE MESSENGER MAP",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
-                            
-                            val statusText = if (uiState.isPmtilesLoaded) "PMTiles Vector Map (Offline)" else "Cached Raster Tiles (Offline)"
-                            val statusColor = if (uiState.isPmtilesLoaded) MeshThemeTokens.semanticColors.connected else MeshThemeTokens.semanticColors.warning
-                            
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = statusColor.copy(alpha = 0.2f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.5f)),
-                                modifier = Modifier.padding(bottom = 2.dp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .clip(CircleShape)
-                                            .background(statusColor)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = statusText,
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = Color.White
-                                    )
-                                }
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = uiState.searchQuery,
-                            onValueChange = { viewModel.onSearchQueryChanged(it) },
-                            placeholder = { Text("Search offline places...", color = Color.White.copy(alpha = 0.6f)) },
-                            leadingIcon = {
                                 IconButton(onClick = onBack) {
                                     Icon(
                                         Icons.AutoMirrored.Default.ArrowBack,
@@ -211,34 +180,43 @@ fun MapScreen(
                                         tint = Color.White
                                     )
                                 }
-                            },
-                            trailingIcon = {
-                                Row {
-                                    if (uiState.searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
-                                            Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.White)
+
+                                androidx.compose.foundation.text.BasicTextField(
+                                    value = uiState.searchQuery,
+                                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                                    singleLine = true,
+                                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                    decorationBox = { innerTextField ->
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            if (uiState.searchQuery.isEmpty()) {
+                                                Text(
+                                                    "Search offline places...",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = Color.White.copy(alpha = 0.5f)
+                                                )
+                                            }
+                                            innerTextField()
                                         }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.White.copy(alpha = 0.7f))
                                     }
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = Color.White,
-                                        modifier = Modifier.padding(end = 12.dp, top = 12.dp)
+                                } else {
+                                    val statusColor = if (uiState.isPmtilesLoaded) MeshThemeTokens.semanticColors.connected else MeshThemeTokens.semanticColors.warning
+                                    Box(
+                                        modifier = Modifier
+                                            .padding(end = 8.dp)
+                                            .size(8.dp)
+                                            .clip(CircleShape)
+                                            .background(statusColor)
                                     )
                                 }
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(28.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.Black.copy(alpha = 0.75f),
-                                unfocusedContainerColor = Color.Black.copy(alpha = 0.65f),
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.2f)
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                            }
+                        }
 
                         // Autocomplete Search Results dropdown list
                         if (uiState.isSearching && uiState.searchResults.isNotEmpty()) {
@@ -311,128 +289,106 @@ fun MapScreen(
                         }
                     }
 
-                    // ── 3. Bottom Controls Panel overlay ──────────────────────
+                    // ── 3. Bottom Controls & Action Bar Overlay ───────────────
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(16.dp),
+                            .padding(12.dp),
                         contentAlignment = Alignment.BottomCenter
                     ) {
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
+                            // Bottom Right: Camera Zoom & Location FABs
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.Bottom
+                                horizontalArrangement = Arrangement.End
                             ) {
-                                // Bottom Left Action Panel
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    // Local import database file trigger
-                                    Button(
-                                        onClick = { importLauncher.launch(arrayOf("*/*")) },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.tertiary,
-                                            contentColor = Color.White
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Import Map", style = MaterialTheme.typography.labelSmall)
-                                    }
-
-                                    // Share coordinates trigger
-                                    Button(
-                                        onClick = { viewModel.shareCurrentLocation() },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.secondary,
-                                            contentColor = Color.White
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                                    ) {
-                                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(14.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text("Share Location", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-
-                                // Bottom Right: Camera zoom and orientation FAB column
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
                                     horizontalAlignment = Alignment.End
                                 ) {
-                                    // Zoom In FAB
                                     FloatingActionButton(
                                         onClick = { viewModel.onZoomIn() },
-                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        containerColor = Color.Black.copy(alpha = 0.75f),
                                         contentColor = Color.White,
-                                        modifier = Modifier.size(40.dp)
+                                        modifier = Modifier.size(38.dp)
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = "Zoom In")
+                                        Icon(Icons.Default.Add, contentDescription = "Zoom In", modifier = Modifier.size(18.dp))
                                     }
-                                    // Zoom Out FAB
+
                                     FloatingActionButton(
                                         onClick = { viewModel.onZoomOut() },
-                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        containerColor = Color.Black.copy(alpha = 0.75f),
                                         contentColor = Color.White,
-                                        modifier = Modifier.size(40.dp)
+                                        modifier = Modifier.size(38.dp)
                                     ) {
-                                        Icon(Icons.Default.Remove, contentDescription = "Zoom Out")
+                                        Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(18.dp))
                                     }
-                                    // Re-center / Follow My Location
+
                                     FloatingActionButton(
                                         onClick = { viewModel.onMyLocationClicked() },
-                                        containerColor = if (uiState.isAutoCentering) MeshThemeTokens.semanticColors.connected else Color.Black.copy(alpha = 0.65f),
+                                        containerColor = if (uiState.isAutoCentering) MeshThemeTokens.semanticColors.connected else Color.Black.copy(alpha = 0.75f),
                                         contentColor = if (uiState.isAutoCentering) Color.Black else Color.White,
-                                        modifier = Modifier.size(40.dp)
+                                        modifier = Modifier.size(38.dp)
                                     ) {
-                                        Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+                                        Icon(Icons.Default.MyLocation, contentDescription = "My Location", modifier = Modifier.size(18.dp))
                                     }
                                 }
                             }
 
-                            // Storage display & download/management bottom card
-                            GlassPanel(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = 12.dp
+                            // Inbuilt Offline Map Status & Location Bar
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.Black.copy(alpha = 0.85f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                shadowElevation = 8.dp,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
-                                        Text(
-                                            text = "Offline Storage Map System",
-                                            fontWeight = FontWeight.Bold,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = Color.White
-                                        )
-                                        Text(
-                                            text = "Cached tiles: ${uiState.offlineCacheSize} (${String.format("%.2f", uiState.offlineCacheSize * 0.015)} MB)",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.White.copy(alpha = 0.7f)
-                                        )
-                                    }
                                     Row(
+                                        verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        IconButton(
-                                            onClick = { viewModel.downloadMapArea() },
-                                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                                        ) {
-                                            Icon(Icons.Default.Download, contentDescription = "Download Region", tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .clip(CircleShape)
+                                                .background(MeshThemeTokens.semanticColors.connected)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Inbuilt Offline Map",
+                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = Color.White
+                                            )
+                                            Text(
+                                                text = "Vector Mesh Map • Ready Offline",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.White.copy(alpha = 0.6f)
+                                            )
                                         }
-                                        IconButton(
-                                            onClick = { viewModel.deleteOfflineMap() },
-                                            colors = IconButtonDefaults.iconButtonColors(containerColor = Color.Red.copy(alpha = 0.2f))
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Clear Cache", tint = Color.Red)
-                                        }
+                                    }
+
+                                    Button(
+                                        onClick = { viewModel.shareCurrentLocation() },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(Modifier.width(4.dp))
+                                        Text("Share Location", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
                                     }
                                 }
                             }
@@ -521,18 +477,19 @@ private fun LayerToggleRow(
 ) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         items(layers, key = { it.id }) { layer ->
             FilterChip(
                 selected = layer.isVisible,
                 onClick = { onToggle(layer.id, !layer.isVisible) },
-                label = { Text(layer.name, style = MaterialTheme.typography.labelSmall) },
+                label = { Text(layer.name, style = MaterialTheme.typography.labelSmall, maxLines = 1) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                     selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = Color.Black.copy(alpha = 0.5f),
-                    labelColor = Color.White.copy(alpha = 0.8f)
+                    containerColor = Color.Black.copy(alpha = 0.65f),
+                    labelColor = Color.White.copy(alpha = 0.9f)
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
@@ -620,16 +577,27 @@ private fun MapLibreMapView(
             view.getMapAsync { mapboxMap ->
                 mapboxMapState = mapboxMap
                 
+                mapboxMap.uiSettings.isRotateGesturesEnabled = true
+                mapboxMap.uiSettings.isScrollGesturesEnabled = true
+                mapboxMap.uiSettings.isZoomGesturesEnabled = true
+                mapboxMap.uiSettings.isTiltGesturesEnabled = true
+                mapboxMap.uiSettings.isCompassEnabled = true
+                mapboxMap.uiSettings.isAttributionEnabled = false
+
                 val styleFile = File(context.filesDir, "style.json")
-                if (styleFile.exists()) {
+                if (styleFile.exists() && styleFile.length() > 0) {
                     mapboxMap.setStyle(org.maplibre.android.maps.Style.Builder().fromUri("file://${styleFile.absolutePath}"))
+                } else {
+                    mapboxMap.setStyle(org.maplibre.android.maps.Style.Builder().fromUri("https://demotiles.maplibre.org/style.json"))
                 }
                 
-                mapboxMap.addOnCameraMoveListener {
-                    val cameraPos = mapboxMap.cameraPosition
-                    val target = cameraPos?.target
-                    if (target != null) {
-                        onMapMoved(target.latitude, target.longitude)
+                mapboxMap.addOnCameraMoveStartedListener { reason ->
+                    if (reason == org.maplibre.android.maps.MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) {
+                        val cameraPos = mapboxMap.cameraPosition
+                        val target = cameraPos?.target
+                        if (target != null) {
+                            onMapMoved(target.latitude, target.longitude)
+                        }
                     }
                 }
 
@@ -641,22 +609,16 @@ private fun MapLibreMapView(
         }
     }
 
-    // Dynamic Camera Tracking Updates
+    // Dynamic Camera Tracking Updates - ONLY animate camera when auto-centering is triggered
     LaunchedEffect(mapCenterLat, mapCenterLon, zoomLevel, isAutoCentering) {
         val map = mapboxMapState ?: return@LaunchedEffect
-        val currentCamera = map.cameraPosition ?: return@LaunchedEffect
-        val target = currentCamera.target ?: return@LaunchedEffect
-        val distance = Math.abs(target.latitude - mapCenterLat) + Math.abs(target.longitude - mapCenterLon)
-        val currentZoom = currentCamera.zoom.toDouble()
-        val isDifferentZoom = Math.abs(currentZoom - zoomLevel.toDouble()) > 0.1
-        
-        if (distance > 0.0001 || isDifferentZoom) {
+        if (isAutoCentering) {
             map.animateCamera(
                 org.maplibre.android.camera.CameraUpdateFactory.newLatLngZoom(
                     org.maplibre.android.geometry.LatLng(mapCenterLat, mapCenterLon),
                     zoomLevel.toDouble()
                 ),
-                800
+                600
             )
         }
     }
@@ -666,12 +628,13 @@ private fun MapLibreMapView(
         val map = mapboxMapState ?: return@LaunchedEffect
         map.clear()
         
-        // 1. Me location
+        // 1. Real GPS User Location
         if (currentLocation != null) {
             map.addMarker(
                 org.maplibre.android.annotations.MarkerOptions()
                     .position(org.maplibre.android.geometry.LatLng(currentLocation.latitude, currentLocation.longitude))
-                    .title("Me (Current)")
+                    .title("📍 My Real Location")
+                    .snippet("Lat: ${String.format("%.4f", currentLocation.latitude)}, Lon: ${String.format("%.4f", currentLocation.longitude)}")
             )
         }
 
