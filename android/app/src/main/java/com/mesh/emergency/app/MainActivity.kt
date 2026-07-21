@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
             permissionsList.add(android.Manifest.permission.POST_NOTIFICATIONS)
         }
         requestPermissionLauncher.launch(permissionsList.toTypedArray())
+
         // Install splash screen before super.onCreate()
         installSplashScreen()
         org.maplibre.android.MapLibre.getInstance(this)
@@ -128,4 +129,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
 }
+

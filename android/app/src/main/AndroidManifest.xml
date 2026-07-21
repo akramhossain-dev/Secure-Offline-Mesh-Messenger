@@ -34,8 +34,11 @@
     <!-- Foreground Service & Battery Optimization Permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
 
     <!-- Internet Permission (Online fallback for map tiles retrieval) -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -77,6 +80,23 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- ── Direct Reply Broadcast Receiver ──────────────────────────── -->
+        <receiver
+            android:name=".core.notification.DirectReplyReceiver"
+            android:exported="false" />
+
+        <!-- ── Chat Head Floating Overlay System Service ────────────────── -->
+        <service
+            android:name=".core.system.ChatHeadService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Displays floating chat head avatars over other apps for mesh messaging" />
+        </service>
+
 
         <!-- Disable WorkManager default initializer for Hilt Worker Injection -->
         <provider

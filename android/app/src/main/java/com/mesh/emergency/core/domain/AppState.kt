@@ -26,6 +26,14 @@ data class AppState(
     val connectedNodeCount: Int = 0,
     val activeTransport: String = "NONE",
     val isInitialized: Boolean = false,
+
+    // ── Notification & Overlay Preferences ──────────────────────────────────
+    val chatHeadsEnabled: Boolean = true,
+    val bubblesEnabled: Boolean = true,
+    val floatingChatEnabled: Boolean = true,
+    val soundEnabled: Boolean = true,
+    val vibrationEnabled: Boolean = true,
+    val popupPreviewEnabled: Boolean = true
 )
 
 /**
@@ -38,4 +46,12 @@ interface AppStateRepository {
     fun updateConnectionStatus(isOnline: Boolean, transport: String, nodeCount: Int)
     fun updateBattery(level: Float, isCharging: Boolean)
     fun setActiveSos(active: Boolean)
+
+    // Notification Preference Updaters
+    suspend fun setChatHeadsEnabled(enabled: Boolean)
+    suspend fun setBubblesEnabled(enabled: Boolean)
+    suspend fun setFloatingChatEnabled(enabled: Boolean)
+    suspend fun setSoundEnabled(enabled: Boolean)
+    suspend fun setVibrationEnabled(enabled: Boolean)
+    suspend fun setPopupPreviewEnabled(enabled: Boolean)
 }

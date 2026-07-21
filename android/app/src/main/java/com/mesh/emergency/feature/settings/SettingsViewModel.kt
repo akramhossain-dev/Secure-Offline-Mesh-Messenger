@@ -26,7 +26,15 @@ data class SettingsUiState(
     val debugModeEnabled: Boolean = false,
     val encryptionEnabled: Boolean = true,
     val storageUsageMb: Float = 0f,
-    val appVersion: String = "0.1.0-debug"
+    val appVersion: String = "0.1.0-debug",
+
+    // Notification & Overlay Settings
+    val chatHeadsEnabled: Boolean = true,
+    val bubblesEnabled: Boolean = true,
+    val floatingChatEnabled: Boolean = true,
+    val soundEnabled: Boolean = true,
+    val vibrationEnabled: Boolean = true,
+    val popupPreviewEnabled: Boolean = true
 ) : BaseUiState
 
 // ── Events ────────────────────────────────────────────────────────────────────
@@ -36,6 +44,14 @@ sealed interface SettingsUiEvent : BaseUiEvent {
     data class ToggleDebugMode(val enabled: Boolean) : SettingsUiEvent
     data object ClearLogs : SettingsUiEvent
     
+    // Notification & Chat Heads controls
+    data class ToggleChatHeads(val enabled: Boolean) : SettingsUiEvent
+    data class ToggleBubbles(val enabled: Boolean) : SettingsUiEvent
+    data class ToggleFloatingChat(val enabled: Boolean) : SettingsUiEvent
+    data class ToggleSound(val enabled: Boolean) : SettingsUiEvent
+    data class ToggleVibration(val enabled: Boolean) : SettingsUiEvent
+    data class TogglePopupPreview(val enabled: Boolean) : SettingsUiEvent
+
     // Privacy controls (A34.8)
     data object ClearLocalData : SettingsUiEvent
     data object DeleteAllMessages : SettingsUiEvent
@@ -64,7 +80,18 @@ class SettingsViewModel @Inject constructor(
     private fun observeAppState() {
         viewModelScope.launch {
             appStateRepository.appState.collect { state ->
-                updateState { copy(themeMode = state.themeMode, languageCode = state.languageCode) }
+                updateState {
+                    copy(
+                        themeMode = state.themeMode,
+                        languageCode = state.languageCode,
+                        chatHeadsEnabled = state.chatHeadsEnabled,
+                        bubblesEnabled = state.bubblesEnabled,
+                        floatingChatEnabled = state.floatingChatEnabled,
+                        soundEnabled = state.soundEnabled,
+                        vibrationEnabled = state.vibrationEnabled,
+                        popupPreviewEnabled = state.popupPreviewEnabled
+                    )
+                }
             }
         }
     }
@@ -85,6 +112,36 @@ class SettingsViewModel @Inject constructor(
             }
             is SettingsUiEvent.ToggleDebugMode -> {
                 updateState { copy(debugModeEnabled = event.enabled) }
+            }
+            is SettingsUiEvent.ToggleChatHeads -> {
+                viewModelScope.launch {
+                    appStateRepository.setChatHeadsEnabled(event.enabled)
+                }
+            }
+            is SettingsUiEvent.ToggleBubbles -> {
+                viewModelScope.launch {
+                    appStateRepository.setBubblesEnabled(event.enabled)
+                }
+            }
+            is SettingsUiEvent.ToggleFloatingChat -> {
+                viewModelScope.launch {
+                    appStateRepository.setFloatingChatEnabled(event.enabled)
+                }
+            }
+            is SettingsUiEvent.ToggleSound -> {
+                viewModelScope.launch {
+                    appStateRepository.setSoundEnabled(event.enabled)
+                }
+            }
+            is SettingsUiEvent.ToggleVibration -> {
+                viewModelScope.launch {
+                    appStateRepository.setVibrationEnabled(event.enabled)
+                }
+            }
+            is SettingsUiEvent.TogglePopupPreview -> {
+                viewModelScope.launch {
+                    appStateRepository.setPopupPreviewEnabled(event.enabled)
+                }
             }
             SettingsUiEvent.ClearLogs -> {
                 viewModelScope.launch {

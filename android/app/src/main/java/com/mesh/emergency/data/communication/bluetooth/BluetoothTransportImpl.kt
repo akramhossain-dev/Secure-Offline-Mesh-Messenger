@@ -1623,9 +1623,31 @@ class BluetoothTransportImpl @Inject constructor(
                     status = "ACTIVE"
                 )
                 notificationManager.showNotification(alert)
+
+                // ── Launch floating Chat Head if overlay permission granted ──
+                try {
+                    if (android.provider.Settings.canDrawOverlays(context)) {
+                        val convId = if (isGlobal) "global" else sourceId
+                        val headIntent = android.content.Intent(
+                            context,
+                            com.mesh.emergency.core.system.ChatHeadService::class.java
+                        ).apply {
+                            action = com.mesh.emergency.core.system.ChatHeadService.ACTION_SHOW_HEAD
+                            putExtra(com.mesh.emergency.core.system.ChatHeadService.EXTRA_CONV_ID, convId)
+                            putExtra(com.mesh.emergency.core.system.ChatHeadService.EXTRA_LABEL, senderName)
+                        }
+                        androidx.core.content.ContextCompat.startForegroundService(context, headIntent)
+                        Timber.d("CHAT_HEAD_TRIGGER — convId=$convId sender=$senderName")
+                    } else {
+                        Timber.w("CHAT_HEAD_SKIP — canDrawOverlays=false, overlay permission not granted")
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "CHAT_HEAD_ERROR — failed to start ChatHeadService")
+                }
             }
         }
     }
+
 
     private fun playReceiveSound() {
         try {

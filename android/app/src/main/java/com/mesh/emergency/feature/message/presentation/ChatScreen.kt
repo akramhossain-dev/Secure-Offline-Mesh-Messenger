@@ -287,7 +287,7 @@ fun ChatScreen(
                             verticalArrangement = Arrangement.spacedBy(spacing.xs),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
+                            itemsIndexed(uiState.messages, key = { index, message -> if (message.id.isNotBlank()) message.id else "private_msg_$index" }) { index, message ->
                                 val showDateSeparator = index == 0 || !com.mesh.emergency.core.utils.DateUtils.isSameDay(
                                     uiState.messages[index - 1].timestamp,
                                     message.timestamp

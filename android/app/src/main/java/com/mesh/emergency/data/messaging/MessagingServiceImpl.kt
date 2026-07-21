@@ -17,10 +17,17 @@ import com.mesh.emergency.data.local.entity.DbMessageType
 import com.mesh.emergency.data.local.entity.GlobalMessageEntity
 import com.mesh.emergency.data.local.entity.MessageEntity
 import com.mesh.emergency.data.local.entity.ConversationEntity
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import androidx.core.content.ContextCompat
+import com.mesh.emergency.core.domain.AppStateRepository
 import com.mesh.emergency.core.notification.AlertModel
 import com.mesh.emergency.core.notification.AlertPriority
 import com.mesh.emergency.core.notification.AlertType
 import com.mesh.emergency.core.notification.NotificationManager
+import com.mesh.emergency.core.system.ChatHeadService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -50,9 +57,11 @@ import javax.inject.Singleton
  */
 @Singleton
 class MessagingServiceImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val communicationManager: CommunicationManager,
     private val localDataSource: LocalDataSource,
-    private val notificationManager: NotificationManager
+    private val notificationManager: NotificationManager,
+    private val appStateRepository: AppStateRepository
 ) : MessagingService {
 
     private val scope = CoroutineScope(Dispatchers.IO)
@@ -355,7 +364,7 @@ class MessagingServiceImpl @Inject constructor(
 
                         Timber.d("MESSAGE STORED — type=GCHAT id=$msgId")
 
-                        // Show system notification for incoming global messages from peers
+                        // Show system notification & Chat Head for incoming global messages from peers
                         val currentUser = localDataSource.getCurrentUser().firstOrNull()
                         val localUserId = currentUser?.entityId ?: "self"
                         if (senderId != localUserId) {
@@ -370,6 +379,22 @@ class MessagingServiceImpl @Inject constructor(
                                 status = "ACTIVE"
                             )
                             notificationManager.showNotification(alert)
+
+                            // Trigger floating Chat Head if overlay permission is granted and Chat Heads enabled
+                            val canDraw = Settings.canDrawOverlays(context)
+                            val headsOn = appStateRepository.appState.value.chatHeadsEnabled
+                            Timber.d("CHAT_HEAD_CHECK — canDrawOverlays=$canDraw chatHeadsEnabled=$headsOn sender=$senderId local=$localUserId")
+                            if (canDraw && headsOn) {
+                                Timber.d("CHAT_HEAD_TRIGGER — launching ChatHeadService convId=global")
+                                val headIntent = Intent(context, ChatHeadService::class.java).apply {
+                                    action = ChatHeadService.ACTION_SHOW_HEAD
+                                    putExtra(ChatHeadService.EXTRA_CONV_ID, "global")
+                                    putExtra(ChatHeadService.EXTRA_LABEL, "Global: $senderName")
+                                }
+                                ContextCompat.startForegroundService(context, headIntent)
+                            } else {
+                                Timber.w("CHAT_HEAD_SKIP — canDraw=$canDraw headsOn=$headsOn → no floating head shown")
+                            }
                         }
 
                         _incomingMessages.tryEmit(
@@ -499,7 +524,7 @@ class MessagingServiceImpl @Inject constructor(
 
                             Timber.d("MESSAGE STORED — type=MSG id=$msgId conversationId=$senderId")
 
-                            // Show system notification for private message from peer
+                            // Show system notification & Chat Head for private message from peer
                             if (senderId != localUserId) {
                                 val alert = AlertModel(
                                     id = msgId,
@@ -512,6 +537,16 @@ class MessagingServiceImpl @Inject constructor(
                                     status = "ACTIVE"
                                 )
                                 notificationManager.showNotification(alert)
+
+                                // Trigger floating Chat Head if overlay permission is granted and Chat Heads enabled
+                                if (Settings.canDrawOverlays(context) && appStateRepository.appState.value.chatHeadsEnabled) {
+                                    val headIntent = Intent(context, ChatHeadService::class.java).apply {
+                                        action = ChatHeadService.ACTION_SHOW_HEAD
+                                        putExtra(ChatHeadService.EXTRA_CONV_ID, senderId)
+                                        putExtra(ChatHeadService.EXTRA_LABEL, senderName)
+                                    }
+                                    ContextCompat.startForegroundService(context, headIntent)
+                                }
                             }
 
                             _incomingMessages.tryEmit(

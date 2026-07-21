@@ -129,6 +129,117 @@ fun SettingsScreen(
                     }
                 }
 
+                // ── Notifications & Chat Heads ─────────────────────────────
+                item { SettingsSectionHeader("Notifications & Chat Heads") }
+                item {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    GlassPanel(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(spacing.sm)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Enable Chat Heads Overlay", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Facebook Messenger-style floating avatar overlays over other apps", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.chatHeadsEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.ToggleChatHeads(it)) }
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Enable Android Bubble Chat", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Show system notification bubbles on Android 11+", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.bubblesEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.ToggleBubbles(it)) }
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Enable Floating Chat / Direct Reply", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Allow inline replies directly from notification banner", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.floatingChatEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.ToggleFloatingChat(it)) }
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Notification Sound", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Play alert tone for incoming messages", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.soundEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.ToggleSound(it)) }
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Vibration Alert", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Vibrate device on incoming message", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.vibrationEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.ToggleVibration(it)) }
+                                )
+                            }
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Popup Preview", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
+                                    Text("Show heads-up preview banner on screen", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = uiState.popupPreviewEnabled,
+                                    onCheckedChange = { viewModel.onEvent(SettingsUiEvent.TogglePopupPreview(it)) }
+                                )
+                            }
+
+                            Spacer(Modifier.height(4.dp))
+
+                            MeshOutlinedButton(
+                                text = "Grant Display Over Other Apps Permission",
+                                onClick = {
+                                    try {
+                                        val overlayIntent = android.content.Intent(
+                                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                            android.net.Uri.parse("package:${context.packageName}")
+                                        )
+                                        context.startActivity(overlayIntent)
+                                    } catch (e: Exception) {
+                                        val osIntent = android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+                                        context.startActivity(osIntent)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            MeshOutlinedButton(
+                                text = "OS Notification & Bubble Settings",
+                                onClick = {
+                                    try {
+                                        val osIntent = android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                            putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        }
+                                        context.startActivity(osIntent)
+                                    } catch (e: Exception) {
+                                        // Fallback to system settings
+                                        val osIntent = android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+                                        context.startActivity(osIntent)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
                 // ── Language ──────────────────────────────────────────────────
                 item { SettingsSectionHeader(stringResource(R.string.settings_section_language)) }
                 item {

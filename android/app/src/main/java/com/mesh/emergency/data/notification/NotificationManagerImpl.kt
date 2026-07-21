@@ -13,25 +13,36 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
+import androidx.core.app.RemoteInput
+import androidx.core.content.LocusIdCompat
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.mesh.emergency.app.MainActivity
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.domain.AppStateRepository
 import com.mesh.emergency.core.notification.AlertModel
 import com.mesh.emergency.core.notification.AlertPriority
+import com.mesh.emergency.core.notification.DirectReplyReceiver
 import com.mesh.emergency.core.notification.NotificationChannelType
 import com.mesh.emergency.core.notification.NotificationManager
 import com.mesh.emergency.core.system.NotificationServiceWrapper
+
 import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Implementation of [NotificationManager] coordinating real system notification alerts.
+ * Implementation of [NotificationManager] coordinating system notifications, Android 11+ Bubbles,
+ * inline Direct Reply actions, and conversation shortcuts.
  */
 @Singleton
 class NotificationManagerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val notificationServiceWrapper: NotificationServiceWrapper
+    private val notificationServiceWrapper: NotificationServiceWrapper,
+    private val appStateRepository: AppStateRepository
 ) : NotificationManager {
 
     private val preferences = mutableMapOf<NotificationChannelType, ChannelPref>()
@@ -44,6 +55,8 @@ class NotificationManagerImpl @Inject constructor(
         if (!notificationServiceWrapper.areNotificationsEnabled()) {
             return Result.Error(Exception("Notifications disabled in OS settings"))
         }
+
+        val appState = appStateRepository.appState.value
 
         val channel = when (alert.priority) {
             AlertPriority.CRITICAL -> NotificationChannelType.EMERGENCY
@@ -66,8 +79,8 @@ class NotificationManagerImpl @Inject constructor(
         // Tap action: opens MainActivity and passes conversation details
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("convId", alert.source) // source contains peerId/userId or "global"
-            putExtra("label", alert.title)   // title contains peerName or SenderName
+            putExtra("convId", alert.source)
+            putExtra("label", alert.title)
         }
 
         val pendingIntent = PendingIntent.getActivity(
@@ -77,12 +90,104 @@ class NotificationManagerImpl @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Tap intent also serves as the Bubble intent — opens MainActivity at the right conversation
+        val bubbleIntent = Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            flags  = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("convId", alert.source)
+            putExtra("label",  alert.title)
+        }
+        val bubblePendingIntent = PendingIntent.getActivity(
+            context,
+            alert.source.hashCode(),
+            bubbleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+
+        // Publish Dynamic Conversation Shortcut (required for Android 11+ Bubbles & Conversation section)
+        val shortcutId = "shortcut_${alert.source}"
+        val person = Person.Builder()
+            .setName(alert.title)
+            .setKey(alert.source)
+            .setImportant(true)
+            .build()
+
+        val shortcut = ShortcutInfoCompat.Builder(context, shortcutId)
+            .setLocusId(LocusIdCompat(shortcutId))
+            .setShortLabel(alert.title)
+            .setLongLabel(alert.title)
+            .setIcon(IconCompat.createWithResource(context, android.R.drawable.stat_notify_chat))
+            .setIntent(bubbleIntent)
+            .setPerson(person)
+            .setLongLived(true)
+            .build()
+
+        ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+
+        // Direct Reply RemoteInput
+        val remoteInput = RemoteInput.Builder(DirectReplyReceiver.KEY_TEXT_REPLY)
+            .setLabel("Reply to ${alert.title}")
+            .build()
+
+        val replyIntent = Intent(context, DirectReplyReceiver::class.java).apply {
+            putExtra(DirectReplyReceiver.EXTRA_CONV_ID, alert.source)
+            putExtra(DirectReplyReceiver.EXTRA_LABEL, alert.title)
+            putExtra(DirectReplyReceiver.EXTRA_NOTIFICATION_ID, alert.id.hashCode())
+        }
+        val replyPendingIntent = PendingIntent.getBroadcast(
+            context,
+            alert.id.hashCode(),
+            replyIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+
+        val replyAction = NotificationCompat.Action.Builder(
+            android.R.drawable.ic_menu_send,
+            "Reply",
+            replyPendingIntent
+        ).addRemoteInput(remoteInput).build()
+
+        // Notification Builder
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setContentTitle(alert.title)
             .setContentText(alert.description)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setPriority(
+            .setShortcutId(shortcutId)
+            .setLocusId(LocusIdCompat(shortcutId))
+            .addPerson(person)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        // Add Direct Reply action if Floating Chat enabled
+        if (appState.floatingChatEnabled) {
+            builder.addAction(replyAction)
+        }
+
+        // Add Bubble Metadata if Bubbles enabled (Android 11+)
+        if (appState.bubblesEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val bubbleMetadata = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                NotificationCompat.BubbleMetadata.Builder(shortcutId)
+                    .setDesiredHeight(600)
+                    .setAutoExpandBubble(false)
+                    .setSuppressNotification(false)
+                    .build()
+            } else {
+                NotificationCompat.BubbleMetadata.Builder(
+                    bubblePendingIntent,
+                    IconCompat.createWithResource(context, android.R.drawable.stat_notify_chat)
+                )
+                    .setDesiredHeight(600)
+                    .setAutoExpandBubble(false)
+                    .setSuppressNotification(false)
+                    .build()
+            }
+            builder.setBubbleMetadata(bubbleMetadata)
+        }
+
+        // Popup Preview priority configuration
+        if (appState.popupPreviewEnabled) {
+            builder.setPriority(
                 when (alert.priority) {
                     AlertPriority.CRITICAL -> NotificationCompat.PRIORITY_MAX
                     AlertPriority.HIGH     -> NotificationCompat.PRIORITY_HIGH
@@ -90,24 +195,24 @@ class NotificationManagerImpl @Inject constructor(
                     AlertPriority.LOW      -> NotificationCompat.PRIORITY_LOW
                 }
             )
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+        } else {
+            builder.setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        }
 
-        // Set default sound, vibration and lights according to preferences
+        // Defaults for sound & vibration according to app preferences
         var defaults = 0
-        if (pref.sound) {
+        if (pref.sound && appState.soundEnabled) {
             defaults = defaults or NotificationCompat.DEFAULT_SOUND
         }
-        if (pref.vibration) {
+        if (pref.vibration && appState.vibrationEnabled) {
             defaults = defaults or NotificationCompat.DEFAULT_VIBRATE
         }
         builder.setDefaults(defaults or NotificationCompat.DEFAULT_LIGHTS)
 
-        Timber.d("NOTIFICATION CREATED — id=${alert.id} title='${alert.title}' text='${alert.description}'")
+        Timber.d("NOTIFICATION CREATED — id=${alert.id} title='${alert.title}' bubbles=${appState.bubblesEnabled}")
 
         val notificationManager = NotificationManagerCompat.from(context)
         try {
-            // Check permission (required on Android 13+)
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 notificationManager.notify(alert.id.hashCode(), builder.build())
@@ -130,7 +235,6 @@ class NotificationManagerImpl @Inject constructor(
     }
 
     override fun createNotificationChannels(): Result<Unit> {
-        // Pop preferences
         NotificationChannelType.values().forEach {
             preferences[it] = ChannelPref(true, true, true)
         }
@@ -150,7 +254,7 @@ class NotificationManagerImpl @Inject constructor(
             }
             manager.createNotificationChannel(emergencyChannel)
 
-            // MESSAGE Channel
+            // MESSAGE Channel (with Bubble support enabled)
             val messageChannel = NotificationChannel(
                 "channel_message",
                 "Messages",
@@ -159,6 +263,9 @@ class NotificationManagerImpl @Inject constructor(
                 description = "Incoming chat communications"
                 enableLights(true)
                 enableVibration(true)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    setAllowBubbles(true)
+                }
             }
             manager.createNotificationChannel(messageChannel)
 

@@ -117,7 +117,7 @@ fun MessageListScreen(
                     verticalArrangement = Arrangement.spacedBy(spacing.sm),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(uiState.conversations, key = { it.id }) { conv ->
+                    items(uiState.conversations, key = { if (it.id.isNotBlank()) it.id else "conv_${it.hashCode()}" }) { conv ->
                         ConversationRow(
                             conversation = conv,
                             onClick = {

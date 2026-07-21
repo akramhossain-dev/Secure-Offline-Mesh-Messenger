@@ -41,23 +41,32 @@ class MeshForegroundService : Service() {
         createNotificationChannel()
         val notification = buildServiceNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    startForeground(
+                        NOTIFICATION_ID,
+                        notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+                    )
+                } catch (se: SecurityException) {
+                    // BLE runtime permissions not yet granted — start without type.
+                    // The service will be restarted with the correct type once the user
+                    // grants Bluetooth permissions in the onboarding flow.
+                    Timber.w(se, "SERVICE: BLE permissions not granted yet — starting FGS without connectedDevice type")
+                    startForeground(NOTIFICATION_ID, notification)
+                }
             } else {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            }
-            try {
-                startForeground(NOTIFICATION_ID, notification, type)
-            } catch (e: Exception) {
-                Timber.e(e, "SERVICE STARTED — Failed to startForeground with type, falling back")
                 startForeground(NOTIFICATION_ID, notification)
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Timber.e(e, "SERVICE: startForeground failed — service will retry on next start")
+            stopSelf()
+            return START_NOT_STICKY
         }
 
         return START_STICKY
+
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
