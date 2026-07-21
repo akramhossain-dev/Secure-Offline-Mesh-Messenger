@@ -72,6 +72,9 @@ class LocalDataSourceImpl @Inject constructor(
     override suspend fun insertConversation(conversation: ConversationEntity) =
         conversationDao.insertConversation(conversation)
 
+    override suspend fun clearUnreadCount(convId: String) =
+        conversationDao.clearUnreadCount(convId)
+
     override suspend fun deleteConversation(conversation: ConversationEntity) =
         conversationDao.deleteConversation(conversation)
 

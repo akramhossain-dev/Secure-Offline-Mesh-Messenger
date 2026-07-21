@@ -37,7 +37,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mesh.emergency.core.designsystem.component.*
 import com.mesh.emergency.core.designsystem.icon.MeshIcons
@@ -190,18 +193,22 @@ private fun ConversationRow(conversation: ConversationSummary, onClick: () -> Un
 
 @Composable
 private fun UnreadBadge(count: Int, modifier: Modifier = Modifier) {
+    if (count <= 0) return
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(20.dp)
+            .padding(start = 6.dp)
+            .height(20.dp)
+            .widthIn(min = 20.dp)
             .background(
                 color = MaterialTheme.colorScheme.primary,
                 shape = androidx.compose.foundation.shape.CircleShape
             )
+            .padding(horizontal = 4.dp)
     ) {
         Text(
             text = if (count > 9) "9+" else count.toString(),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
             color = MaterialTheme.colorScheme.onPrimary
         )
     }

@@ -110,6 +110,10 @@ fun AppNavGraph(
         ) { backStackEntry ->
             val convId = backStackEntry.arguments?.getString("convId") ?: ""
             val label  = backStackEntry.arguments?.getString("label")  ?: "Chat"
+            val context = androidx.compose.ui.platform.LocalContext.current
+            androidx.compose.runtime.LaunchedEffect(convId) {
+                com.mesh.emergency.core.overlay.ChatHeadService.removeHead(context, convId)
+            }
             ChatScreen(
                 conversationId = convId,
                 recipientLabel = label,
@@ -124,6 +128,10 @@ fun AppNavGraph(
             deepLinks = listOf(navDeepLink { uriPattern = "${NavRoutes.DEEP_LINK_BASE}/chat/{contactId}" })
         ) { backStackEntry ->
             val contactId = backStackEntry.arguments?.getString("contactId") ?: "unknown"
+            val context = androidx.compose.ui.platform.LocalContext.current
+            androidx.compose.runtime.LaunchedEffect(contactId) {
+                com.mesh.emergency.core.overlay.ChatHeadService.removeHead(context, "conv-$contactId")
+            }
             ChatScreen(
                 conversationId = "conv-$contactId",
                 recipientLabel = contactId,
@@ -133,6 +141,10 @@ fun AppNavGraph(
 
         // ── Global Chat ─────────────────────────────────────────────────────
         composable(route = NavigationDestination.GlobalChat.route) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                com.mesh.emergency.core.overlay.ChatHeadService.removeHead(context, "global")
+            }
             GlobalChatScreen(onBack = { navController.popBackStack() })
         }
 

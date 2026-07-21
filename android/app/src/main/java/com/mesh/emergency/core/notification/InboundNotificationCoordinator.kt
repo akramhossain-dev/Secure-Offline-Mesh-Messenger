@@ -64,17 +64,19 @@ class InboundNotificationCoordinator @Inject constructor(
         try {
             val canDraw = Settings.canDrawOverlays(context)
             val headsOn = appStateRepository.appState.value.chatHeadsEnabled
-            if (canDraw && headsOn) {
+            val isAppInForeground = com.mesh.emergency.app.MeshApplication.AppLifecycleTracker.isAppInForeground
+            if (canDraw && headsOn && !isAppInForeground) {
                 val convId = if (isGlobal) "global" else sourceId
+                val label  = if (isGlobal) "Global Mesh Chat" else senderName
                 val headIntent = Intent(context, ChatHeadService::class.java).apply {
                     action = ChatHeadService.ACTION_SHOW_HEAD
                     putExtra(ChatHeadService.EXTRA_CONV_ID, convId)
-                    putExtra(ChatHeadService.EXTRA_LABEL, senderName)
+                    putExtra(ChatHeadService.EXTRA_LABEL, label)
                 }
                 ContextCompat.startForegroundService(context, headIntent)
                 Timber.d("INBOUND_COORD: Chat Head triggered convId=$convId sender=$senderName")
             } else {
-                Timber.d("INBOUND_COORD: Chat Head skipped — canDraw=$canDraw headsOn=$headsOn")
+                Timber.d("INBOUND_COORD: Chat Head skipped — canDraw=$canDraw headsOn=$headsOn isAppInForeground=$isAppInForeground")
             }
         } catch (e: Exception) {
             Timber.e(e, "INBOUND_COORD: Failed to start ChatHeadService")

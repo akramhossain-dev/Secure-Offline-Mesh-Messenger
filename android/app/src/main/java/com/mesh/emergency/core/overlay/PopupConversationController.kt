@@ -50,7 +50,7 @@ class PopupConversationController @Inject constructor(
         onCloseRequested: () -> Unit
     ) {
         if (holder.popupView != null) {
-            closePopup(windowManager, holder)
+            closePopup(service, windowManager, holder)
         } else {
             openPopup(context, service, windowManager, holder, convViewModelStores, onCloseRequested)
         }
@@ -97,13 +97,16 @@ class PopupConversationController @Inject constructor(
                 MeshTheme {
                     OverlayChatScreen(
                         viewModel = vm,
+                        activeHeads = service.getActiveHeads(),
+                        activeConvId = holder.convId,
+                        onSelectHead = { targetId -> service.switchActivePopup(targetId) },
                         onClose = {
-                            closePopup(windowManager, holder)
+                            closePopup(service, windowManager, holder)
                             onCloseRequested()
                         },
                         onExpand = {
                             expandToFullApp(context, holder.convId, holder.label)
-                            closePopup(windowManager, holder)
+                            closePopup(service, windowManager, holder)
                             onCloseRequested()
                         }
                     )
@@ -115,17 +118,20 @@ class PopupConversationController @Inject constructor(
         holder.popupParams = pParams
 
         overlayManager.safeAddView(windowManager, composeView, pParams)
+        service.setFloatingHeadsVisible(false)
         Timber.d("PopupConversationController: Opened chat popup convId=${holder.convId}")
     }
 
     /** Closes the expandable floating chat window for a conversation. */
-    fun closePopup(windowManager: WindowManager, holder: ChatHeadHolder) {
+    fun closePopup(service: ChatHeadService, windowManager: WindowManager, holder: ChatHeadHolder) {
         holder.popupView?.let { view ->
             overlayManager.safeRemoveView(windowManager, view)
             holder.popupView   = null
             holder.popupParams = null
             Timber.d("PopupConversationController: Closed chat popup convId=${holder.convId}")
         }
+        // Restore floating heads visibility if no other popup is open
+        service.setFloatingHeadsVisible(true)
     }
 
     /** Launches MainActivity navigated directly to the full conversation route. */

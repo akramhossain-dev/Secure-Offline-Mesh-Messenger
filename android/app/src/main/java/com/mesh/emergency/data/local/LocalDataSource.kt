@@ -40,6 +40,7 @@ interface LocalDataSource {
     fun getConversations(): Flow<List<ConversationEntity>>
     suspend fun getConversationById(id: String): ConversationEntity?
     suspend fun insertConversation(conversation: ConversationEntity)
+    suspend fun clearUnreadCount(convId: String)
     suspend fun deleteConversation(conversation: ConversationEntity)
 
     // ── Message Operations ────────────────────────────────────────────────────

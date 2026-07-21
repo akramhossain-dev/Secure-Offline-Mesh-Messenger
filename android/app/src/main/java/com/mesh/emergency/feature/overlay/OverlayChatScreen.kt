@@ -61,6 +61,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import com.mesh.emergency.core.overlay.ChatHeadHolder
+
 // ── Colour constants matching Messenger dark theme ─────────────────────────────
 private val MessengerBlue  = Color(0xFF0084FF)
 private val PopupBg        = Color(0xFF1C1E22)
@@ -73,6 +79,9 @@ private val InputBg        = Color(0xFF2C2D30)
 @Composable
 fun OverlayChatScreen(
     viewModel: OverlayConversationViewModel,
+    activeHeads: List<ChatHeadHolder> = emptyList(),
+    activeConvId: String = "",
+    onSelectHead: (String) -> Unit = {},
     onClose: () -> Unit,
     onExpand: () -> Unit
 ) {
@@ -93,6 +102,68 @@ fun OverlayChatScreen(
         modifier       = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+
+            // ── Top Horizontal Avatar Dock (Messenger Style) ─────────────────
+            if (activeHeads.size > 1) {
+                Surface(color = Color(0xFF18191A), modifier = Modifier.fillMaxWidth()) {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        items(activeHeads, key = { it.convId }) { h ->
+                            val isSelected = h.convId == activeConvId
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .border(
+                                        width = if (isSelected) 2.5.dp else 0.dp,
+                                        color = if (isSelected) MessengerBlue else Color.Transparent,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { onSelectHead(h.convId) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val avatarBg = if (h.convId == "global") Brush.radialGradient(listOf(Color(0xFF00C853), Color(0xFF007E33)))
+                                               else Brush.radialGradient(listOf(MessengerBlue, Color(0xFF0055CC)))
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(avatarBg),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    val initials = if (h.convId == "global") "🌐" else h.label.take(2).uppercase()
+                                    Text(
+                                        text  = initials,
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                                if (h.unreadState.value > 0 && !isSelected) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(16.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Red),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (h.unreadState.value > 9) "9+" else "${h.unreadState.value}",
+                                            color = Color.White,
+                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             // ── Header ─────────────────────────────────────────────────────────
             OverlayHeader(
@@ -116,7 +187,6 @@ fun OverlayChatScreen(
                     val prevMsg = messages.getOrNull(index - 1)
                     val nextMsg = messages.getOrNull(index + 1)
 
-                    // Grouping logic: same sender within 2 minutes = same group
                     val isFirstInGroup = prevMsg == null
                         || prevMsg.isSelf != msg.isSelf
                         || prevMsg.senderName != msg.senderName
@@ -127,7 +197,6 @@ fun OverlayChatScreen(
                         || nextMsg.senderName != msg.senderName
                         || (nextMsg.timestamp - msg.timestamp) > 120_000L
 
-                    // Spacing: larger gap between groups, tiny within group
                     if (isFirstInGroup && index > 0) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }

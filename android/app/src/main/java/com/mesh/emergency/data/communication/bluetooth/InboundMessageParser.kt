@@ -275,11 +275,13 @@ class InboundMessageParser @Inject constructor(
                                 replyToSenderName = replyToName,
                                 replyToContent = replyToText
                             )
+                            val existingConv = localDataSource.getConversationById(senderId)
+                            val currentUnread = existingConv?.unreadCount ?: 0
                             val conversationEntity = ConversationEntity(
                                 entityId      = senderId,
                                 title         = senderName,
                                 lastMessageId = msgId,
-                                unreadCount   = 1,
+                                unreadCount   = currentUnread + 1,
                                 updatedAt     = timestamp
                             )
                             localDataSource.insertMessage(messageEntity)

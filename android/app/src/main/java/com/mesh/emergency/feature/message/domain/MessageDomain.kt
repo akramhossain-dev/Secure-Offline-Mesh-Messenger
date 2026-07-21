@@ -68,6 +68,7 @@ interface MessageRepository {
     suspend fun getMessageById(messageId: String): Message?
     suspend fun updateMessage(message: Message)
     suspend fun markMessageAsRead(messageId: String)
+    suspend fun clearUnreadCount(conversationId: String)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

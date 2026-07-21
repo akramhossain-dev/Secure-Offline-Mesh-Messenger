@@ -239,6 +239,8 @@ class ChatViewModel @Inject constructor(
                 // Ignore if service not active
             }
 
+            messageRepository.clearUnreadCount(id)
+
             messageRepository.getMessagesForConversation(id).collect { msgs ->
                 val mappedMsgs = msgs.map { msg ->
                     msg.copy(isSelf = msg.senderId == localUserId || msg.senderId == "self")
@@ -246,6 +248,9 @@ class ChatViewModel @Inject constructor(
                 
                 // Real-time: mark received messages as read and send receipts
                 val unread = mappedMsgs.filter { !it.isSelf && it.readStatus == "UNREAD" }
+                if (unread.isNotEmpty()) {
+                    messageRepository.clearUnreadCount(id)
+                }
                 for (msg in unread) {
                     messageRepository.markMessageAsRead(msg.id)
                     messagingService.sendReadReceipt(msg.id, localUserId, msg.senderId)

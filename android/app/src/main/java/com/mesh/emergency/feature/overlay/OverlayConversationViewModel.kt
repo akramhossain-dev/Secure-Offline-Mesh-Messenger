@@ -75,7 +75,8 @@ class OverlayConversationViewModel(
     fun init(convId: String, peerName: String) {
         if (initialized) return
         initialized = true
-        _uiState.update { it.copy(convId = convId, peerName = peerName) }
+        val resolvedTitle = if (convId == "global") "Global Mesh Chat" else peerName
+        _uiState.update { it.copy(convId = convId, peerName = resolvedTitle) }
         loadLocalProfile(convId)
         observeConnectionState()
         observeMessages(convId)
@@ -112,6 +113,7 @@ class OverlayConversationViewModel(
 
     private fun observeMessages(convId: String) {
         viewModelScope.launch {
+            localDataSource.clearUnreadCount(convId)
             if (convId == "global") {
                 localDataSource.getGlobalMessages().collect { entities ->
                     val localId = _uiState.value.localUserId

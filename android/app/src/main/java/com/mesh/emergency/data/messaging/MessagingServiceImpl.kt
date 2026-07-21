@@ -520,12 +520,14 @@ class MessagingServiceImpl @Inject constructor(
                                     transportType  = transportTypeName
                                 )
                             )
+                            val existingConv = localDataSource.getConversationById(senderId)
+                            val currentUnread = existingConv?.unreadCount ?: 0
                             localDataSource.insertConversation(
                                 ConversationEntity(
                                     entityId      = senderId,
                                     title         = senderName,
                                     lastMessageId = msgId,
-                                    unreadCount   = 1,
+                                    unreadCount   = currentUnread + 1,
                                     updatedAt     = timestamp
                                 )
                             )

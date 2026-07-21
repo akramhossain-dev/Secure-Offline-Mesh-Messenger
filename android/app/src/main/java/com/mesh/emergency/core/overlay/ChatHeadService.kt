@@ -50,6 +50,18 @@ class ChatHeadService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSta
         const val EXTRA_CONV_ID = "extra_conv_id"
         const val EXTRA_LABEL   = "extra_label"
 
+        fun removeHead(context: Context, convId: String) {
+            try {
+                val intent = Intent(context, ChatHeadService::class.java).apply {
+                    action = ACTION_REMOVE_HEAD
+                    putExtra(EXTRA_CONV_ID, convId)
+                }
+                context.startService(intent)
+            } catch (e: Exception) {
+                Timber.w(e, "CHAT_HEAD_SERVICE: Failed to send removeHead intent")
+            }
+        }
+
         private const val NOTIF_CHANNEL_ID = "chat_head_service_channel"
         private const val NOTIF_ID         = 9090
     }
@@ -91,6 +103,7 @@ class ChatHeadService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSta
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForegroundNotification()
         intent?.let { dispatchIntent(it) }
         return START_STICKY
     }
@@ -179,7 +192,7 @@ class ChatHeadService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSta
 
     private fun removeChatHead(convId: String) {
         val holder = chatHeads.remove(convId) ?: return
-        popupController.closePopup(windowManager, holder)
+        popupController.closePopup(this, windowManager, holder)
         overlayManager.safeRemoveView(windowManager, holder.headView)
 
         convViewModelStores.remove(convId)?.clear()
@@ -194,6 +207,28 @@ class ChatHeadService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSta
         val keys = chatHeads.keys.toList()
         keys.forEach { removeChatHead(it) }
         stopSelf()
+    }
+
+    fun setFloatingHeadsVisible(visible: Boolean) {
+        val visibility = if (visible) android.view.View.VISIBLE else android.view.View.GONE
+        chatHeads.values.forEach { it.headView.visibility = visibility }
+    }
+
+    fun getActiveHeads(): List<ChatHeadHolder> = chatHeads.values.toList()
+
+    fun switchActivePopup(targetConvId: String) {
+        val holder = chatHeads[targetConvId] ?: return
+        // Close current popup
+        chatHeads.values.forEach { h -> popupController.closePopup(this, windowManager, h) }
+        // Open target popup
+        popupController.openPopup(
+            context = this,
+            service = this,
+            windowManager = windowManager,
+            holder = holder,
+            convViewModelStores = convViewModelStores,
+            onCloseRequested = { saveActiveHeadsState() }
+        )
     }
 
     private fun saveActiveHeadsState() {
@@ -253,6 +288,14 @@ class ChatHeadService : Service(), LifecycleOwner, ViewModelStoreOwner, SavedSta
             .setOngoing(true)
             .build()
 
-        startForeground(NOTIF_ID, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                startForeground(NOTIF_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } catch (e: Exception) {
+                startForeground(NOTIF_ID, notification)
+            }
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
     }
 }

@@ -267,36 +267,37 @@ fun OnboardingScreen(
                                     }
                                 }
 
-                                OutlinedButton(
-                                    onClick = {
-                                        val perms = mutableListOf(
-                                            Manifest.permission.ACCESS_FINE_LOCATION,
-                                            Manifest.permission.ACCESS_COARSE_LOCATION
-                                        )
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                            perms.add(Manifest.permission.BLUETOOTH_SCAN)
-                                            perms.add(Manifest.permission.BLUETOOTH_CONNECT)
-                                            perms.add(Manifest.permission.BLUETOOTH_ADVERTISE)
-                                        }
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            perms.add(Manifest.permission.POST_NOTIFICATIONS)
-                                        }
-                                        runtimePermissionLauncher.launch(perms.toTypedArray())
-                                        // If overlay not yet granted, open its settings too
-                                        if (!hasOverlayPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                            try {
-                                                overlayLauncher.launch(
-                                                    Intent(
-                                                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                                        Uri.parse("package:${context.packageName}")
+                                if (!hasOverlayPermission) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            val perms = mutableListOf(
+                                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                                Manifest.permission.ACCESS_COARSE_LOCATION
+                                            )
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                                perms.add(Manifest.permission.BLUETOOTH_SCAN)
+                                                perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+                                                perms.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+                                            }
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                perms.add(Manifest.permission.POST_NOTIFICATIONS)
+                                            }
+                                            runtimePermissionLauncher.launch(perms.toTypedArray())
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                                try {
+                                                    overlayLauncher.launch(
+                                                        Intent(
+                                                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                                            Uri.parse("package:${context.packageName}")
+                                                        )
                                                     )
-                                                )
-                                            } catch (e: Exception) { /* fallback */ }
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Grant All Permissions (1-Click)", fontWeight = FontWeight.Bold)
+                                                } catch (e: Exception) { /* fallback */ }
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Enable Overlay Permission", fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }

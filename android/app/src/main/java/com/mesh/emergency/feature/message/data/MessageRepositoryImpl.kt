@@ -110,13 +110,13 @@ class MessageRepositoryImpl @Inject constructor(
         )
         messageDao.insertMessage(entity)
 
-        // Upsert conversation row so it appears in MessageListScreen
+        val existingConv = conversationDao.getConversationById(peerId)
         conversationDao.insertConversation(
             ConversationEntity(
                 entityId      = peerId,
                 title         = peerName,
                 lastMessageId = message.id,
-                unreadCount   = 0,
+                unreadCount   = existingConv?.unreadCount ?: 0,
                 updatedAt     = message.timestamp
             )
         )
@@ -141,6 +141,11 @@ class MessageRepositoryImpl @Inject constructor(
         if (existing != null) {
             val updated = existing.copy(readStatus = "READ")
             messageDao.insertMessage(updated)
+            conversationDao.clearUnreadCount(existing.conversationId)
         }
+    }
+
+    override suspend fun clearUnreadCount(conversationId: String) {
+        conversationDao.clearUnreadCount(conversationId)
     }
 }

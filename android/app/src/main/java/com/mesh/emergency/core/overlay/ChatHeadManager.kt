@@ -50,7 +50,7 @@ class ChatHeadManager @Inject constructor(
         val screenH = context.resources.displayMetrics.heightPixels
 
         val startX = screenW - 140
-        val startY = (screenH * 0.25f).toInt() + (stackIndex * 170)
+        val startY = (screenH * 0.25f).toInt()
 
         val headParams = overlayManager.createHeadLayoutParams(startX, startY)
 

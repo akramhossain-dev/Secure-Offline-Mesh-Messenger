@@ -40,6 +40,10 @@ interface ConversationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConversation(conversation: ConversationEntity)
 
+    /** Reset unread count to 0 for a conversation. */
+    @Query("UPDATE conversations SET unreadCount = 0 WHERE entityId = :id")
+    suspend fun clearUnreadCount(id: String)
+
     /** Delete conversation. */
     @Delete
     suspend fun deleteConversation(conversation: ConversationEntity)
