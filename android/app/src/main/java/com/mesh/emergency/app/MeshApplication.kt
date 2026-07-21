@@ -12,7 +12,6 @@ import com.mesh.emergency.BuildConfig
 import com.mesh.emergency.core.common.logging.AppLogger
 import com.mesh.emergency.core.system.MeshWorkManager
 import com.mesh.emergency.data.communication.CommunicationManagerImpl
-import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,18 +45,12 @@ class MeshApplication : Application(), Configuration.Provider {
 
     /**
      * Eagerly injected so [CommunicationManagerImpl.init] runs at app startup,
-     * kicking off the persistent BLE connect() retry loop on every phone.
+     * kicking off the persistent transport connect() retry loop on every phone.
+     * The [CommunicationManagerImpl] is responsible for starting all registered
+     * transports — including Bluetooth — via the generic reconnect loop.
      */
     @Inject
     lateinit var communicationManager: CommunicationManagerImpl
-
-    /**
-     * Eagerly injected to start GATT server + advertising immediately at launch,
-     * independently of [communicationManager]. The advertising is critical for
-     * being discoverable as the QR-shower (Phone B).
-     */
-    @Inject
-    lateinit var bluetoothTransport: BluetoothTransportImpl
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -91,15 +84,26 @@ class MeshApplication : Application(), Configuration.Provider {
         // Schedule all periodic background sync, routing, and cleanup workers
         meshWorkManager.scheduleAllWorkers()
 
-        // Eagerly start BLE: both phones must advertise from the very first second.
-        // Without this, Phone B (QR shower / Profile screen) is never advertising,
-        // so Phone A's 15s reconnect scan after QR pairing finds nothing.
+        // Start MeshForegroundService to keep communication active in the background
+        try {
+            val serviceIntent = android.content.Intent(this, com.mesh.emergency.core.system.MeshForegroundService::class.java)
+            androidx.core.content.ContextCompat.startForegroundService(this, serviceIntent)
+            Timber.d("SERVICE STARTED — MeshApplication starting MeshForegroundService")
+        } catch (e: Exception) {
+            Timber.e(e, "SERVICE STARTED — Failed to start MeshForegroundService from Application")
+        }
+
+        // Eagerly start all transports via CommunicationManager.
+        // The Bluetooth transport will start its GATT server and advertising
+        // immediately, ensuring this device is discoverable from the first second.
         appScope.launch {
             try {
-                Timber.d("BLE_FLOW: MeshApplication eagerly starting BLE transport")
-                bluetoothTransport.connect()
+                Timber.d("COMM_FLOW: MeshApplication eagerly starting all registered transports")
+                communicationManager.getTransports().forEach { transport ->
+                    transport.connect()
+                }
             } catch (e: Exception) {
-                Timber.e(e, "BLE_FLOW: Eager BLE connect() failed in Application.onCreate()")
+                Timber.e(e, "COMM_FLOW: Eager transport connect() failed in Application.onCreate()")
             }
         }
     }

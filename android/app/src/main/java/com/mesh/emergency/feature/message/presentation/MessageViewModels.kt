@@ -6,6 +6,7 @@
 package com.mesh.emergency.feature.message.presentation
 
 import androidx.lifecycle.viewModelScope
+import com.mesh.emergency.core.messaging.MessagingService
 import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
@@ -103,7 +104,7 @@ class ChatViewModel @Inject constructor(
     private val messageRepository: MessageRepository,
     private val communicationManager: com.mesh.emergency.core.communication.CommunicationManager,
     private val localDataSource: LocalDataSource,
-    private val bluetoothTransport: com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+    private val messagingService: MessagingService
 ) : BaseViewModel<ChatUiState, ChatUiEvent, ChatUiEffect>(ChatUiState()) {
 
     init {
@@ -154,8 +155,7 @@ class ChatViewModel @Inject constructor(
                             editHistory = history
                         )
                         messageRepository.updateMessage(updated)
-                        
-                        bluetoothTransport.sendPrivateMessageEdit(event.messageId, localUserId, peerId, event.newText)
+                        messagingService.sendPrivateMessageEdit(event.messageId, localUserId, peerId, event.newText)
                     }
                     updateState { copy(editingMessage = null, draftText = "") }
                 }
@@ -174,8 +174,7 @@ class ChatViewModel @Inject constructor(
                             updatedAt = System.currentTimeMillis()
                         )
                         messageRepository.updateMessage(updated)
-                        
-                        bluetoothTransport.sendPrivateMessageDelete(event.id, localUserId, peerId)
+                        messagingService.sendPrivateMessageDelete(event.id, localUserId, peerId)
                     }
                 }
             }
@@ -232,7 +231,7 @@ class ChatViewModel @Inject constructor(
                 val unread = mappedMsgs.filter { !it.isSelf && it.readStatus == "UNREAD" }
                 for (msg in unread) {
                     messageRepository.markMessageAsRead(msg.id)
-                    bluetoothTransport.sendReadReceipt(msg.id, localUserId, msg.senderId)
+                    messagingService.sendReadReceipt(msg.id, localUserId, msg.senderId)
                 }
 
                 val pending = mappedMsgs.count { it.deliveryStatus in listOf(DbDeliveryStatus.PENDING, DbDeliveryStatus.QUEUED) }

@@ -31,6 +31,12 @@
     <!-- Notification Permission (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Foreground Service & Battery Optimization Permissions -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Internet Permission (Online fallback for map tiles retrieval) -->
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -64,6 +70,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- ── Foreground Mesh Service ──────────────────────────────────── -->
+        <service
+            android:name=".core.system.MeshForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
 
         <!-- Disable WorkManager default initializer for Hilt Worker Injection -->
         <provider

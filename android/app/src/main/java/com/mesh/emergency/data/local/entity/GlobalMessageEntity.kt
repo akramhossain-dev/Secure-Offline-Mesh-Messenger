@@ -37,5 +37,11 @@ data class GlobalMessageEntity(
     val editHistory: List<String> = emptyList(),
     val replyToMessageId: String? = null,
     val replyToSenderName: String? = null,
-    val replyToContent: String? = null
+    val replyToContent: String? = null,
+    /**
+     * Which transport technology delivered this message.
+     * Values: "BLUETOOTH" | "LORA" | "WIFI_DIRECT" | "NFC" | "USB_SERIAL" | "UNKNOWN"
+     * Stored as metadata only — no transport-specific logic depends on this field.
+     */
+    val transportType: String = "UNKNOWN"
 )

@@ -21,7 +21,7 @@ import com.mesh.emergency.core.hardware.BleConnectionState
 import com.mesh.emergency.core.hardware.BleDeviceRepository
 import com.mesh.emergency.core.hardware.BleDiscoveryState
 import com.mesh.emergency.core.hardware.BleFailureReason
-import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+import com.mesh.emergency.core.communication.Transport
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,13 +45,13 @@ import javax.inject.Singleton
  *
  * Filters scan results by the Mesh GATT Service UUID so only compatible
  * ESP32/LoRa peripherals appear in the device list. The actual GATT
- * connection is delegated to [BluetoothTransportImpl] which already
+ * connection is delegated to the Bluetooth [Transport] implementation which
  * manages the GATT callbacks and characteristic I/O.
  */
 @Singleton
 class BleDeviceRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val bluetoothTransport: BluetoothTransportImpl
+    @javax.inject.Named("bluetooth") private val bluetoothTransport: Transport
 ) : BleDeviceRepository {
 
     companion object {

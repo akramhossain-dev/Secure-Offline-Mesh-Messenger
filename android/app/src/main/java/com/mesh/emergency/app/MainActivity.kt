@@ -49,21 +49,19 @@ class MainActivity : AppCompatActivity() {
     ) { _ -> }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val requiredPermissions = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            arrayOf(
-                android.Manifest.permission.BLUETOOTH_SCAN,
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_ADVERTISE,
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        } else {
-            arrayOf(
-                android.Manifest.permission.ACCESS_FINE_LOCATION,
-                android.Manifest.permission.ACCESS_COARSE_LOCATION
-            )
+        val permissionsList = mutableListOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            permissionsList.add(android.Manifest.permission.BLUETOOTH_SCAN)
+            permissionsList.add(android.Manifest.permission.BLUETOOTH_CONNECT)
+            permissionsList.add(android.Manifest.permission.BLUETOOTH_ADVERTISE)
         }
-        requestPermissionLauncher.launch(requiredPermissions)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            permissionsList.add(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+        requestPermissionLauncher.launch(permissionsList.toTypedArray())
         // Install splash screen before super.onCreate()
         installSplashScreen()
         org.maplibre.android.MapLibre.getInstance(this)

@@ -21,6 +21,7 @@ import com.mesh.emergency.core.notification.NotificationChannelType
 import com.mesh.emergency.core.notification.NotificationManager
 import com.mesh.emergency.core.system.NotificationServiceWrapper
 import dagger.hilt.android.qualifiers.ApplicationContext
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -80,11 +81,12 @@ class NotificationManagerImpl @Inject constructor(
             .setSmallIcon(android.R.drawable.stat_notify_chat)
             .setContentTitle(alert.title)
             .setContentText(alert.description)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setPriority(
                 when (alert.priority) {
                     AlertPriority.CRITICAL -> NotificationCompat.PRIORITY_MAX
                     AlertPriority.HIGH     -> NotificationCompat.PRIORITY_HIGH
-                    AlertPriority.NORMAL   -> NotificationCompat.PRIORITY_DEFAULT
+                    AlertPriority.NORMAL   -> NotificationCompat.PRIORITY_HIGH
                     AlertPriority.LOW      -> NotificationCompat.PRIORITY_LOW
                 }
             )
@@ -101,14 +103,20 @@ class NotificationManagerImpl @Inject constructor(
         }
         builder.setDefaults(defaults or NotificationCompat.DEFAULT_LIGHTS)
 
+        Timber.d("NOTIFICATION CREATED — id=${alert.id} title='${alert.title}' text='${alert.description}'")
+
         val notificationManager = NotificationManagerCompat.from(context)
         try {
             // Check permission (required on Android 13+)
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                 context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 notificationManager.notify(alert.id.hashCode(), builder.build())
+                Timber.d("NOTIFICATION DISPLAYED — id=${alert.id} channel=$channelId")
+            } else {
+                Timber.w("NOTIFICATION DISPLAYED FAILED — POST_NOTIFICATIONS permission not granted")
             }
         } catch (e: SecurityException) {
+            Timber.e(e, "NOTIFICATION DISPLAYED FAILED — SecurityException posting notification")
             return Result.Error(e)
         }
 

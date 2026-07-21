@@ -17,7 +17,7 @@ import com.mesh.emergency.core.hardware.HardwareCommandResult
 import com.mesh.emergency.core.hardware.HardwareDeviceProfile
 import com.mesh.emergency.core.hardware.HardwareDeviceType
 import com.mesh.emergency.core.hardware.HardwareManager
-import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
+import com.mesh.emergency.core.communication.Transport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +35,7 @@ import javax.inject.Singleton
  * A30.8 — HardwareManager implementation.
  *
  * Orchestrates BLE scanning via [BleDeviceRepository] and command exchange
- * via [Esp32CommandProtocol] and [BluetoothTransportImpl].
+ * via [Esp32CommandProtocol] and the active Bluetooth [Transport].
  *
  * A31.4 — Hardware Status Monitoring:
  * Automatically polls [Esp32Command.GetStatus] every 30 s when connected.
@@ -43,7 +43,7 @@ import javax.inject.Singleton
 @Singleton
 class HardwareManagerImpl @Inject constructor(
     private val bleRepository: BleDeviceRepository,
-    private val bluetoothTransport: BluetoothTransportImpl
+    @javax.inject.Named("bluetooth") private val bluetoothTransport: Transport
 ) : HardwareManager {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())

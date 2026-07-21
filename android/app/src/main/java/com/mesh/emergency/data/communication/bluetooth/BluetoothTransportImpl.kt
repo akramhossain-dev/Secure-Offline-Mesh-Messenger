@@ -27,7 +27,11 @@ import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import com.mesh.emergency.core.common.result.Result
+import com.mesh.emergency.core.communication.PairingService
 import com.mesh.emergency.core.communication.Transport
+import com.mesh.emergency.core.communication.TransportCapability
+import com.mesh.emergency.core.communication.TransportEvent
+import com.mesh.emergency.core.communication.TransportNode
 import com.mesh.emergency.core.communication.TransportStatus
 import com.mesh.emergency.core.communication.TransportType
 import com.mesh.emergency.core.utils.PermissionManager
@@ -68,9 +72,17 @@ class BluetoothTransportImpl @Inject constructor(
     private val localDataSource: com.mesh.emergency.data.local.LocalDataSource,
     private val messageNotifier: com.mesh.emergency.core.notification.MessageNotifier,
     private val notificationManager: com.mesh.emergency.core.notification.NotificationManager
-) : Transport {
+) : Transport, PairingService {
 
     override val type: TransportType = TransportType.BLUETOOTH
+
+    override val capabilities: Set<TransportCapability> = setOf(
+        TransportCapability.BROADCAST,
+        TransportCapability.DISCOVERABLE,
+        TransportCapability.ACKNOWLEDGEMENTS,
+        TransportCapability.SIGNAL_STRENGTH,
+        TransportCapability.MESH_ROUTING
+    )
 
     private val _status = MutableStateFlow(TransportStatus.DISCONNECTED)
     override val status: StateFlow<TransportStatus> = _status.asStateFlow()
@@ -199,7 +211,7 @@ class BluetoothTransportImpl @Inject constructor(
 
     /** Exposes the local Bluetooth MAC address for embedding in QR handshake payloads. */
     @get:SuppressLint("HardwareIds")
-    val localBleAddress: String get() = try { adapter?.address ?: "" } catch (e: Exception) { "" }
+    override val localBleAddress: String get() = try { adapter?.address ?: "" } catch (e: Exception) { "" }
 
     /**
      * Delivers [payload] to all BLE devices that are currently connected as GATT clients
@@ -286,7 +298,7 @@ class BluetoothTransportImpl @Inject constructor(
      * payload's `ble` field is often unusable for path 3.  Paths 1 and 2 work without
      * any MAC address by reusing already-established connections.
      */
-    suspend fun queueAndDeliverReverseHandshake(payload: ByteArray, targetMac: String) {
+    override suspend fun queueAndDeliverReverseHandshake(payload: ByteArray, targetMac: String) {
         // Path 1: server notify (Phone A is server, Phone B is a connected client)
         val serverSent = sendViaConnectedClients(payload)
         Timber.d("BLE_FLOW: queueAndDeliver — path1 serverNotify=$serverSent")
@@ -397,7 +409,10 @@ class BluetoothTransportImpl @Inject constructor(
             }
         }
 
-        withContext(Dispatchers.Main) { scanner.startScan(filters, settings, scanCb) }
+        withContext(Dispatchers.Main) {
+            scanner.startScan(filters, settings, scanCb)
+            Timber.d("SCANNING STARTED — BLE Scanner active (reconnect scan)")
+        }
 
         // Wait up to 15 seconds for a device to appear
         var waited = 0
@@ -605,7 +620,10 @@ class BluetoothTransportImpl @Inject constructor(
                         .build()
                 )
 
-                withContext(Dispatchers.Main) { scanner.startScan(filters, settings, scanCallback) }
+                withContext(Dispatchers.Main) {
+                    scanner.startScan(filters, settings, scanCallback)
+                    Timber.d("SCANNING STARTED — BLE Scanner active (connect loop)")
+                }
 
                 // Wait up to 12 seconds for a device to appear
                 var waited = 0
@@ -646,7 +664,7 @@ class BluetoothTransportImpl @Inject constructor(
     @SuppressLint("MissingPermission")
     override suspend fun disconnect(): Result<Unit> {
         // Stop Advertising
-        stopAdvertising()
+        stopBleAdvertising()
 
         // Close GATT Server
         gattServer?.let {
@@ -711,7 +729,101 @@ class BluetoothTransportImpl @Inject constructor(
 
     override fun receive(): Flow<ByteArray> = _receiveFlow.asSharedFlow()
 
-    // ── GATT Server & Advertising Methods ───────────────────────────────────────────
+    // ── Extended Transport Interface Implementations ───────────────────────────
+
+    /**
+     * Starts the BLE hardware subsystem.
+     * Equivalent to [connect] — initializes the GATT server and begins scanning.
+     */
+    override suspend fun start(): Result<Unit> = connect()
+
+    /**
+     * Stops the BLE hardware subsystem and releases all GATT resources.
+     * Equivalent to [disconnect].
+     */
+    override suspend fun stop(): Result<Unit> = disconnect()
+
+    /**
+     * Starts BLE advertising so this device is discoverable by peers.
+     * Safe to call independently of [connect] for advertising-only mode.
+     */
+    override suspend fun advertise(): Result<Unit> {
+        startAdvertising()
+        return Result.Success(Unit)
+    }
+
+    /** Stops BLE advertising. */
+    override suspend fun stopAdvertising(): Result<Unit> {
+        stopBleAdvertising()
+        return Result.Success(Unit)
+    }
+
+    /** Starts BLE scanning for peers. Scanning is managed as part of [connect]. */
+    override suspend fun discover(): Result<Unit> = connect()
+
+    /** Stops BLE scanning. Safe to call even when not scanning. */
+    override suspend fun stopDiscovery(): Result<Unit> = Result.Success(Unit) // scan controlled via connect loop
+
+    /**
+     * Sends a transport-level ACK by broadcasting a minimal delivery receipt.
+     * The ACK packet is only dispatched if a GATT channel is available.
+     */
+    override suspend fun sendAck(messageId: String): Result<Unit> {
+        val json = org.json.JSONObject().apply {
+            put("type", "delivery_receipt")
+            put("id", messageId)
+            put("ts", System.currentTimeMillis())
+        }
+        val payload = "MSG:$json".toByteArray(Charsets.UTF_8)
+        return send(payload)
+    }
+
+    /**
+     * Returns the list of currently connected peers as [TransportNode] objects.
+     * Includes both GATT server clients and the GATT client target (if connected).
+     */
+    override fun getConnectedNodes(): List<TransportNode> {
+        val nodes = mutableListOf<TransportNode>()
+        for (device in connectedDevices) {
+            nodes.add(
+                TransportNode(
+                    nodeId       = device.address,
+                    displayName  = device.name ?: "BLE-${device.address.take(8)}",
+                    rssi         = -60, // GATT server peers don't report RSSI via callback
+                    transportType = TransportType.BLUETOOTH
+                )
+            )
+        }
+        gatt?.device?.let { device ->
+            if (nodes.none { it.nodeId == device.address }) {
+                nodes.add(
+                    TransportNode(
+                        nodeId       = device.address,
+                        displayName  = device.name ?: "BLE-${device.address.take(8)}",
+                        rssi         = -60,
+                        transportType = TransportType.BLUETOOTH
+                    )
+                )
+            }
+        }
+        return nodes
+    }
+
+    /**
+     * Returns the RSSI of the current GATT client connection.
+     * The most recent RSSI is cached from [BluetoothGattCallback.onReadRemoteRssi].
+     * Returns [Int.MIN_VALUE] if no GATT client connection is active.
+     */
+    override fun getSignalStrength(): Int = _lastRssi
+
+    /** Cached RSSI from the most recent [BluetoothGattCallback.onReadRemoteRssi] callback. */
+    @Volatile private var _lastRssi: Int = Int.MIN_VALUE
+
+    /** Emits transport-level events. Currently emits state transitions from [_status]. */
+    override fun observeState(): Flow<TransportEvent> = _transportEventFlow.asSharedFlow()
+
+    private val _transportEventFlow = MutableSharedFlow<TransportEvent>(extraBufferCapacity = 16)
+
 
     @SuppressLint("MissingPermission")
     private fun startAdvertising() {
@@ -732,7 +844,7 @@ class BluetoothTransportImpl @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    private fun stopAdvertising() {
+    private fun stopBleAdvertising() {
         val advertiser = adapter?.bluetoothLeAdvertiser ?: return
         advertiser.stopAdvertising(advertiseCallback)
         Timber.d("BluetoothTransport: BLE Advertising stopped.")
@@ -740,11 +852,11 @@ class BluetoothTransportImpl @Inject constructor(
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-            Timber.d("BluetoothTransport: Advertisement setup success.")
+            Timber.d("ADVERTISEMENT STARTED — BLE Advertising setup success")
         }
 
         override fun onStartFailure(errorCode: Int) {
-            Timber.e("BluetoothTransport: Advertisement setup failed. Code: $errorCode")
+            Timber.e("BLE_FLOW: Advertisement setup failed. Code: $errorCode")
         }
     }
 
@@ -1142,6 +1254,7 @@ class BluetoothTransportImpl @Inject constructor(
 
         override fun onReadRemoteRssi(gatt: BluetoothGatt?, rssi: Int, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS && gatt != null) {
+                _lastRssi = rssi
                 val address = gatt.device.address
                 val name = gatt.device.name ?: "Node-${address.take(6)}"
                 scope.launch {

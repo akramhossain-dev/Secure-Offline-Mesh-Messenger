@@ -2,9 +2,9 @@ package com.mesh.emergency.feature.message.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mesh.emergency.core.communication.PairingService
 import com.mesh.emergency.core.discovery.qr.QRHandshakeData
 import com.mesh.emergency.core.discovery.qr.QRHandshakeManager
-import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.DbTrustStatus
 import com.mesh.emergency.data.local.entity.DeviceEntity
@@ -34,7 +34,7 @@ import javax.inject.Inject
 @HiltViewModel
 class QrPairViewModel @Inject constructor(
     private val localDataSource: LocalDataSource,
-    private val bluetoothTransport: BluetoothTransportImpl
+    private val pairingService: PairingService
 ) : ViewModel() {
 
     private val _effect = MutableSharedFlow<QrPairUiEffect>()
@@ -114,7 +114,7 @@ class QrPairViewModel @Inject constructor(
                         val localUserId  = localProfile?.entityId ?: java.util.UUID.randomUUID().toString()
                         val localPubKey  = localProfile?.publicKey ?: ""
                         val localName    = localProfile?.username ?: ""
-                        val localBle     = bluetoothTransport.localBleAddress
+                        val localBle     = pairingService.localBleAddress
 
                         val reverseJson = JSONObject().apply {
                             put("type", "REVERSE_HANDSHAKE")
@@ -130,7 +130,7 @@ class QrPairViewModel @Inject constructor(
 
                         // Three-path delivery:
                         // path1 serverNotify → path2 clientWrite → path3 directGATT → path4 pending+scan
-                        bluetoothTransport.queueAndDeliverReverseHandshake(reversePayload, data.bleAddress)
+                        pairingService.queueAndDeliverReverseHandshake(reversePayload, data.bleAddress)
                         Timber.d("PAIR_FLOW: Pair request sent — delivery attempted via all available BLE paths")
                     } catch (e: Exception) {
                         // Reverse handshake is best-effort; failure doesn't break forward pairing

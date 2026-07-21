@@ -8,11 +8,11 @@ package com.mesh.emergency.feature.chat
 import androidx.lifecycle.viewModelScope
 import com.mesh.emergency.core.communication.CommunicationManager
 import com.mesh.emergency.core.communication.CommunicationState
+import com.mesh.emergency.core.messaging.MessagingService
 import com.mesh.emergency.core.presentation.base.BaseUiEffect
 import com.mesh.emergency.core.presentation.base.BaseUiEvent
 import com.mesh.emergency.core.presentation.base.BaseUiState
 import com.mesh.emergency.core.presentation.base.BaseViewModel
-import com.mesh.emergency.data.communication.bluetooth.BluetoothTransportImpl
 import com.mesh.emergency.data.local.LocalDataSource
 import com.mesh.emergency.data.local.entity.GlobalMessageEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -87,13 +87,14 @@ sealed interface GlobalChatUiEffect : BaseUiEffect {
  *
  * Architecture:
  * - Observes [LocalDataSource.getGlobalMessages] as a real-time Flow.
- * - Sends via [BluetoothTransportImpl.sendGlobalMessage] to broadcast to all BLE peers.
- * - Inserts the local user's own message optimistically to Room before BLE delivery.
+ * - Sends via [MessagingService] which routes through [CommunicationManager] to the active transport.
+ * - Inserts the local user's own message optimistically to Room before transport delivery.
+ * - Transport-agnostic: changing Bluetooth to LoRa requires no change here.
  */
 @HiltViewModel
 class GlobalChatViewModel @Inject constructor(
     private val localDataSource: LocalDataSource,
-    private val bluetoothTransport: BluetoothTransportImpl,
+    private val messagingService: MessagingService,
     private val communicationManager: CommunicationManager
 ) : BaseViewModel<GlobalChatUiState, GlobalChatUiEvent, GlobalChatUiEffect>(GlobalChatUiState()) {
 
@@ -184,8 +185,7 @@ class GlobalChatViewModel @Inject constructor(
                             editHistory = history
                         )
                         localDataSource.updateGlobalMessage(updated)
-                        
-                        bluetoothTransport.sendGlobalMessageEdit(event.id, senderId, senderName, text)
+                        messagingService.sendGlobalMessageEdit(event.id, senderId, senderName, text)
                     }
                     updateState { copy(editingMessage = null, draftText = "") }
                 }
@@ -202,8 +202,7 @@ class GlobalChatViewModel @Inject constructor(
                             updatedAt = System.currentTimeMillis()
                         )
                         localDataSource.updateGlobalMessage(updated)
-                        
-                        bluetoothTransport.sendGlobalMessageDelete(event.id, senderId, senderName)
+                        messagingService.sendGlobalMessageDelete(event.id, senderId, senderName)
                     }
                 }
             }
@@ -268,8 +267,8 @@ class GlobalChatViewModel @Inject constructor(
             updateState { copy(draftText = "", replyingToMessage = null) }
             sendEffect(GlobalChatUiEffect.ScrollToBottom)
 
-            // Always attempt BLE broadcast — transport knows if peers are connected
-            val sent = bluetoothTransport.sendGlobalMessage(
+            // Broadcast via the active transport through MessagingService
+            val sent = messagingService.sendGlobalMessage(
                 messageId  = msgId,
                 senderId   = senderId,
                 senderName = senderName,
@@ -278,7 +277,7 @@ class GlobalChatViewModel @Inject constructor(
                 replyToName = replyMsg?.senderName,
                 replyToText = replyMsg?.content
             )
-            Timber.d("GCHAT: Message sent via BLE — id=$msgId success=$sent online=$isOnline")
+            Timber.d("GCHAT: Message sent — id=$msgId success=$sent online=$isOnline")
 
             // Update delivery status via dedicated UPDATE query (not insert — IGNORE would skip it)
             val finalStatus = when {

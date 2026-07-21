@@ -99,6 +99,18 @@ abstract class DatabaseModule {
         }
 
         /**
+         * Migration 4 → 5: Transport independence metadata.
+         * Adds [transportType] column to both message tables.
+         * Default value 'UNKNOWN' ensures backward compatibility with all existing rows.
+         */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `messages` ADD COLUMN `transportType` TEXT NOT NULL DEFAULT 'UNKNOWN'")
+                db.execSQL("ALTER TABLE `global_messages` ADD COLUMN `transportType` TEXT NOT NULL DEFAULT 'UNKNOWN'")
+            }
+        }
+
+        /**
          * Provides the singleton database instance.
          */
         @Provides
@@ -111,7 +123,7 @@ abstract class DatabaseModule {
                 AppDatabase::class.java,
                 AppDatabase.DATABASE_NAME
             )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .fallbackToDestructiveMigration(true)
             .fallbackToDestructiveMigrationOnDowngrade(true)
             // A33.3 — Enable WAL for faster concurrent reads + larger page cache

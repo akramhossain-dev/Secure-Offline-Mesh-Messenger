@@ -3,7 +3,7 @@
  * Copyright (c) 2024. All rights reserved.
  */
 
-package com.mesh.emergency.data.communication
+package com.mesh.emergency.data.communication.usb
 
 import com.mesh.emergency.core.common.result.Result
 import com.mesh.emergency.core.communication.Transport
@@ -21,29 +21,27 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Extension point for a future LoRa transport implementation.
+ * Extension point for a future USB Serial transport implementation.
  *
- * LoRa (Long Range) enables kilometre-range, low-power mesh communication at low throughput.
- * Suitable for emergency scenarios where BLE is not in range but physical LoRa hardware is present.
+ * USB Serial enables direct wired communication with external hardware modules
+ * (e.g., ESP32 LoRa boards, serial-over-USB devices) when BLE is unavailable.
  *
  * This stub satisfies the [Transport] interface contract and reports [TransportStatus.UNAVAILABLE].
- * When the LoRa transport is implemented, only this class needs to change —
+ * When the USB Serial transport is implemented, only this class needs to change —
  * no modifications to [CommunicationManager], [MessagingService], or any UI layer.
  *
  * Expected capabilities when implemented:
- * - [TransportCapability.BROADCAST] — LoRa broadcast to all in-range nodes
- * - [TransportCapability.SIGNAL_STRENGTH] — RSSI/SNR from LoRa radio
- * - [TransportCapability.MESH_ROUTING] — relay packets across multi-hop LoRa mesh
+ * - [TransportCapability.ACKNOWLEDGEMENTS] — serial ACK/NAK protocol
+ * - [TransportCapability.TRANSPORT_ENCRYPTION] — packet-level encryption over serial
  */
 @Singleton
-class LoRaTransportStub @Inject constructor() : Transport {
+class UsbSerialTransportStub @Inject constructor() : Transport {
 
-    override val type: TransportType = TransportType.LORA
+    override val type: TransportType = TransportType.USB_SERIAL
 
     override val capabilities: Set<TransportCapability> = setOf(
-        TransportCapability.BROADCAST,
-        TransportCapability.SIGNAL_STRENGTH,
-        TransportCapability.MESH_ROUTING
+        TransportCapability.ACKNOWLEDGEMENTS,
+        TransportCapability.TRANSPORT_ENCRYPTION
     )
 
     private val _status = MutableStateFlow(TransportStatus.UNAVAILABLE)
@@ -51,13 +49,13 @@ class LoRaTransportStub @Inject constructor() : Transport {
 
     override suspend fun start(): Result<Unit>           = Result.Success(Unit) // no-op stub
     override suspend fun stop(): Result<Unit>            = Result.Success(Unit) // no-op stub
-    override suspend fun connect(): Result<Unit>         = Result.Error(Exception("LoRa transport not yet implemented"))
+    override suspend fun connect(): Result<Unit>         = Result.Error(Exception("USB Serial transport not yet implemented"))
     override suspend fun disconnect(): Result<Unit>      = Result.Success(Unit) // no-op stub
-    override suspend fun advertise(): Result<Unit>       = Result.Error(Exception("LoRa transport not yet implemented"))
+    override suspend fun advertise(): Result<Unit>       = Result.Success(Unit) // USB does not advertise
     override suspend fun stopAdvertising(): Result<Unit> = Result.Success(Unit) // no-op stub
-    override suspend fun discover(): Result<Unit>        = Result.Error(Exception("LoRa transport not yet implemented"))
+    override suspend fun discover(): Result<Unit>        = Result.Error(Exception("USB Serial transport not yet implemented"))
     override suspend fun stopDiscovery(): Result<Unit>   = Result.Success(Unit) // no-op stub
-    override suspend fun send(data: ByteArray): Result<Unit> = Result.Error(Exception("LoRa transport features are stubbed"))
+    override suspend fun send(data: ByteArray): Result<Unit> = Result.Error(Exception("USB Serial transport not yet implemented"))
     override suspend fun sendAck(messageId: String): Result<Unit> = Result.Success(Unit) // no-op stub
     override fun receive(): Flow<ByteArray>              = emptyFlow()
     override fun getConnectedNodes(): List<TransportNode> = emptyList()
