@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Emergency Connect — Adaptive Icon Foreground
+    Design: Shield outline with mesh-network node topology inside.
+    Safe zone: 72×72 dp centred in 108×108 canvas (18dp inset on each side).
+    Background colour is provided by ic_launcher_background.xml.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ── Shield outline ───────────────────────────────────────────────── -->
+    <!--
+        Vertices: top-centre (54,22), top-right (82,36), bottom-right (82,66),
+        curving to bottom-centre point (54,90), bottom-left (26,66), top-left (26,36).
+        Rounded corners via cubic bezier on bottom half.
+    -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#C4C3EE"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M54,22
+            L82,36
+            L82,66
+            Q82,80 54,90
+            Q26,80 26,66
+            L26,36
+            Z" />
+
+    <!-- ── Mesh connection lines ─────────────────────────────────────────── -->
+    <!--
+        Network topology: 3 outer nodes (top, bottom-left, bottom-right)
+        all connected to a central hub, plus the outer triangle edges.
+    -->
+    <path
+        android:strokeColor="#5ADFF0"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="
+            M54,40 L54,57
+            M40,65 L54,57
+            M68,65 L54,57
+            M54,40 L40,65
+            M54,40 L68,65
+            M40,65 L68,65" />
+
+    <!-- ── Outer network nodes ───────────────────────────────────────────── -->
+    <!-- Top node -->
+    <path
+        android:fillColor="#4F4BD4"
+        android:pathData="M54,40m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+    <!-- Bottom-left node -->
+    <path
+        android:fillColor="#4F4BD4"
+        android:pathData="M40,65m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+    <!-- Bottom-right node -->
+    <path
+        android:fillColor="#4F4BD4"
+        android:pathData="M68,65m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+
+    <!-- ── Central hub node (brighter, two-tone) ────────────────────────── -->
+    <!-- Outer glow ring -->
+    <path
+        android:fillColor="#8B89F9"
+        android:pathData="M54,57m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <!-- Inner dot -->
+    <path
+        android:fillColor="#C4C3EE"
+        android:pathData="M54,57m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+
+</vector>

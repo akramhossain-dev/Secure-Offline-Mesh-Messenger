@@ -1,92 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Emergency Connect — Splash Branding Image
+    Shown at the bottom of the Android 12+ system splash screen via
+    android:windowSplashScreenBrandingImage.
+
+    Design: Abstract horizontal mesh-network graphic — 5 nodes of varying
+    sizes connected by teal lines, with the central hub double-ringed.
+    The visual language directly mirrors the shield logo above it and
+    conveys "connected mesh" without needing rendered text paths.
+
+    240×60 viewport. Network centred vertically at y=30.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="240dp"
     android:height="60dp"
     android:viewportWidth="240"
     android:viewportHeight="60">
 
-    <!-- Small Lock + Signal Indicator (Secure Mesh) -->
-    <!-- Lock Body -->
+    <!-- ── Connection lines ─────────────────────────────────────────────── -->
+    <path
+        android:strokeColor="#5ADFF0"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="
+            M44,30 L82,30
+            M90,30 L110,30
+            M130,30 L150,30
+            M158,30 L196,30
+            M90,30 L110,20
+            M110,20 L130,30
+            M130,30 L150,20
+            M150,20 L158,30" />
+
+    <!-- ── Far-left outer node ───────────────────────────────────────────── -->
+    <path
+        android:fillColor="#4F4BD4"
+        android:pathData="M38,30m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+
+    <!-- ── Left secondary node ──────────────────────────────────────────── -->
+    <path
+        android:fillColor="#7674DC"
+        android:pathData="M86,30m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- ── Upper-left relay node ─────────────────────────────────────────── -->
+    <path
+        android:fillColor="#8B89F9"
+        android:pathData="M110,20m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+
+    <!-- ── Upper-right relay node ────────────────────────────────────────── -->
+    <path
+        android:fillColor="#8B89F9"
+        android:pathData="M150,20m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+
+    <!-- ── Central hub — outer glow ring ────────────────────────────────── -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4F4BD4"
+        android:strokeWidth="1.5"
+        android:pathData="M120,30m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+    <!-- Hub fill -->
+    <path
+        android:fillColor="#8B89F9"
+        android:pathData="M120,30m-9,0a9,9 0,1 1,18 0a9,9 0,1 1,-18 0" />
+    <!-- Hub inner dot -->
     <path
         android:fillColor="#C4C3EE"
-        android:pathData="M114,26 h12 v10 h-12 Z" />
-    <!-- Lock Shackle -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="1.5"
-        android:pathData="M116,26 V22 c0,-2 2,-4 4,-4 c2,0 4,2 4,4 v4" />
-    
-    <!-- Pulse Waves (Network representation) -->
-    <path
-        android:strokeColor="#8B89F9"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:pathData="M106,24 C102,28 102,36 106,40" />
-    <path
-        android:strokeColor="#8B89F9"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:pathData="M134,24 C138,28 138,36 134,40" />
+        android:pathData="M120,30m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
 
-    <!-- Branding Text - OFFLINE MESH (Simulated premium sleek blocks/letters) -->
-    <!-- Letter O -->
+    <!-- ── Right secondary node ──────────────────────────────────────────── -->
     <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:pathData="M24,24 A6,6 0 1,1 24,36 A6,6 0 1,1 24,24" />
-    <!-- Letter F -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M38,36 V24 h8 M38,30 h6" />
-    <!-- Letter F -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M52,36 V24 h8 M52,30 h6" />
-    <!-- Letter L -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M66,24 v12 h8" />
-    <!-- Letter I -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M80,24 v12" />
-    <!-- Letter N -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M88,36 V24 L96,36 V24" />
+        android:fillColor="#7674DC"
+        android:pathData="M154,30m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
 
-    <!-- Letter M -->
+    <!-- ── Far-right outer node ──────────────────────────────────────────── -->
     <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M148,36 V24 L154,31 L160,24 V36" />
-    <!-- Letter E -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M168,36 V24 h8 M168,30 h6 M168,36 h8" />
-    <!-- Letter S -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M188,24 h6 a3,3 0 0,1 0,6 h-2 a3,3 0 0,0 0,6 h6" />
-    <!-- Letter H -->
-    <path
-        android:strokeColor="#C4C3EE"
-        android:strokeWidth="3.5"
-        android:strokeLineCap="round"
-        android:pathData="M204,24 v12 M212,24 v12 M204,30 h8" />
+        android:fillColor="#4F4BD4"
+        android:pathData="M202,30m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+
 </vector>

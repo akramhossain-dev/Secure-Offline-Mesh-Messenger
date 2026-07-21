@@ -30,8 +30,13 @@
 
     <!-- Splash screen theme — used before Compose initializes -->
     <style name="Theme.OfflineEmergencyMesh.Splash" parent="Theme.SplashScreen">
+        <!-- Deep indigo splash background (dark-by-default, night override in values-night/) -->
         <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Shield + mesh logo -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <!-- Branded indigo circle behind the icon on the system splash -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+        <!-- Horizontal mesh network mark at the bottom (Android 12+) -->
         <item name="android:windowSplashScreenBrandingImage">@drawable/ic_splash_brand</item>
         <item name="postSplashScreenTheme">@style/Theme.OfflineEmergencyMesh</item>
     </style>

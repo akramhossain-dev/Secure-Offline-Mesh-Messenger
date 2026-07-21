@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Offline Emergency Mesh Communication System
+    Night-mode Theme Overrides
+
+    On devices in dark system mode, override the splash background to pure
+    deep indigo (same as the default, but explicitly declared here so it
+    does not inherit a lighter surface if Material3 ever changes defaults).
+
+    Light-mode splash uses @color/splash_background as declared in values/themes.xml.
+    Dark-mode splash intentionally matches — the brand splash is always dark.
+-->
+<resources>
+
+    <!-- Splash screen — explicit dark-mode background -->
+    <style name="Theme.OfflineEmergencyMesh.Splash" parent="Theme.SplashScreen">
+        <!-- True deep indigo in dark mode — no flicker to white -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Same logo — dark circle is baked into the drawable -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <!-- Branded icon background circle -->
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+        <!-- Mesh network branding mark -->
+        <item name="android:windowSplashScreenBrandingImage">@drawable/ic_splash_brand</item>
+        <item name="postSplashScreenTheme">@style/Theme.OfflineEmergencyMesh</item>
+    </style>
+
+</resources>

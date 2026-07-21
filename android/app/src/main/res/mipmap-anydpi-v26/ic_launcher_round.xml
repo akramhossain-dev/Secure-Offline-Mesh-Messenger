@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Emergency Connect — Adaptive Round Icon descriptor (API 26+)
+    Identical to ic_launcher.xml. The system enforces the circular mask
+    shape; using the same foreground/background ensures visual consistency
+    across icon shapes on all launchers.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
